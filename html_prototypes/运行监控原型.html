@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视联网适配中心 - 运行监控</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue/dist/index.iife.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            color: #bdc3c7;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .nav-item.active {
+            background-color: rgba(64, 158, 255, 0.2);
+            color: #409eff;
+            border-left-color: #409eff;
+        }
+        .nav-group {
+            margin-bottom: 10px;
+        }
+        .nav-group-title {
+            padding: 8px 20px;
+            color: #95a5a6;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-submenu {
+            padding-left: 40px;
+            font-size: 14px;
+        }
+        .alarm-level-p0 {
+            color: #f56c6c;
+            background-color: #fef0f0;
+            border: 1px solid #fbc4c4;
+        }
+        .alarm-level-p1 {
+            color: #e6a23c;
+            background-color: #fdf6ec;
+            border: 1px solid #f5dab1;
+        }
+        .alarm-level-p2 {
+            color: #409eff;
+            background-color: #ecf5ff;
+            border: 1px solid #b3d8ff;
+        }
+        .alarm-level-p3 {
+            color: #67c23a;
+            background-color: #f0f9ff;
+            border: 1px solid #c2e7b0;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-new { background-color: #f56c6c; }
+        .status-acknowledged { background-color: #e6a23c; }
+        .status-in-progress { background-color: #409eff; }
+        .status-resolved { background-color: #67c23a; }
+        .status-closed { background-color: #909399; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="flex h-screen bg-gray-50">
+            <!-- 左侧导航 -->
+            <div class="w-64 sidebar">
+                <div class="p-6 border-b border-gray-600">
+                    <h1 class="text-xl font-bold text-white">视联网适配中心</h1>
+                </div>
+                <nav class="mt-6">
+                    <div class="nav-group">
+                        <div class="nav-group-title">运营门户</div>
+                        <div class="nav-item" :class="{active: activeMenu === 'dashboard'}" @click="activeMenu = 'dashboard'">
+                            <i class="el-icon-monitor"></i> 驾驶舱
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'customer'}" @click="activeMenu = 'customer'">
+                            <i class="el-icon-user"></i> 客户管理
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'analysis'}" @click="activeMenu = 'analysis'">
+                            <i class="el-icon-data-analysis"></i> 运营分析
+                        </div>
+                        <!-- 运营分析二级菜单 -->
+                        <div v-if="activeMenu === 'analysis'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user-solid"></i> 客户分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-monitor"></i> 设备分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-data-line"></i> 业务分析
+                            </div>
+                        </div>
+                        <div class="nav-item active" :class="{active: activeMenu === 'monitor'}" @click="activeMenu = 'monitor'">
+                            <i class="el-icon-warning"></i> 运行监控
+                        </div>
+                        <!-- 运行监控二级菜单 -->
+                        <div v-if="activeMenu === 'monitor'" class="nav-submenu">
+                            <div class="nav-item active">
+                                <i class="el-icon-bell"></i> 告警规则管理
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-message"></i> 告警事件管理
+                            </div>
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'system'}" @click="activeMenu = 'system'">
+                            <i class="el-icon-setting"></i> 系统配置
+                        </div>
+                        <!-- 系统配置二级菜单 -->
+                        <div v-if="activeMenu === 'system'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user"></i> 用户管理
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-s-custom"></i> 角色管理
+                            </div>
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'logs'}" @click="activeMenu = 'logs'">
+                            <i class="el-icon-document"></i> 日志管理
+                        </div>
+                        <!-- 日志管理二级菜单 -->
+                        <div v-if="activeMenu === 'logs'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-key"></i> 登录日志
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-edit"></i> 操作日志
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">接口适配</div>
+                        <div class="nav-item" :class="{active: activeMenu === 'interface'}" @click="activeMenu = 'interface'">
+                            <i class="el-icon-connection"></i> 接入平台管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-monitor"></i> 设备管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-video-camera"></i> 通道管理
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">业务数据采集</div>
+                        <div class="nav-item" :class="{active: activeMenu === 'collection'}" @click="activeMenu = 'collection'">
+                            <i class="el-icon-download"></i> 运行业务数据采集配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-user-solid"></i> CRM客户数据同步配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-timer"></i> 任务状态
+                            <div class="nav-submenu">
+                                <div class="nav-item">客户分析</div>
+                                <div class="nav-item">设备分析</div>
+                                <div class="nav-item">业务分析</div>
+                            </div>
+                        </div>
+                        <div class="nav-item active">
+                            <i class="el-icon-monitor"></i> 运行监控
+                            <div class="nav-submenu">
+                                <div class="nav-item" :class="{active: currentTab === 'rules'}" @click="currentTab = 'rules'">告警规则管理</div>
+                                <div class="nav-item" :class="{active: currentTab === 'alarms'}" @click="currentTab = 'alarms'">告警事件管理</div>
+                            </div>
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-setting"></i> 系统配置
+                            <div class="nav-submenu">
+                                <div class="nav-item">用户管理</div>
+                                <div class="nav-item">角色管理</div>
+                            </div>
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-document"></i> 日志管理
+                            <div class="nav-submenu">
+                                <div class="nav-item">登录日志</div>
+                                <div class="nav-item">操作日志</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">接口适配</div>
+                        <div class="nav-item">
+                            <i class="el-icon-connection"></i> 接入平台管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-cpu"></i> 设备管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-link"></i> 通道管理
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">业务数据采集</div>
+                        <div class="nav-item">
+                            <i class="el-icon-data-board"></i> 运行业务数据采集配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-refresh"></i> CRM客户数据同步配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-view"></i> 任务状态
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="flex-1 overflow-auto">
+                <!-- 顶部标题栏 -->
+                <div class="bg-white shadow-sm border-b px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">运行监控</h2>
+                            <p class="text-gray-600 mt-1">实时监控系统状态，配置告警规则，管理告警事件</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <!-- 用户信息 -->
+                            <el-dropdown trigger="click">
+                                <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
+                                    <el-avatar size="small" class="mr-2">
+                                        <i class="el-icon-user"></i>
+                                    </el-avatar>
+                                    <span class="text-gray-700 font-medium">{{ currentUser.name }}</span>
+                                    <i class="el-icon-arrow-down ml-1 text-gray-500"></i>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="showProfile">
+                                            <i class="el-icon-user mr-2"></i>个人中心
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="changePassword">
+                                            <i class="el-icon-key mr-2"></i>修改密码
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided @click="logout">
+                                            <i class="el-icon-switch-button mr-2"></i>退出登录
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 告警规则管理 -->
+                <div v-if="currentTab === 'rules'" class="p-6">
+                    <!-- 操作栏 -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <el-button type="primary" @click="showAddRuleDialog = true">
+                                <i class="el-icon-plus mr-1"></i>新增规则
+                            </el-button>
+                            <el-button @click="refreshRules">
+                                <i class="el-icon-refresh mr-1"></i>刷新
+                            </el-button>
+                        </div>
+                    </div>
+
+                    <!-- 筛选条件 -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">规则名称</label>
+                                <el-input v-model="ruleFilters.name" placeholder="请输入规则名称" clearable></el-input>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">监控对象类型</label>
+                                <el-select v-model="ruleFilters.objectType" placeholder="请选择" clearable>
+                                    <el-option label="系统资源" value="SYSTEM_SERVICE"></el-option>
+                                    <el-option label="平台连接" value="PLATFORM_CONNECTION"></el-option>
+                                    <el-option label="业务指标" value="BUSINESS_METRIC"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">告警级别</label>
+                                <el-select v-model="ruleFilters.level" placeholder="请选择" clearable>
+                                    <el-option label="紧急(P0)" value="P0"></el-option>
+                                    <el-option label="重要(P1)" value="P1"></el-option>
+                                    <el-option label="警告(P2)" value="P2"></el-option>
+                                    <el-option label="提示(P3)" value="P3"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">启用状态</label>
+                                <el-select v-model="ruleFilters.enabled" placeholder="请选择" clearable>
+                                    <el-option label="已启用" :value="true"></el-option>
+                                    <el-option label="已停用" :value="false"></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end space-x-2">
+                            <el-button @click="resetRuleFilters">重置</el-button>
+                            <el-button type="primary" @click="searchRules">查询</el-button>
+                        </div>
+                    </div>
+
+                    <!-- 规则列表 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <el-table :data="rules" style="width: 100%" v-loading="rulesLoading">
+                            <el-table-column prop="ruleName" label="规则名称" width="200">
+                                <template #default="scope">
+                                    <el-link type="primary" @click="viewRuleDetail(scope.row)">{{ scope.row.ruleName }}</el-link>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="monitorObjectType" label="监控对象" width="120">
+                                <template #default="scope">
+                                    <el-tag size="small" :type="getObjectTypeTagType(scope.row.monitorObjectType)">
+                                        {{ getObjectTypeLabel(scope.row.monitorObjectType) }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="conditions" label="告警条件" min-width="200">
+                                <template #default="scope">
+                                    <span class="text-sm text-gray-600">{{ formatConditions(scope.row.conditions) }}</span>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="alarmLevel" label="告警级别" width="100">
+                                <template #default="scope">
+                                    <el-tag size="small" :class="'alarm-level-' + scope.row.alarmLevel.toLowerCase()">
+                                        {{ scope.row.alarmLevel }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="enabledStatus" label="状态" width="80">
+                                <template #default="scope">
+                                    <el-switch v-model="scope.row.enabledStatus" @change="toggleRuleStatus(scope.row)"></el-switch>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createdBy" label="创建人" width="100"></el-table-column>
+                            <el-table-column prop="creationTime" label="创建时间" width="160">
+                                <template #default="scope">
+                                    {{ formatDateTime(scope.row.creationTime) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="200" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" @click="editRule(scope.row)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="deleteRule(scope.row)">删除</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <div class="p-4 flex justify-end">
+                            <el-pagination
+                                v-model:current-page="rulePagination.currentPage"
+                                v-model:page-size="rulePagination.pageSize"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :total="rulePagination.total"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                @size-change="handleRulePageSizeChange"
+                                @current-change="handleRulePageChange">
+                            </el-pagination>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 告警事件管理 -->
+                <div v-if="currentTab === 'alarms'" class="p-6">
+                    <!-- 操作栏 -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <el-button @click="refreshAlarms">
+                                <i class="el-icon-refresh mr-1"></i>刷新
+                            </el-button>
+                            <el-button @click="batchAcknowledge" :disabled="selectedAlarms.length === 0">
+                                <i class="el-icon-check mr-1"></i>批量确认
+                            </el-button>
+                            <el-button @click="batchClose" :disabled="selectedAlarms.length === 0">
+                                <i class="el-icon-close mr-1"></i>批量关闭
+                            </el-button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-500">自动刷新:</span>
+                            <el-switch v-model="autoRefresh" @change="toggleAutoRefresh"></el-switch>
+                        </div>
+                    </div>
+
+                    <!-- 筛选条件 -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">告警级别</label>
+                                <el-select v-model="alarmFilters.level" placeholder="请选择" clearable multiple>
+                                    <el-option label="紧急(P0)" value="P0"></el-option>
+                                    <el-option label="重要(P1)" value="P1"></el-option>
+                                    <el-option label="警告(P2)" value="P2"></el-option>
+                                    <el-option label="提示(P3)" value="P3"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">告警状态</label>
+                                <el-select v-model="alarmFilters.status" placeholder="请选择" clearable multiple>
+                                    <el-option label="新告警" value="NEW"></el-option>
+                                    <el-option label="已确认" value="ACKNOWLEDGED"></el-option>
+                                    <el-option label="处理中" value="IN_PROGRESS"></el-option>
+                                    <el-option label="已解决" value="RESOLVED"></el-option>
+                                    <el-option label="已关闭" value="CLOSED"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">告警源</label>
+                                <el-input v-model="alarmFilters.source" placeholder="请输入告警源" clearable></el-input>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">开始时间</label>
+                                <el-date-picker v-model="alarmFilters.startTime" type="datetime" placeholder="选择开始时间" style="width: 100%"></el-date-picker>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">结束时间</label>
+                                <el-date-picker v-model="alarmFilters.endTime" type="datetime" placeholder="选择结束时间" style="width: 100%"></el-date-picker>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end space-x-2">
+                            <el-button @click="resetAlarmFilters">重置</el-button>
+                            <el-button type="primary" @click="searchAlarms">查询</el-button>
+                        </div>
+                    </div>
+
+                    <!-- 告警列表 -->
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <el-table :data="alarms" style="width: 100%" v-loading="alarmsLoading" @selection-change="handleAlarmSelectionChange">
+                            <el-table-column type="selection" width="55"></el-table-column>
+                            <el-table-column prop="alarmLevel" label="级别" width="80">
+                                <template #default="scope">
+                                    <el-tag size="small" :class="'alarm-level-' + scope.row.alarmLevel.toLowerCase()">
+                                        {{ scope.row.alarmLevel }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="localStatus" label="状态" width="100">
+                                <template #default="scope">
+                                    <div class="flex items-center">
+                                        <span :class="'status-indicator status-' + scope.row.localStatus.toLowerCase().replace('_', '-')"></span>
+                                        <span class="text-sm">{{ getStatusLabel(scope.row.localStatus) }}</span>
+                                    </div>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="alarmDescription" label="告警描述" min-width="300">
+                                <template #default="scope">
+                                    <el-link type="primary" @click="viewAlarmDetail(scope.row)">{{ scope.row.alarmDescription }}</el-link>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="alarmSourceOrObject" label="告警源" width="150"></el-table-column>
+                            <el-table-column prop="firstOccurrenceTime" label="首次发生" width="160">
+                                <template #default="scope">
+                                    {{ formatDateTime(scope.row.firstOccurrenceTime) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="lastOccurrenceTime" label="最近发生" width="160">
+                                <template #default="scope">
+                                    {{ formatDateTime(scope.row.lastOccurrenceTime) }}
+                                </template>
+                            </el-table-column>
+                            <el-table-column label="操作" width="200" fixed="right">
+                                <template #default="scope">
+                                    <el-button v-if="scope.row.localStatus === 'NEW'" size="small" @click="acknowledgeAlarm(scope.row)">确认</el-button>
+                                    <el-button v-if="scope.row.localStatus === 'ACKNOWLEDGED'" size="small" type="warning" @click="markInProgress(scope.row)">处理中</el-button>
+                                    <el-button v-if="scope.row.localStatus === 'IN_PROGRESS'" size="small" type="success" @click="resolveAlarm(scope.row)">解决</el-button>
+                                    <el-button v-if="scope.row.localStatus === 'RESOLVED'" size="small" @click="closeAlarm(scope.row)">关闭</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <div class="p-4 flex justify-end">
+                            <el-pagination
+                                v-model:current-page="alarmPagination.currentPage"
+                                v-model:page-size="alarmPagination.pageSize"
+                                :page-sizes="[10, 20, 50, 100]"
+                                :total="alarmPagination.total"
+                                layout="total, sizes, prev, pager, next, jumper"
+                                @size-change="handleAlarmPageSizeChange"
+                                @current-change="handleAlarmPageChange">
+                            </el-pagination>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增/编辑规则对话框 -->
+        <el-dialog v-model="showAddRuleDialog" :title="editingRule ? '编辑告警规则' : '新增告警规则'" width="800px">
+            <el-form :model="ruleForm" :rules="ruleFormRules" ref="ruleFormRef" label-width="120px">
+                <el-form-item label="规则名称" prop="ruleName">
+                    <el-input v-model="ruleForm.ruleName" placeholder="请输入规则名称"></el-input>
+                </el-form-item>
+                <el-form-item label="监控对象类型" prop="monitorObjectType">
+                    <el-select v-model="ruleForm.monitorObjectType" placeholder="请选择监控对象类型" @change="onObjectTypeChange">
+                        <el-option label="系统资源" value="SYSTEM_SERVICE"></el-option>
+                        <el-option label="平台连接" value="PLATFORM_CONNECTION"></el-option>
+                        <el-option label="业务指标" value="BUSINESS_METRIC"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="监控对象实例" prop="monitorObjectInstance">
+                    <el-select v-model="ruleForm.monitorObjectInstance" placeholder="请选择具体实例" filterable>
+                        <el-option v-for="instance in availableInstances" :key="instance.value" :label="instance.label" :value="instance.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="监控指标" prop="metricName">
+                    <el-select v-model="ruleForm.metricName" placeholder="请选择监控指标">
+                        <el-option v-for="metric in availableMetrics" :key="metric.value" :label="metric.label" :value="metric.value"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="触发条件">
+                    <div class="space-y-4">
+                        <div v-for="(condition, index) in ruleForm.conditions" :key="index" class="flex items-center space-x-2 p-3 border rounded">
+                            <el-select v-model="condition.operator" placeholder="操作符" style="width: 100px">
+                                <el-option label=">" value="GT"></el-option>
+                                <el-option label=">=" value="GTE"></el-option>
+                                <el-option label="<" value="LT"></el-option>
+                                <el-option label="<=" value="LTE"></el-option>
+                                <el-option label="=" value="EQ"></el-option>
+                                <el-option label="!=" value="NEQ"></el-option>
+                            </el-select>
+                            <el-input v-model="condition.threshold" placeholder="阈值" style="width: 120px"></el-input>
+                            <span class="text-sm text-gray-500">持续</span>
+                            <el-input v-model="condition.duration" placeholder="时长" style="width: 80px"></el-input>
+                            <span class="text-sm text-gray-500">分钟</span>
+                            <el-button v-if="ruleForm.conditions.length > 1" size="small" type="danger" @click="removeCondition(index)">删除</el-button>
+                        </div>
+                        <el-button size="small" @click="addCondition">添加条件</el-button>
+                        <div v-if="ruleForm.conditions.length > 1" class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-700">条件关系:</span>
+                            <el-radio-group v-model="ruleForm.conditionLogic">
+                                <el-radio label="AND">且(AND)</el-radio>
+                                <el-radio label="OR">或(OR)</el-radio>
+                            </el-radio-group>
+                        </div>
+                    </div>
+                </el-form-item>
+                <el-form-item label="告警级别" prop="alarmLevel">
+                    <el-select v-model="ruleForm.alarmLevel" placeholder="请选择告警级别">
+                        <el-option label="紧急(P0)" value="P0"></el-option>
+                        <el-option label="重要(P1)" value="P1"></el-option>
+                        <el-option label="警告(P2)" value="P2"></el-option>
+                        <el-option label="提示(P3)" value="P3"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="告警描述模板">
+                    <el-input v-model="ruleForm.alarmDescriptionTemplate" type="textarea" :rows="3" placeholder="支持变量替换，如：服务 ${monitorObjectInstance} 的 ${metricName} 当前值为 ${currentValue}，已超出阈值 ${thresholdValue}"></el-input>
+                </el-form-item>
+                <el-form-item label="启用状态">
+                    <el-switch v-model="ruleForm.enabledStatus"></el-switch>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="showAddRuleDialog = false">取消</el-button>
+                    <el-button type="primary" @click="saveRule">保存</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 告警详情对话框 -->
+        <el-dialog v-model="showAlarmDetailDialog" title="告警详情" width="600px">
+            <div v-if="selectedAlarm">
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="告警ID">{{ selectedAlarm.alarmEventId }}</el-descriptions-item>
+                    <el-descriptions-item label="告警级别">
+                        <el-tag :class="'alarm-level-' + selectedAlarm.alarmLevel.toLowerCase()">{{ selectedAlarm.alarmLevel }}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="告警状态">
+                        <div class="flex items-center">
+                            <span :class="'status-indicator status-' + selectedAlarm.localStatus.toLowerCase().replace('_', '-')"></span>
+                            <span>{{ getStatusLabel(selectedAlarm.localStatus) }}</span>
+                        </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="告警源">{{ selectedAlarm.alarmSourceOrObject }}</el-descriptions-item>
+                    <el-descriptions-item label="首次发生时间" :span="2">{{ formatDateTime(selectedAlarm.firstOccurrenceTime) }}</el-descriptions-item>
+                    <el-descriptions-item label="最近发生时间" :span="2">{{ formatDateTime(selectedAlarm.lastOccurrenceTime) }}</el-descriptions-item>
+                    <el-descriptions-item label="当前指标值">{{ selectedAlarm.currentMetricValue }}</el-descriptions-item>
+                    <el-descriptions-item label="阈值">{{ selectedAlarm.thresholdValue }}</el-descriptions-item>
+                    <el-descriptions-item label="告警描述" :span="2">{{ selectedAlarm.alarmDescription }}</el-descriptions-item>
+                </el-descriptions>
+                
+                <div v-if="selectedAlarm.acknowledgedBy" class="mt-4">
+                    <h4 class="text-lg font-medium mb-2">处理记录</h4>
+                    <el-timeline>
+                        <el-timeline-item v-if="selectedAlarm.acknowledgedBy" :timestamp="formatDateTime(selectedAlarm.acknowledgedTime)" placement="top">
+                            <div class="text-sm">
+                                <span class="font-medium">{{ selectedAlarm.acknowledgedBy }}</span> 确认了告警
+                            </div>
+                        </el-timeline-item>
+                        <el-timeline-item v-if="selectedAlarm.resolvedBy" :timestamp="formatDateTime(selectedAlarm.resolvedTime)" placement="top">
+                            <div class="text-sm">
+                                <span class="font-medium">{{ selectedAlarm.resolvedBy }}</span> 解决了告警
+                                <div v-if="selectedAlarm.resolutionNotes" class="text-gray-600 mt-1">备注: {{ selectedAlarm.resolutionNotes }}</div>
+                            </div>
+                        </el-timeline-item>
+                    </el-timeline>
+                </div>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    currentTab: 'rules',
+                    autoRefresh: false,
+                    autoRefreshTimer: null,
+                    
+                    // 用户信息
+                    currentUser: {
+                        name: '张管理员',
+                        role: '系统管理员',
+                        avatar: ''
+                    },
+                    
+                    // 规则管理
+                    rules: [],
+                    rulesLoading: false,
+                    ruleFilters: {
+                        name: '',
+                        objectType: '',
+                        level: '',
+                        enabled: null
+                    },
+                    rulePagination: {
+                        currentPage: 1,
+                        pageSize: 20,
+                        total: 0
+                    },
+                    
+                    // 告警管理
+                    alarms: [],
+                    alarmsLoading: false,
+                    selectedAlarms: [],
+                    alarmFilters: {
+                        level: [],
+                        status: [],
+                        source: '',
+                        startTime: '',
+                        endTime: ''
+                    },
+                    alarmPagination: {
+                        currentPage: 1,
+                        pageSize: 20,
+                        total: 0
+                    },
+                    
+                    // 对话框
+                    showAddRuleDialog: false,
+                    showAlarmDetailDialog: false,
+                    editingRule: null,
+                    selectedAlarm: null,
+                    
+                    // 表单
+                    ruleForm: {
+                        ruleName: '',
+                        monitorObjectType: '',
+                        monitorObjectInstance: '',
+                        metricName: '',
+                        conditions: [{
+                            operator: 'GT',
+                            threshold: '',
+                            duration: '5'
+                        }],
+                        conditionLogic: 'AND',
+                        alarmLevel: '',
+                        alarmDescriptionTemplate: '',
+                        enabledStatus: true
+                    },
+                    ruleFormRules: {
+                        ruleName: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
+                        monitorObjectType: [{ required: true, message: '请选择监控对象类型', trigger: 'change' }],
+                        metricName: [{ required: true, message: '请选择监控指标', trigger: 'change' }],
+                        alarmLevel: [{ required: true, message: '请选择告警级别', trigger: 'change' }]
+                    },
+                    
+                    // 选项数据
+                    availableInstances: [],
+                    availableMetrics: []
+                };
+            },
+            mounted() {
+                this.loadRules();
+                this.loadAlarms();
+                this.initMockData();
+            },
+            beforeUnmount() {
+                if (this.autoRefreshTimer) {
+                    clearInterval(this.autoRefreshTimer);
+                }
+            },
+            methods: {
+                // 初始化模拟数据
+                initMockData() {
+                    // 模拟规则数据
+                    this.rules = [
+                        {
+                            ruleId: 1,
+                            ruleName: 'CPU使用率告警',
+                            monitorObjectType: 'SYSTEM_SERVICE',
+                            monitorObjectInstance: '适配中心服务',
+                            metricName: 'cpuUsage',
+                            conditions: [{ operator: 'GT', threshold: '80', duration: '5' }],
+                            alarmLevel: 'P1',
+                            enabledStatus: true,
+                            createdBy: '管理员',
+                            creationTime: '2024-01-15 10:30:00'
+                        },
+                        {
+                            ruleId: 2,
+                            ruleName: '接口响应时间告警',
+                            monitorObjectType: 'PLATFORM_CONNECTION',
+                            monitorObjectInstance: '省级平台A',
+                            metricName: 'responseTime',
+                            conditions: [{ operator: 'GT', threshold: '3000', duration: '3' }],
+                            alarmLevel: 'P2',
+                            enabledStatus: true,
+                            createdBy: '运维员',
+                            creationTime: '2024-01-14 15:20:00'
+                        },
+                        {
+                            ruleId: 3,
+                            ruleName: '视频流成功率告警',
+                            monitorObjectType: 'BUSINESS_METRIC',
+                            monitorObjectInstance: '全局',
+                            metricName: 'videoStreamSuccessRate',
+                            conditions: [{ operator: 'LT', threshold: '95', duration: '10' }],
+                            alarmLevel: 'P0',
+                            enabledStatus: false,
+                            createdBy: '管理员',
+                            creationTime: '2024-01-13 09:15:00'
+                        }
+                    ];
+                    this.rulePagination.total = this.rules.length;
+                    
+                    // 模拟告警数据
+                    this.alarms = [
+                        {
+                            alarmEventId: 'ALM001',
+                            ruleId: 1,
+                            alarmLevel: 'P1',
+                            alarmSourceOrObject: '适配中心服务',
+                            firstOccurrenceTime: '2024-01-15 14:30:00',
+                            lastOccurrenceTime: '2024-01-15 14:35:00',
+                            alarmDescription: 'CPU使用率持续5分钟超过80%，当前值：85%',
+                            currentMetricValue: '85%',
+                            thresholdValue: '80%',
+                            localStatus: 'NEW',
+                            acknowledgedBy: null,
+                            acknowledgedTime: null
+                        },
+                        {
+                            alarmEventId: 'ALM002',
+                            ruleId: 2,
+                            alarmLevel: 'P2',
+                            alarmSourceOrObject: '省级平台A',
+                            firstOccurrenceTime: '2024-01-15 13:20:00',
+                            lastOccurrenceTime: '2024-01-15 13:25:00',
+                            alarmDescription: '接口响应时间超过3秒，当前值：3.5秒',
+                            currentMetricValue: '3.5s',
+                            thresholdValue: '3s',
+                            localStatus: 'ACKNOWLEDGED',
+                            acknowledgedBy: '运维员',
+                            acknowledgedTime: '2024-01-15 13:30:00'
+                        },
+                        {
+                            alarmEventId: 'ALM003',
+                            ruleId: 1,
+                            alarmLevel: 'P1',
+                            alarmSourceOrObject: '适配中心服务',
+                            firstOccurrenceTime: '2024-01-15 12:10:00',
+                            lastOccurrenceTime: '2024-01-15 12:15:00',
+                            alarmDescription: 'CPU使用率持续5分钟超过80%，当前值：82%',
+                            currentMetricValue: '82%',
+                            thresholdValue: '80%',
+                            localStatus: 'RESOLVED',
+                            acknowledgedBy: '管理员',
+                            acknowledgedTime: '2024-01-15 12:20:00',
+                            resolvedBy: '管理员',
+                            resolvedTime: '2024-01-15 12:45:00',
+                            resolutionNotes: '已优化系统资源配置，问题已解决'
+                        }
+                    ];
+                    this.alarmPagination.total = this.alarms.length;
+                },
+                
+                // 标签页切换
+                handleTabClick(tab) {
+                    this.currentTab = tab.name;
+                },
+                
+                // 规则管理方法
+                loadRules() {
+                    this.rulesLoading = true;
+                    // 模拟API调用
+                    setTimeout(() => {
+                        this.rulesLoading = false;
+                    }, 500);
+                },
+                
+                refreshRules() {
+                    this.loadRules();
+                    ElMessage.success('规则列表已刷新');
+                },
+                
+                searchRules() {
+                    this.loadRules();
+                },
+                
+                resetRuleFilters() {
+                    this.ruleFilters = {
+                        name: '',
+                        objectType: '',
+                        level: '',
+                        enabled: null
+                    };
+                },
+                
+                editRule(rule) {
+                    this.editingRule = rule;
+                    this.ruleForm = { ...rule };
+                    this.showAddRuleDialog = true;
+                },
+                
+                deleteRule(rule) {
+                    ElMessageBox.confirm('确定要删除这个告警规则吗？', '确认删除', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        const index = this.rules.findIndex(r => r.ruleId === rule.ruleId);
+                        if (index > -1) {
+                            this.rules.splice(index, 1);
+                            this.rulePagination.total--;
+                            ElMessage.success('删除成功');
+                        }
+                    });
+                },
+                
+                toggleRuleStatus(rule) {
+                    ElMessage.success(`规则已${rule.enabledStatus ? '启用' : '停用'}`);
+                },
+                
+                viewRuleDetail(rule) {
+                    ElMessage.info('查看规则详情功能');
+                },
+                
+                saveRule() {
+                    this.$refs.ruleFormRef.validate((valid) => {
+                        if (valid) {
+                            if (this.editingRule) {
+                                // 编辑
+                                const index = this.rules.findIndex(r => r.ruleId === this.editingRule.ruleId);
+                                if (index > -1) {
+                                    this.rules[index] = { ...this.ruleForm, ruleId: this.editingRule.ruleId };
+                                }
+                                ElMessage.success('规则更新成功');
+                            } else {
+                                // 新增
+                                const newRule = {
+                                    ...this.ruleForm,
+                                    ruleId: Date.now(),
+                                    createdBy: '管理员',
+                                    creationTime: new Date().toLocaleString()
+                                };
+                                this.rules.unshift(newRule);
+                                this.rulePagination.total++;
+                                ElMessage.success('规则创建成功');
+                            }
+                            this.showAddRuleDialog = false;
+                            this.resetRuleForm();
+                        }
+                    });
+                },
+                
+                resetRuleForm() {
+                    this.editingRule = null;
+                    this.ruleForm = {
+                        ruleName: '',
+                        monitorObjectType: '',
+                        monitorObjectInstance: '',
+                        metricName: '',
+                        conditions: [{
+                            operator: 'GT',
+                            threshold: '',
+                            duration: '5'
+                        }],
+                        conditionLogic: 'AND',
+                        alarmLevel: '',
+                        alarmDescriptionTemplate: '',
+                        enabledStatus: true
+                    };
+                },
+                
+                addCondition() {
+                    this.ruleForm.conditions.push({
+                        operator: 'GT',
+                        threshold: '',
+                        duration: '5'
+                    });
+                },
+                
+                removeCondition(index) {
+                    this.ruleForm.conditions.splice(index, 1);
+                },
+                
+                onObjectTypeChange() {
+                    // 根据监控对象类型加载可用实例
+                    this.availableInstances = [];
+                    this.availableMetrics = [];
+                    
+                    if (this.ruleForm.monitorObjectType === 'SYSTEM_SERVICE') {
+                        this.availableInstances = [
+                            { label: '适配中心服务', value: '适配中心服务' },
+                            { label: '数据库服务', value: '数据库服务' },
+                            { label: '缓存服务', value: '缓存服务' }
+                        ];
+                        this.availableMetrics = [
+                            { label: 'CPU使用率', value: 'cpuUsage' },
+                            { label: '内存使用率', value: 'memoryUsage' },
+                            { label: '磁盘使用率', value: 'diskUsage' }
+                        ];
+                    } else if (this.ruleForm.monitorObjectType === 'PLATFORM_CONNECTION') {
+                        this.availableInstances = [
+                            { label: '省级平台A', value: '省级平台A' },
+                            { label: '省级平台B', value: '省级平台B' }
+                        ];
+                        this.availableMetrics = [
+                            { label: '响应时间', value: 'responseTime' },
+                            { label: '连接状态', value: 'connectionStatus' },
+                            { label: '数据同步成功率', value: 'syncSuccessRate' }
+                        ];
+                    } else if (this.ruleForm.monitorObjectType === 'BUSINESS_METRIC') {
+                        this.availableInstances = [
+                            { label: '全局', value: '全局' }
+                        ];
+                        this.availableMetrics = [
+                            { label: '视频流成功率', value: 'videoStreamSuccessRate' },
+                            { label: '接口调用成功率', value: 'apiSuccessRate' },
+                            { label: '数据处理延迟', value: 'dataProcessingDelay' }
+                        ];
+                    }
+                },
+                
+                // 告警管理方法
+                loadAlarms() {
+                    this.alarmsLoading = true;
+                    setTimeout(() => {
+                        this.alarmsLoading = false;
+                    }, 500);
+                },
+                
+                refreshAlarms() {
+                    this.loadAlarms();
+                    ElMessage.success('告警列表已刷新');
+                },
+                
+                searchAlarms() {
+                    this.loadAlarms();
+                },
+                
+                resetAlarmFilters() {
+                    this.alarmFilters = {
+                        level: [],
+                        status: [],
+                        source: '',
+                        startTime: '',
+                        endTime: ''
+                    };
+                },
+                
+                handleAlarmSelectionChange(selection) {
+                    this.selectedAlarms = selection;
+                },
+                
+                viewAlarmDetail(alarm) {
+                    this.selectedAlarm = alarm;
+                    this.showAlarmDetailDialog = true;
+                },
+                
+                acknowledgeAlarm(alarm) {
+                    alarm.localStatus = 'ACKNOWLEDGED';
+                    alarm.acknowledgedBy = '管理员';
+                    alarm.acknowledgedTime = new Date().toLocaleString();
+                    ElMessage.success('告警已确认');
+                },
+                
+                markInProgress(alarm) {
+                    alarm.localStatus = 'IN_PROGRESS';
+                    ElMessage.success('告警已标记为处理中');
+                },
+                
+                resolveAlarm(alarm) {
+                    ElMessageBox.prompt('请输入解决备注', '解决告警', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消'
+                    }).then(({ value }) => {
+                        alarm.localStatus = 'RESOLVED';
+                        alarm.resolvedBy = '管理员';
+                        alarm.resolvedTime = new Date().toLocaleString();
+                        alarm.resolutionNotes = value;
+                        ElMessage.success('告警已解决');
+                    });
+                },
+                
+                closeAlarm(alarm) {
+                    alarm.localStatus = 'CLOSED';
+                    ElMessage.success('告警已关闭');
+                },
+                
+                batchAcknowledge() {
+                    this.selectedAlarms.forEach(alarm => {
+                        if (alarm.localStatus === 'NEW') {
+                            alarm.localStatus = 'ACKNOWLEDGED';
+                            alarm.acknowledgedBy = '管理员';
+                            alarm.acknowledgedTime = new Date().toLocaleString();
+                        }
+                    });
+                    ElMessage.success(`已确认 ${this.selectedAlarms.length} 个告警`);
+                },
+                
+                batchClose() {
+                    this.selectedAlarms.forEach(alarm => {
+                        alarm.localStatus = 'CLOSED';
+                    });
+                    ElMessage.success(`已关闭 ${this.selectedAlarms.length} 个告警`);
+                },
+                
+                toggleAutoRefresh() {
+                    if (this.autoRefresh) {
+                        this.autoRefreshTimer = setInterval(() => {
+                            this.refreshAlarms();
+                        }, 30000); // 30秒刷新一次
+                        ElMessage.success('已开启自动刷新');
+                    } else {
+                        if (this.autoRefreshTimer) {
+                            clearInterval(this.autoRefreshTimer);
+                            this.autoRefreshTimer = null;
+                        }
+                        ElMessage.info('已关闭自动刷新');
+                    }
+                },
+                
+                // 分页方法
+                handleRulePageSizeChange(size) {
+                    this.rulePagination.pageSize = size;
+                    this.loadRules();
+                },
+                
+                handleRulePageChange(page) {
+                    this.rulePagination.currentPage = page;
+                    this.loadRules();
+                },
+                
+                handleAlarmPageSizeChange(size) {
+                    this.alarmPagination.pageSize = size;
+                    this.loadAlarms();
+                },
+                
+                handleAlarmPageChange(page) {
+                    this.alarmPagination.currentPage = page;
+                    this.loadAlarms();
+                },
+                
+                // 用户相关方法
+                showProfile() {
+                    this.$message.info('跳转到个人中心页面');
+                },
+                
+                changePassword() {
+                    this.$message.info('打开修改密码对话框');
+                },
+                
+                logout() {
+                    this.$confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        this.$message.success('已退出登录');
+                        // 这里可以添加实际的退出登录逻辑
+                    }).catch(() => {});
+                },
+                
+                // 工具方法
+                formatDateTime(dateTime) {
+                    if (!dateTime) return '-';
+                    return dateTime;
+                },
+                
+                formatConditions(conditions) {
+                    if (!conditions || conditions.length === 0) return '-';
+                    return conditions.map(c => `${c.operator} ${c.threshold} (${c.duration}分钟)`).join(', ');
+                },
+                
+                getObjectTypeLabel(type) {
+                    const labels = {
+                        'SYSTEM_SERVICE': '系统资源',
+                        'PLATFORM_CONNECTION': '平台连接',
+                        'BUSINESS_METRIC': '业务指标'
+                    };
+                    return labels[type] || type;
+                },
+                
+                getObjectTypeTagType(type) {
+                    const types = {
+                        'SYSTEM_SERVICE': 'primary',
+                        'PLATFORM_CONNECTION': 'success',
+                        'BUSINESS_METRIC': 'warning'
+                    };
+                    return types[type] || '';
+                },
+                
+                getStatusLabel(status) {
+                    const labels = {
+                        'NEW': '新告警',
+                        'ACKNOWLEDGED': '已确认',
+                        'IN_PROGRESS': '处理中',
+                        'RESOLVED': '已解决',
+                        'CLOSED': '已关闭'
+                    };
+                    return labels[status] || status;
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

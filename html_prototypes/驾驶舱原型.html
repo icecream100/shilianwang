@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视联网适配中心 - 驾驶舱</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue/dist/index.iife.js"></script>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dashboard-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #409eff;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #67c23a; }
+        .status-warning { background-color: #e6a23c; }
+        .status-offline { background-color: #f56c6c; }
+        .chart-container {
+            height: 300px;
+            width: 100%;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            color: #bdc3c7;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .nav-item.active {
+            background-color: rgba(64, 158, 255, 0.2);
+            color: #409eff;
+            border-left-color: #409eff;
+        }
+        .nav-group {
+            margin-bottom: 10px;
+        }
+        .nav-group-title {
+            padding: 8px 20px;
+            color: #95a5a6;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-submenu {
+            padding-left: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="flex h-screen bg-gray-50">
+            <!-- 左侧导航 -->
+            <div class="w-64 sidebar">
+                <div class="p-6 border-b border-gray-600">
+                    <h1 class="text-xl font-bold text-white">视联网适配中心</h1>
+                </div>
+                <nav class="mt-6">
+                    <div class="nav-group">
+                        <div class="nav-group-title">运营门户</div>
+                        <div class="nav-item active">
+                            <i class="el-icon-monitor"></i> 驾驶舱
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-user"></i> 客户管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-data-analysis"></i> 运营分析
+                            <div class="nav-submenu">
+                                <div class="nav-item">客户分析</div>
+                                <div class="nav-item">设备分析</div>
+                                <div class="nav-item">业务分析</div>
+                            </div>
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-monitor"></i> 运行监控
+                            <div class="nav-submenu">
+                                <div class="nav-item">告警规则管理</div>
+                                <div class="nav-item">告警事件管理</div>
+                            </div>
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-setting"></i> 系统配置
+                            <div class="nav-submenu">
+                                <div class="nav-item">用户管理</div>
+                                <div class="nav-item">角色管理</div>
+                            </div>
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-document"></i> 日志管理
+                            <div class="nav-submenu">
+                                <div class="nav-item">登录日志</div>
+                                <div class="nav-item">操作日志</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">接口适配</div>
+                        <div class="nav-item">
+                            <i class="el-icon-connection"></i> 接入平台管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-cpu"></i> 设备管理
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-link"></i> 通道管理
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">业务数据采集</div>
+                        <div class="nav-item">
+                            <i class="el-icon-data-board"></i> 运行业务数据采集配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-refresh"></i> CRM客户数据同步配置
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-view"></i> 任务状态
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- 顶部导航栏 -->
+                <div class="bg-white shadow-sm border-b px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">运营驾驶舱</h2>
+                            <p class="text-gray-600 mt-1">实时监控省级适配中心运营状态与关键指标</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <!-- 用户信息 -->
+                            <el-dropdown trigger="click">
+                                <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
+                                    <el-avatar size="small" class="mr-2" :src="userInfo.avatarUrl">
+                                        <i class="el-icon-user"></i>
+                                    </el-avatar>
+                                    <span class="text-gray-700 font-medium">{{ userInfo.realName }}</span>
+                                    <i class="el-icon-arrow-down ml-1 text-gray-500"></i>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="navigateToProfile">
+                                            <i class="el-icon-user mr-2"></i>个人中心
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="navigateToPassword">
+                                            <i class="el-icon-key mr-2"></i>修改密码
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided @click="logout">
+                                            <i class="el-icon-switch-button mr-2"></i>退出登录
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="bg-gray-50 px-6 py-3 border-b">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <el-button type="primary" size="small" @click="refreshData">
+                                <i class="el-icon-refresh mr-1"></i>刷新数据
+                            </el-button>
+                            <span class="text-sm text-gray-500">最后更新: {{ lastUpdateTime }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 驾驶舱内容 -->
+                <div class="flex-1 overflow-auto p-6">
+                    <!-- 4.1 省侧核心运营指标展示区 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">核心运营指标</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                            <!-- 已接入设备总数 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">已接入设备总数</p>
+                                        <p class="text-3xl font-bold text-blue-600">{{ metrics.totalDevices }}</p>
+                                        <p class="text-xs text-green-500 mt-1">
+                                            <i class="el-icon-arrow-up"></i> +{{ metrics.deviceGrowth }}%
+                                        </p>
+                                    </div>
+                                    <div class="text-blue-500">
+                                        <i class="el-icon-cpu text-3xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 省级平台接入数量 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">省级平台接入数量</p>
+                                        <p class="text-3xl font-bold text-green-600">{{ metrics.platformCount }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">已启用平台</p>
+                                    </div>
+                                    <div class="text-green-500">
+                                        <i class="el-icon-connection text-3xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 服务客户总数 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">服务客户总数</p>
+                                        <p class="text-3xl font-bold text-purple-600">{{ metrics.customerCount }}</p>
+                                        <p class="text-xs text-green-500 mt-1">
+                                            <i class="el-icon-arrow-up"></i> +{{ metrics.customerGrowth }}%
+                                        </p>
+                                    </div>
+                                    <div class="text-purple-500">
+                                        <i class="el-icon-user text-3xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 活动视频流数量 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">活动视频流数量</p>
+                                        <p class="text-3xl font-bold text-orange-600">{{ metrics.activeStreams }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">实时活跃</p>
+                                    </div>
+                                    <div class="text-orange-500">
+                                        <i class="el-icon-video-camera text-3xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 设备分布统计和实时业务量监控 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- 设备分布统计 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">各省级平台设备接入统计</h4>
+                                <div id="deviceDistributionChart" class="chart-container"></div>
+                            </div>
+
+                            <!-- 实时业务量监控 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">今日业务量趋势</h4>
+                                <div id="businessVolumeChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4.2 适配状态与服务健康度监控区 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">服务健康度监控</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- 微服务状态 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">微服务状态</h4>
+                                <div class="space-y-3">
+                                    <div v-for="service in services" :key="service.name" class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <div class="flex items-center">
+                                            <span :class="['status-indicator', service.status === 'online' ? 'status-online' : service.status === 'warning' ? 'status-warning' : 'status-offline']"></span>
+                                            <span class="font-medium">{{ service.name }}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-sm font-semibold" :class="service.status === 'online' ? 'text-green-600' : service.status === 'warning' ? 'text-yellow-600' : 'text-red-600'">
+                                                {{ service.score }}分
+                                            </div>
+                                            <div class="text-xs text-gray-500">{{ service.statusText }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 协议适配成功率 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">协议适配成功率</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">GB/T 28181</span>
+                                            <span class="text-sm font-bold text-green-600">{{ protocolStats.gb28181 }}%</span>
+                                        </div>
+                                        <el-progress :percentage="protocolStats.gb28181" :show-text="false" stroke-width="8"></el-progress>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">CRM数据同步</span>
+                                            <span class="text-sm font-bold text-blue-600">{{ protocolStats.crmSync }}%</span>
+                                        </div>
+                                        <el-progress :percentage="protocolStats.crmSync" :show-text="false" stroke-width="8" color="#409eff"></el-progress>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">元数据同步</span>
+                                            <span class="text-sm font-bold text-purple-600">{{ protocolStats.metaSync }}%</span>
+                                        </div>
+                                        <el-progress :percentage="protocolStats.metaSync" :show-text="false" stroke-width="8" color="#722ed1"></el-progress>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 核心性能指标 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">核心性能指标</h4>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">北向接口响应时间</span>
+                                        <span class="text-sm font-bold text-blue-600">{{ performance.apiResponseTime }}ms</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">接口调用成功率</span>
+                                        <span class="text-sm font-bold text-green-600">{{ performance.apiSuccessRate }}%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">设备在线率</span>
+                                        <span class="text-sm font-bold text-purple-600">{{ performance.deviceOnlineRate }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4.3 省级平台连接状态监控区 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">省级平台连接状态</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- 平台连接状态矩阵 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">平台连接状态</h4>
+                                <el-table :data="platformConnections" style="width: 100%" size="small">
+                                    <el-table-column prop="name" label="平台名称" width="120"></el-table-column>
+                                    <el-table-column label="连接状态" width="80">
+                                        <template #default="scope">
+                                            <span :class="['status-indicator', scope.row.connectionStatus === 'connected' ? 'status-online' : 'status-offline']"></span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="认证状态" width="80">
+                                        <template #default="scope">
+                                            <span :class="['status-indicator', scope.row.authStatus === 'success' ? 'status-online' : scope.row.authStatus === 'pending' ? 'status-warning' : 'status-offline']"></span>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="lastHeartbeat" label="最新心跳" width="100">
+                                        <template #default="scope">
+                                            <span class="text-xs">{{ scope.row.lastHeartbeat }}</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+
+                            <!-- 网络质量监控 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">网络质量监控</h4>
+                                <div id="networkQualityChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4.4 关键运维指标与告警概览区 -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">运维指标与告警</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- 告警统计 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">当前告警</h4>
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div class="text-center p-4 bg-red-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-red-600">{{ alerts.p0Count }}</div>
+                                        <div class="text-sm text-red-600">P0严重告警</div>
+                                    </div>
+                                    <div class="text-center p-4 bg-orange-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-orange-600">{{ alerts.p1Count }}</div>
+                                        <div class="text-sm text-orange-600">P1主要告警</div>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <div v-for="alert in alerts.recent" :key="alert.id" class="p-2 bg-gray-50 rounded text-xs">
+                                        <div class="flex items-center justify-between">
+                                            <span :class="alert.level === 'P0' ? 'text-red-600' : 'text-orange-600'">{{ alert.level }}</span>
+                                            <span class="text-gray-500">{{ alert.time }}</span>
+                                        </div>
+                                        <div class="text-gray-800 mt-1">{{ alert.message }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 业务趋势 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">业务趋势</h4>
+                                <div id="businessTrendChart" class="chart-container"></div>
+                            </div>
+
+                            <!-- 系统资源使用情况 -->
+                            <div class="bg-white rounded-lg shadow p-6">
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">系统资源</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">CPU使用率</span>
+                                            <span class="text-sm font-bold">{{ systemResources.cpu }}%</span>
+                                        </div>
+                                        <el-progress :percentage="systemResources.cpu" :show-text="false" stroke-width="8" :color="systemResources.cpu > 80 ? '#f56c6c' : '#67c23a'"></el-progress>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">内存占用率</span>
+                                            <span class="text-sm font-bold">{{ systemResources.memory }}%</span>
+                                        </div>
+                                        <el-progress :percentage="systemResources.memory" :show-text="false" stroke-width="8" :color="systemResources.memory > 80 ? '#f56c6c' : '#67c23a'"></el-progress>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">存储占用率</span>
+                                            <span class="text-sm font-bold">{{ systemResources.storage }}%</span>
+                                        </div>
+                                        <el-progress :percentage="systemResources.storage" :show-text="false" stroke-width="8" :color="systemResources.storage > 80 ? '#f56c6c' : '#67c23a'"></el-progress>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-sm font-medium">网络吞吐量</span>
+                                            <span class="text-sm font-bold">{{ systemResources.network }} MB/s</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500">↑{{ systemResources.networkIn }} MB/s ↓{{ systemResources.networkOut }} MB/s</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    lastUpdateTime: new Date().toLocaleString(),
+                    // 用户信息
+                    userInfo: {
+                        username: 'admin',
+                        realName: '张三',
+                        department: '技术部',
+                        avatarUrl: ''
+                    },
+                    metrics: {
+                        totalDevices: 15847,
+                        deviceGrowth: 12.5,
+                        platformCount: 8,
+                        customerCount: 1256,
+                        customerGrowth: 8.3,
+                        activeStreams: 2847
+                    },
+                    services: [
+                        { name: '南向接入服务', status: 'online', score: 98, statusText: '正常运行' },
+                        { name: '流媒体服务', status: 'online', score: 95, statusText: '正常运行' },
+                        { name: '北向接口服务', status: 'warning', score: 85, statusText: '性能警告' },
+                        { name: '数据同步服务', status: 'online', score: 92, statusText: '正常运行' },
+                        { name: '监控告警服务', status: 'online', score: 96, statusText: '正常运行' }
+                    ],
+                    protocolStats: {
+                        gb28181: 98.5,
+                        crmSync: 95.2,
+                        metaSync: 97.8
+                    },
+                    performance: {
+                        apiResponseTime: 125,
+                        apiSuccessRate: 99.2,
+                        deviceOnlineRate: 94.8
+                    },
+                    platformConnections: [
+                        { name: '千里眼平台A', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:45' },
+                        { name: '移动看家B', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:42' },
+                        { name: '国标平台C', connectionStatus: 'connected', authStatus: 'pending', lastHeartbeat: '10:22:15' },
+                        { name: '省平台D', connectionStatus: 'disconnected', authStatus: 'failed', lastHeartbeat: '10:15:30' }
+                    ],
+                    alerts: {
+                        p0Count: 2,
+                        p1Count: 5,
+                        recent: [
+                            { id: 1, level: 'P0', time: '10:15', message: '千里眼平台连接异常' },
+                            { id: 2, level: 'P1', time: '10:12', message: 'CPU使用率超过85%' },
+                            { id: 3, level: 'P1', time: '10:08', message: '视频流处理延迟' },
+                            { id: 4, level: 'P0', time: '09:55', message: '数据库连接池耗尽' }
+                        ]
+                    },
+                    systemResources: {
+                        cpu: 72,
+                        memory: 68,
+                        storage: 45,
+                        network: 156.8,
+                        networkIn: 89.2,
+                        networkOut: 67.6
+                    }
+                };
+            },
+            mounted() {
+                this.initCharts();
+                this.startAutoRefresh();
+            },
+            methods: {
+                // 用户相关方法
+                navigateToProfile() {
+                    ElMessage.info('跳转到个人中心');
+                    // 这里可以添加路由跳转逻辑
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                navigateToPassword() {
+                    ElMessage.info('跳转到修改密码');
+                    // 这里可以添加路由跳转逻辑
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                logout() {
+                    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElMessage.success('已退出登录');
+                        // 这里可以添加退出登录逻辑
+                        window.location.href = './登录页面原型.html';
+                    }).catch(() => {
+                        // 取消退出
+                    });
+                },
+                refreshData() {
+                    this.lastUpdateTime = new Date().toLocaleString();
+                    ElMessage.success('数据已刷新');
+                    // 模拟数据更新
+                    this.updateMetrics();
+                },
+                updateMetrics() {
+                    // 模拟实时数据更新
+                    this.metrics.activeStreams = Math.floor(Math.random() * 1000) + 2500;
+                    this.systemResources.cpu = Math.floor(Math.random() * 30) + 60;
+                    this.systemResources.memory = Math.floor(Math.random() * 25) + 60;
+                },
+                startAutoRefresh() {
+                    setInterval(() => {
+                        this.updateMetrics();
+                        this.lastUpdateTime = new Date().toLocaleString();
+                    }, 30000); // 每30秒自动刷新
+                },
+                initCharts() {
+                    this.initDeviceDistributionChart();
+                    this.initBusinessVolumeChart();
+                    this.initNetworkQualityChart();
+                    this.initBusinessTrendChart();
+                },
+                initDeviceDistributionChart() {
+                    const chart = echarts.init(document.getElementById('deviceDistributionChart'));
+                    const option = {
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [
+                            {
+                                name: '设备分布',
+                                type: 'pie',
+                                radius: '50%',
+                                data: [
+                                    { value: 6520, name: '千里眼平台' },
+                                    { value: 4230, name: '移动看家' },
+                                    { value: 3180, name: '国标平台' },
+                                    { value: 1917, name: '其他平台' }
+                                ],
+                                emphasis: {
+                                    itemStyle: {
+                                        shadowBlur: 10,
+                                        shadowOffsetX: 0,
+                                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                }
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                },
+                initBusinessVolumeChart() {
+                    const chart = echarts.init(document.getElementById('businessVolumeChart'));
+                    const hours = [];
+                    const videoData = [];
+                    const apiData = [];
+                    
+                    for (let i = 0; i < 24; i++) {
+                        hours.push(i + ':00');
+                        videoData.push(Math.floor(Math.random() * 500) + 200);
+                        apiData.push(Math.floor(Math.random() * 1000) + 500);
+                    }
+                    
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: ['视频调阅', 'API调用']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: hours
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                name: '视频调阅',
+                                type: 'line',
+                                data: videoData,
+                                smooth: true
+                            },
+                            {
+                                name: 'API调用',
+                                type: 'line',
+                                data: apiData,
+                                smooth: true
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                },
+                initNetworkQualityChart() {
+                    const chart = echarts.init(document.getElementById('networkQualityChart'));
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: ['延时(ms)', '丢包率(%)']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['千里眼A', '移动看家B', '国标平台C', '省平台D']
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: '延时(ms)',
+                                position: 'left'
+                            },
+                            {
+                                type: 'value',
+                                name: '丢包率(%)',
+                                position: 'right'
+                            }
+                        ],
+                        series: [
+                            {
+                                name: '延时(ms)',
+                                type: 'bar',
+                                data: [25, 32, 45, 120]
+                            },
+                            {
+                                name: '丢包率(%)',
+                                type: 'line',
+                                yAxisIndex: 1,
+                                data: [0.1, 0.2, 0.8, 5.2]
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                },
+                initBusinessTrendChart() {
+                    const chart = echarts.init(document.getElementById('businessTrendChart'));
+                    const dates = [];
+                    const deviceData = [];
+                    const customerData = [];
+                    
+                    for (let i = 29; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        dates.push(date.getMonth() + 1 + '/' + date.getDate());
+                        deviceData.push(Math.floor(Math.random() * 200) + 15000);
+                        customerData.push(Math.floor(Math.random() * 50) + 1200);
+                    }
+                    
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: ['设备数量', '客户数量']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: dates
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: '设备数量',
+                                position: 'left'
+                            },
+                            {
+                                type: 'value',
+                                name: '客户数量',
+                                position: 'right'
+                            }
+                        ],
+                        series: [
+                            {
+                                name: '设备数量',
+                                type: 'line',
+                                data: deviceData,
+                                smooth: true
+                            },
+                            {
+                                name: '客户数量',
+                                type: 'line',
+                                yAxisIndex: 1,
+                                data: customerData,
+                                smooth: true
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

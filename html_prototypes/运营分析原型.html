@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>运营分析 - 视联网适配中心</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .metric-card-green {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .metric-card-orange {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        .metric-card-purple {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #409eff;
+        }
+        .content-header {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="flex h-screen bg-gray-100">
+            <!-- 左侧导航栏 -->
+            <div class="w-64 sidebar text-white flex-shrink-0">
+                <div class="p-6">
+                    <h1 class="text-xl font-bold mb-8">视联网适配中心</h1>
+                    <nav>
+                        <div class="mb-4">
+                            <div class="text-sm text-gray-300 mb-2">运营门户</div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'dashboard'}"
+                                 @click="activeMenu = 'dashboard'">
+                                <i class="el-icon-odometer mr-2"></i>驾驶舱
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'customer'}"
+                                 @click="activeMenu = 'customer'">
+                                <i class="el-icon-user mr-2"></i>客户管理
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'analysis'}"
+                                 @click="activeMenu = 'analysis'">
+                                <i class="el-icon-data-analysis mr-2"></i>运营分析
+                            </div>
+                            <!-- 运营分析二级菜单 -->
+                            <div v-if="activeMenu === 'analysis'" class="ml-4 mt-2">
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm" 
+                                     :class="{active: activeTab === 'customer'}"
+                                     @click="activeTab = 'customer'">
+                                    <i class="el-icon-user-solid mr-2"></i>客户分析
+                                </div>
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm" 
+                                     :class="{active: activeTab === 'device'}"
+                                     @click="activeTab = 'device'">
+                                    <i class="el-icon-monitor mr-2"></i>设备分析
+                                </div>
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm" 
+                                     :class="{active: activeTab === 'business'}"
+                                     @click="activeTab = 'business'">
+                                    <i class="el-icon-data-line mr-2"></i>业务分析
+                                </div>
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'monitor'}"
+                                 @click="activeMenu = 'monitor'">
+                                <i class="el-icon-warning mr-2"></i>运行监控
+                            </div>
+                            <!-- 运行监控二级菜单 -->
+                            <div v-if="activeMenu === 'monitor'" class="ml-4 mt-2">
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-bell mr-2"></i>告警规则管理
+                                </div>
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-message mr-2"></i>告警事件管理
+                                </div>
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'system'}"
+                                 @click="activeMenu = 'system'">
+                                <i class="el-icon-setting mr-2"></i>系统配置
+                            </div>
+                            <!-- 系统配置二级菜单 -->
+                            <div v-if="activeMenu === 'system'" class="ml-4 mt-2">
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-user mr-2"></i>用户管理
+                                </div>
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-s-custom mr-2"></i>角色管理
+                                </div>
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'logs'}"
+                                 @click="activeMenu = 'logs'">
+                                <i class="el-icon-document mr-2"></i>日志管理
+                            </div>
+                            <!-- 日志管理二级菜单 -->
+                            <div v-if="activeMenu === 'logs'" class="ml-4 mt-2">
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-key mr-2"></i>登录日志
+                                </div>
+                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
+                                    <i class="el-icon-edit mr-2"></i>操作日志
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="text-sm text-gray-300 mb-2">接口适配</div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'interface'}"
+                                 @click="activeMenu = 'interface'">
+                                <i class="el-icon-connection mr-2"></i>接入平台管理
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer">
+                                <i class="el-icon-monitor mr-2"></i>设备管理
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer">
+                                <i class="el-icon-video-camera mr-2"></i>通道管理
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="text-sm text-gray-300 mb-2">业务数据采集</div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
+                                 :class="{active: activeMenu === 'collection'}"
+                                 @click="activeMenu = 'collection'">
+                                <i class="el-icon-download mr-2"></i>运行业务数据采集配置
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer">
+                                <i class="el-icon-user-solid mr-2"></i>CRM客户数据同步配置
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer">
+                                <i class="el-icon-timer mr-2"></i>任务状态
+                            </div>
+                            <div class="nav-item px-4 py-2 rounded cursor-pointer">
+                                <i class="el-icon-setting mr-2"></i>协议配置
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- 顶部导航栏 -->
+                <div class="content-header p-4 border-b bg-white">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">{{ currentPageTitle }}</h2>
+                            <p class="text-gray-600 mt-1">{{ currentPageDescription }}</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex space-x-3">
+                                <el-button type="primary" @click="exportReport">
+                                    <i class="el-icon-download mr-1"></i>导出报表
+                                </el-button>
+                                <el-button @click="refreshData">
+                                    <i class="el-icon-refresh mr-1"></i>刷新数据
+                                </el-button>
+                            </div>
+                            <!-- 用户信息 -->
+                            <el-dropdown trigger="click">
+                                <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
+                                    <el-avatar size="small" class="mr-2">
+                                        <i class="el-icon-user"></i>
+                                    </el-avatar>
+                                    <span class="text-gray-700 font-medium">{{ currentUser.name }}</span>
+                                    <i class="el-icon-arrow-down ml-1 text-gray-500"></i>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="showProfile">
+                                            <i class="el-icon-user mr-2"></i>个人中心
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="changePassword">
+                                            <i class="el-icon-key mr-2"></i>修改密码
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided @click="logout">
+                                            <i class="el-icon-switch-button mr-2"></i>退出登录
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- 内容区域 -->
+                <div class="flex-1 overflow-auto p-6">
+                    <!-- 客户分析 -->
+                    <div v-if="activeTab === 'customer'">
+                        <!-- 筛选条件 -->
+                        <div class="bg-white p-4 rounded-lg shadow mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <el-date-picker
+                                    v-model="customerFilters.dateRange"
+                                    type="daterange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期"
+                                    size="default">
+                                </el-date-picker>
+                                <el-select v-model="customerFilters.industry" placeholder="所属行业" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="政府机关" value="government"></el-option>
+                                    <el-option label="教育" value="education"></el-option>
+                                    <el-option label="医疗" value="healthcare"></el-option>
+                                    <el-option label="金融" value="finance"></el-option>
+                                    <el-option label="制造业" value="manufacturing"></el-option>
+                                </el-select>
+                                <el-select v-model="customerFilters.level" placeholder="客户级别" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="战略客户" value="strategic"></el-option>
+                                    <el-option label="重要客户" value="important"></el-option>
+                                    <el-option label="普通客户" value="normal"></el-option>
+                                </el-select>
+                                <el-select v-model="customerFilters.region" placeholder="所属区域" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="华北" value="north"></el-option>
+                                    <el-option label="华东" value="east"></el-option>
+                                    <el-option label="华南" value="south"></el-option>
+                                    <el-option label="华中" value="central"></el-option>
+                                    <el-option label="西南" value="southwest"></el-option>
+                                    <el-option label="西北" value="northwest"></el-option>
+                                    <el-option label="东北" value="northeast"></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+
+                        <!-- 关键指标卡片 -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            <div class="metric-card p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">客户总数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.totalCustomers }}</p>
+                                        <p class="text-sm mt-1 opacity-75">较上月 +{{ customerMetrics.customerGrowth }}%</p>
+                                    </div>
+                                    <i class="el-icon-user-solid text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-green p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">活跃客户</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.activeCustomers }}</p>
+                                        <p class="text-sm mt-1 opacity-75">活跃率 {{ customerMetrics.activeRate }}%</p>
+                                    </div>
+                                    <i class="el-icon-success text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-orange p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">平均资源使用量</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.avgResourceUsage }}</p>
+                                        <p class="text-sm mt-1 opacity-75">个/客户</p>
+                                    </div>
+                                    <i class="el-icon-cpu text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-purple p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">客户价值评分</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.avgValueScore }}</p>
+                                        <p class="text-sm mt-1 opacity-75">平均分</p>
+                                    </div>
+                                    <i class="el-icon-star-on text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图表区域 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">客户行业分布</h3>
+                                <div id="customerIndustryChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">客户增长趋势</h3>
+                                <div id="customerGrowthChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">客户级别分布</h3>
+                                <div id="customerLevelChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">客户活跃度分析</h3>
+                                <div id="customerActivityChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 设备分析 -->
+                    <div v-if="activeTab === 'device'">
+                        <!-- 筛选条件 -->
+                        <div class="bg-white p-4 rounded-lg shadow mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <el-date-picker
+                                    v-model="deviceFilters.dateRange"
+                                    type="daterange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期"
+                                    size="default">
+                                </el-date-picker>
+                                <el-select v-model="deviceFilters.manufacturer" placeholder="设备厂商" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="海康威视" value="hikvision"></el-option>
+                                    <el-option label="大华" value="dahua"></el-option>
+                                    <el-option label="宇视" value="uniview"></el-option>
+                                    <el-option label="华为" value="huawei"></el-option>
+                                </el-select>
+                                <el-select v-model="deviceFilters.platform" placeholder="所属平台" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="千里眼" value="qianliyan"></el-option>
+                                    <el-option label="移动看家" value="cmcc"></el-option>
+                                    <el-option label="国标平台" value="gb28181"></el-option>
+                                </el-select>
+                                <el-select v-model="deviceFilters.region" placeholder="接入区域" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="华北" value="north"></el-option>
+                                    <el-option label="华东" value="east"></el-option>
+                                    <el-option label="华南" value="south"></el-option>
+                                    <el-option label="华中" value="central"></el-option>
+                                </el-select>
+                                <el-select v-model="deviceFilters.status" placeholder="设备状态" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="在线" value="online"></el-option>
+                                    <el-option label="离线" value="offline"></el-option>
+                                    <el-option label="故障" value="fault"></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+
+                        <!-- 关键指标卡片 -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            <div class="metric-card p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">设备总数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.totalDevices }}</p>
+                                        <p class="text-sm mt-1 opacity-75">较上月 +{{ deviceMetrics.deviceGrowth }}台</p>
+                                    </div>
+                                    <i class="el-icon-monitor text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-green p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">设备在线率</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.onlineRate }}%</p>
+                                        <p class="text-sm mt-1 opacity-75">在线 {{ deviceMetrics.onlineDevices }} 台</p>
+                                    </div>
+                                    <i class="el-icon-success text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-orange p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">平均离线时长</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.avgOfflineTime }}</p>
+                                        <p class="text-sm mt-1 opacity-75">小时</p>
+                                    </div>
+                                    <i class="el-icon-time text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-purple p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">视频流利用率</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.streamUtilization }}%</p>
+                                        <p class="text-sm mt-1 opacity-75">平均利用率</p>
+                                    </div>
+                                    <i class="el-icon-video-camera text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图表区域 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">设备厂商分布</h3>
+                                <div id="deviceManufacturerChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">设备在线率趋势</h3>
+                                <div id="deviceOnlineChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">设备故障分析</h3>
+                                <div id="deviceFaultChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">设备资源利用率</h3>
+                                <div id="deviceUtilizationChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 业务分析 -->
+                    <div v-if="activeTab === 'business'">
+                        <!-- 筛选条件 -->
+                        <div class="bg-white p-4 rounded-lg shadow mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <el-date-picker
+                                    v-model="businessFilters.dateRange"
+                                    type="daterange"
+                                    range-separator="至"
+                                    start-placeholder="开始日期"
+                                    end-placeholder="结束日期"
+                                    size="default">
+                                </el-date-picker>
+                                <el-select v-model="businessFilters.businessType" placeholder="业务类型" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="实时视频点播" value="live"></el-option>
+                                    <el-option label="录像回放" value="playback"></el-option>
+                                    <el-option label="视频上云" value="cloud"></el-option>
+                                    <el-option label="智能分析" value="ai"></el-option>
+                                </el-select>
+                                <el-select v-model="businessFilters.customerType" placeholder="客户类型" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="政府机关" value="government"></el-option>
+                                    <el-option label="教育" value="education"></el-option>
+                                    <el-option label="医疗" value="healthcare"></el-option>
+                                    <el-option label="金融" value="finance"></el-option>
+                                </el-select>
+                                <el-select v-model="businessFilters.region" placeholder="接入区域" clearable>
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="华北" value="north"></el-option>
+                                    <el-option label="华东" value="east"></el-option>
+                                    <el-option label="华南" value="south"></el-option>
+                                    <el-option label="华中" value="central"></el-option>
+                                </el-select>
+                            </div>
+                        </div>
+
+                        <!-- 关键指标卡片 -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                            <div class="metric-card p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">总请求量</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.totalRequests }}</p>
+                                        <p class="text-sm mt-1 opacity-75">较上月 +{{ businessMetrics.requestGrowth }}%</p>
+                                    </div>
+                                    <i class="el-icon-data-line text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-green p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">请求成功率</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.successRate }}%</p>
+                                        <p class="text-sm mt-1 opacity-75">成功 {{ businessMetrics.successRequests }} 次</p>
+                                    </div>
+                                    <i class="el-icon-circle-check text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-orange p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">并发峰值</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.peakConcurrency }}</p>
+                                        <p class="text-sm mt-1 opacity-75">用户/秒</p>
+                                    </div>
+                                    <i class="el-icon-top text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                            <div class="metric-card-purple p-6 rounded-lg shadow">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm opacity-90">平均响应时延</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.avgResponseTime }}</p>
+                                        <p class="text-sm mt-1 opacity-75">毫秒</p>
+                                    </div>
+                                    <i class="el-icon-timer text-4xl opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图表区域 -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">业务类型分布</h3>
+                                <div id="businessTypeChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">业务使用趋势</h3>
+                                <div id="businessTrendChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">24小时访问分布</h3>
+                                <div id="businessHourlyChart" class="chart-container"></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow">
+                                <h3 class="text-lg font-semibold mb-4">业务并发分析</h3>
+                                <div id="businessConcurrencyChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    activeMenu: 'analysis',
+                    activeTab: 'customer',
+                    
+                    // 当前用户信息
+                    currentUser: {
+                        name: '管理员',
+                        role: '系统管理员',
+                        avatar: ''
+                    },
+                    
+                    // 客户分析筛选条件
+                    customerFilters: {
+                        dateRange: [],
+                        industry: '',
+                        level: '',
+                        region: ''
+                    },
+                    
+                    // 设备分析筛选条件
+                    deviceFilters: {
+                        dateRange: [],
+                        manufacturer: '',
+                        platform: '',
+                        region: '',
+                        status: ''
+                    },
+                    
+                    // 业务分析筛选条件
+                    businessFilters: {
+                        dateRange: [],
+                        businessType: '',
+                        customerType: '',
+                        region: ''
+                    },
+                    
+                    // 客户分析指标
+                    customerMetrics: {
+                        totalCustomers: 1248,
+                        customerGrowth: 12.5,
+                        activeCustomers: 986,
+                        activeRate: 79.0,
+                        avgResourceUsage: 15.6,
+                        avgValueScore: 8.2
+                    },
+                    
+                    // 设备分析指标
+                    deviceMetrics: {
+                        totalDevices: 15680,
+                        deviceGrowth: 156,
+                        onlineRate: 94.2,
+                        onlineDevices: 14776,
+                        avgOfflineTime: 2.3,
+                        streamUtilization: 68.5
+                    },
+                    
+                    // 业务分析指标
+                    businessMetrics: {
+                        totalRequests: '2.8M',
+                        requestGrowth: 18.7,
+                        successRate: 99.2,
+                        successRequests: '2.78M',
+                        peakConcurrency: 1256,
+                        avgResponseTime: 125
+                    }
+                };
+            },
+            computed: {
+                currentPageTitle() {
+                    const titles = {
+                        customer: '客户分析',
+                        device: '设备分析',
+                        business: '业务分析'
+                    };
+                    return titles[this.activeTab] || '运营分析';
+                },
+                currentPageDescription() {
+                    const descriptions = {
+                        customer: '深入分析客户分布、活跃度和价值，为客户运营策略提供数据支撑',
+                        device: '全面监控设备状态、性能和利用率，优化设备资源配置和运维效率',
+                        business: '统计分析业务使用情况、性能指标和用户行为，支持业务决策优化'
+                    };
+                    return descriptions[this.activeTab] || '全面分析客户、设备和业务数据，为运营决策提供数据支撑';
+                }
+            },
+            mounted() {
+                this.$nextTick(() => {
+                    this.initCharts();
+                });
+            },
+            watch: {
+                activeTab() {
+                    this.$nextTick(() => {
+                        this.initCharts();
+                    });
+                }
+            },
+            methods: {
+                initCharts() {
+                    if (this.activeTab === 'customer') {
+                        this.initCustomerCharts();
+                    } else if (this.activeTab === 'device') {
+                        this.initDeviceCharts();
+                    } else if (this.activeTab === 'business') {
+                        this.initBusinessCharts();
+                    }
+                },
+                
+                initCustomerCharts() {
+                    // 客户行业分布
+                    const industryChart = echarts.init(document.getElementById('customerIndustryChart'));
+                    industryChart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [{
+                            name: '客户行业分布',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                {value: 335, name: '政府机关'},
+                                {value: 310, name: '教育'},
+                                {value: 234, name: '医疗'},
+                                {value: 135, name: '金融'},
+                                {value: 234, name: '制造业'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                    
+                    // 客户增长趋势
+                    const growthChart = echarts.init(document.getElementById('customerGrowthChart'));
+                    growthChart.setOption({
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '新增客户',
+                            data: [120, 132, 101, 134, 90, 230],
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: {
+                                color: '#409EFF'
+                            }
+                        }]
+                    });
+                    
+                    // 客户级别分布
+                    const levelChart = echarts.init(document.getElementById('customerLevelChart'));
+                    levelChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['战略客户', '重要客户', '普通客户']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '客户数量',
+                            data: [156, 423, 669],
+                            type: 'bar',
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: '#83bff6'},
+                                    {offset: 0.5, color: '#188df0'},
+                                    {offset: 1, color: '#188df0'}
+                                ])
+                            }
+                        }]
+                    });
+                    
+                    // 客户活跃度分析
+                    const activityChart = echarts.init(document.getElementById('customerActivityChart'));
+                    activityChart.setOption({
+                        tooltip: {
+                            trigger: 'item'
+                        },
+                        series: [{
+                            name: '客户活跃度',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            avoidLabelOverlap: false,
+                            data: [
+                                {value: 986, name: '活跃客户'},
+                                {value: 262, name: '非活跃客户'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                },
+                
+                initDeviceCharts() {
+                    // 设备厂商分布
+                    const manufacturerChart = echarts.init(document.getElementById('deviceManufacturerChart'));
+                    manufacturerChart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [{
+                            name: '设备厂商分布',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                {value: 6272, name: '海康威视'},
+                                {value: 4704, name: '大华'},
+                                {value: 2352, name: '宇视'},
+                                {value: 1568, name: '华为'},
+                                {value: 784, name: '其他'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                    
+                    // 设备在线率趋势
+                    const onlineChart = echarts.init(document.getElementById('deviceOnlineChart'));
+                    onlineChart.setOption({
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+                        },
+                        yAxis: {
+                            type: 'value',
+                            min: 90,
+                            max: 100
+                        },
+                        series: [{
+                            name: '在线率(%)',
+                            data: [92.5, 91.8, 94.2, 95.6, 96.1, 94.8],
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: {
+                                color: '#67C23A'
+                            }
+                        }]
+                    });
+                    
+                    // 设备故障分析
+                    const faultChart = echarts.init(document.getElementById('deviceFaultChart'));
+                    faultChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['网络故障', '设备离线', '视频异常', '存储故障', '其他']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '故障次数',
+                            data: [45, 32, 28, 15, 12],
+                            type: 'bar',
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: '#ffa726'},
+                                    {offset: 1, color: '#ff7043'}
+                                ])
+                            }
+                        }]
+                    });
+                    
+                    // 设备资源利用率
+                    const utilizationChart = echarts.init(document.getElementById('deviceUtilizationChart'));
+                    utilizationChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['IPC', 'NVR', '编码器', '解码器']
+                        },
+                        yAxis: {
+                            type: 'value',
+                            max: 100
+                        },
+                        series: [{
+                            name: '利用率(%)',
+                            data: [68.5, 72.3, 65.8, 58.9],
+                            type: 'bar',
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: '#a78bfa'},
+                                    {offset: 1, color: '#7c3aed'}
+                                ])
+                            }
+                        }]
+                    });
+                },
+                
+                initBusinessCharts() {
+                    // 业务类型分布
+                    const typeChart = echarts.init(document.getElementById('businessTypeChart'));
+                    typeChart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [{
+                            name: '业务类型分布',
+                            type: 'pie',
+                            radius: '50%',
+                            data: [
+                                {value: 1120000, name: '实时视频点播'},
+                                {value: 840000, name: '录像回放'},
+                                {value: 560000, name: '视频上云'},
+                                {value: 280000, name: '智能分析'}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                    
+                    // 业务使用趋势
+                    const trendChart = echarts.init(document.getElementById('businessTrendChart'));
+                    trendChart.setOption({
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        legend: {
+                            data: ['实时点播', '录像回放', '视频上云', '智能分析']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                name: '实时点播',
+                                data: [180000, 185000, 190000, 195000, 200000, 210000],
+                                type: 'line',
+                                smooth: true
+                            },
+                            {
+                                name: '录像回放',
+                                data: [135000, 138000, 140000, 142000, 145000, 148000],
+                                type: 'line',
+                                smooth: true
+                            },
+                            {
+                                name: '视频上云',
+                                data: [90000, 92000, 94000, 96000, 98000, 100000],
+                                type: 'line',
+                                smooth: true
+                            },
+                            {
+                                name: '智能分析',
+                                data: [45000, 46000, 47000, 48000, 49000, 50000],
+                                type: 'line',
+                                smooth: true
+                            }
+                        ]
+                    });
+                    
+                    // 24小时访问分布
+                    const hourlyChart = echarts.init(document.getElementById('businessHourlyChart'));
+                    hourlyChart.setOption({
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'shadow'
+                            }
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '访问量',
+                            data: [1200, 800, 600, 1000, 2500, 3200, 3800, 4200, 4500, 4800, 3500, 2200],
+                            type: 'bar',
+                            itemStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: '#60a5fa'},
+                                    {offset: 1, color: '#3b82f6'}
+                                ])
+                            }
+                        }]
+                    });
+                    
+                    // 业务并发分析
+                    const concurrencyChart = echarts.init(document.getElementById('businessConcurrencyChart'));
+                    concurrencyChart.setOption({
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            name: '并发用户数',
+                            data: [256, 189, 456, 789, 1256, 892],
+                            type: 'line',
+                            smooth: true,
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: 'rgba(64, 158, 255, 0.3)'},
+                                    {offset: 1, color: 'rgba(64, 158, 255, 0.1)'}
+                                ])
+                            },
+                            itemStyle: {
+                                color: '#409EFF'
+                            }
+                        }]
+                    });
+                },
+                
+                exportReport() {
+                    ElMessage.success('报表导出功能开发中...');
+                },
+                
+                refreshData() {
+                    ElMessage.success('数据刷新成功！');
+                    this.initCharts();
+                },
+                
+                // 用户相关方法
+                showProfile() {
+                    ElMessage.info('个人中心功能开发中...');
+                },
+                
+                changePassword() {
+                    ElMessage.info('修改密码功能开发中...');
+                },
+                
+                logout() {
+                    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElMessage.success('退出登录成功！');
+                        // 这里可以添加实际的退出登录逻辑
+                    }).catch(() => {
+                        // 用户取消退出
+                    });
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

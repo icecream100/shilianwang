@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视联网适配中心 - 日志管理</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/@element-plus/icons-vue/dist/index.iife.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sidebar {
+            width: 250px;
+            background: #001529;
+            color: white;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .main-content {
+            flex: 1;
+            background: #f5f5f5;
+            overflow-y: auto;
+        }
+        .el-menu {
+            border-right: none;
+        }
+        .el-menu--dark {
+            background-color: #001529;
+        }
+        .el-menu-item.is-active {
+            background-color: #1890ff !important;
+        }
+        .el-submenu__title:hover {
+            background-color: #1890ff !important;
+        }
+        .el-menu-item:hover {
+            background-color: #1890ff !important;
+        }
+        .content-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status-success {
+            color: #52c41a;
+        }
+        .status-error {
+            color: #ff4d4f;
+        }
+        .status-warning {
+            color: #faad14;
+        }
+        .status-info {
+            color: #1890ff;
+        }
+        .filter-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .log-detail-dialog .el-dialog__body {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .json-viewer {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="flex h-screen">
+            <!-- 左侧导航 -->
+            <div class="sidebar">
+                <div class="p-4 border-b border-gray-600">
+                    <h2 class="text-lg font-bold text-white">视联网适配中心</h2>
+                </div>
+                <el-menu
+                    v-model:default-active="activeMenuItem"
+                    class="el-menu-vertical-demo"
+                    background-color="#001529"
+                    text-color="#fff"
+                    active-text-color="#fff"
+                    :collapse="false"
+                    @select="handleMenuSelect">
+                    
+                    <el-sub-menu index="1">
+                        <template #title>
+                            <el-icon><Monitor /></el-icon>
+                            <span>运营门户</span>
+                        </template>
+                        <el-menu-item index="1-1">驾驶舱</el-menu-item>
+                        <el-sub-menu index="1-2">
+                            <template #title>客户管理</template>
+                        </el-sub-menu>
+                        <el-sub-menu index="1-3">
+                            <template #title>运营分析</template>
+                            <el-menu-item index="1-3-1">客户分析</el-menu-item>
+                            <el-menu-item index="1-3-2">设备分析</el-menu-item>
+                            <el-menu-item index="1-3-3">业务分析</el-menu-item>
+                        </el-sub-menu>
+                        <el-sub-menu index="1-4">
+                            <template #title>运行监控</template>
+                            <el-menu-item index="1-4-1">告警规则管理</el-menu-item>
+                            <el-menu-item index="1-4-3">告警事件管理</el-menu-item>
+                        </el-sub-menu>
+                        <el-sub-menu index="1-5">
+                            <template #title>系统配置</template>
+                            <el-menu-item index="1-5-1">用户管理</el-menu-item>
+                            <el-menu-item index="1-5-2">角色管理</el-menu-item>
+                        </el-sub-menu>
+                        <el-sub-menu index="1-6">
+                            <template #title>日志管理</template>
+                            <el-menu-item index="1-6-1">登录日志</el-menu-item>
+                            <el-menu-item index="1-6-2">操作日志</el-menu-item>
+                        </el-sub-menu>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="2">
+                        <template #title>
+                            <el-icon><Connection /></el-icon>
+                            <span>接口适配</span>
+                        </template>
+                        <el-menu-item index="2-1">接入平台管理</el-menu-item>
+                        <el-menu-item index="2-2">设备管理</el-menu-item>
+                        <el-menu-item index="2-3">通道管理</el-menu-item>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="3">
+                        <template #title>
+                            <el-icon><DataAnalysis /></el-icon>
+                            <span>业务数据采集</span>
+                        </template>
+                        <el-menu-item index="3-1">运行业务数据采集配置</el-menu-item>
+                        <el-menu-item index="3-2">CRM客户数据同步配置</el-menu-item>
+                        <el-menu-item index="3-3">任务状态</el-menu-item>
+                    </el-sub-menu>
+                </el-menu>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="main-content">
+                <!-- 顶部导航栏 -->
+                <div class="bg-white border-b border-gray-200 px-6 py-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">{{ currentPageTitle }}</h1>
+                            <p class="text-gray-600 mt-1">{{ currentPageDescription }}</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <el-button type="primary" @click="refreshData">
+                                <el-icon><Refresh /></el-icon>
+                                刷新
+                            </el-button>
+                            <!-- 用户信息 -->
+                            <el-dropdown trigger="click">
+                                <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
+                                    <el-avatar size="small" class="mr-2">
+                                        <i class="el-icon-user"></i>
+                                    </el-avatar>
+                                    <span class="text-gray-700 font-medium">{{ currentUser.name }}</span>
+                                    <i class="el-icon-arrow-down ml-1 text-gray-500"></i>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="showProfile">
+                                            <i class="el-icon-user mr-2"></i>个人中心
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="changePassword">
+                                            <i class="el-icon-key mr-2"></i>修改密码
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided @click="logout">
+                                            <i class="el-icon-switch-button mr-2"></i>退出登录
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容区域 -->
+                <div class="p-6">
+                    <!-- 登录日志页面 -->
+                    <div v-if="currentPage === 'login'">
+                        <!-- 筛选条件 -->
+                        <div class="filter-section">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                                    <el-input v-model="loginLogFilter.username" placeholder="请输入用户名" clearable></el-input>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">登录IP地址</label>
+                                    <el-input v-model="loginLogFilter.loginIp" placeholder="请输入IP地址" clearable></el-input>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">登录结果</label>
+                                    <el-select v-model="loginLogFilter.loginStatus" placeholder="请选择登录结果" clearable style="width: 100%">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="成功" value="SUCCESS"></el-option>
+                                        <el-option label="失败" value="FAILURE"></el-option>
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">登录时间</label>
+                                    <el-date-picker
+                                        v-model="loginLogFilter.timeRange"
+                                        type="datetimerange"
+                                        range-separator="至"
+                                        start-placeholder="开始日期"
+                                        end-placeholder="结束日期"
+                                        format="YYYY-MM-DD HH:mm:ss"
+                                        value-format="YYYY-MM-DD HH:mm:ss"
+                                        style="width: 100%">
+                                    </el-date-picker>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-4 space-x-2">
+                                <el-button @click="resetLoginLogFilter">重置</el-button>
+                                <el-button type="primary" @click="searchLoginLogs">
+                                    <el-icon><Search /></el-icon>
+                                    查询
+                                </el-button>
+                            </div>
+                        </div>
+
+                        <!-- 登录日志列表 -->
+                        <div class="content-card p-6">
+                            <el-table :data="filteredLoginLogs" stripe style="width: 100%" v-loading="loginLogLoading">
+                                <el-table-column prop="logId" label="序号" width="80"></el-table-column>
+                                <el-table-column prop="username" label="用户名" width="120"></el-table-column>
+                                <el-table-column prop="loginIp" label="登录IP地址" width="140"></el-table-column>
+                                <el-table-column prop="loginLocation" label="登录地理位置" width="150"></el-table-column>
+                                <el-table-column prop="clientInfo" label="客户端类型" width="200" show-overflow-tooltip></el-table-column>
+                                <el-table-column prop="loginTime" label="登录时间" width="180"></el-table-column>
+                                <el-table-column prop="loginStatus" label="登录结果" width="100">
+                                    <template #default="scope">
+                                        <el-tag :type="scope.row.loginStatus === 'SUCCESS' ? 'success' : 'danger'">
+                                            {{ scope.row.loginStatus === 'SUCCESS' ? '成功' : '失败' }}
+                                        </el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="failureReason" label="失败原因" show-overflow-tooltip></el-table-column>
+                                <el-table-column label="操作" width="120" fixed="right">
+                                    <template #default="scope">
+                                        <el-button type="primary" size="small" @click="viewLoginLogDetail(scope.row)">详情</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            
+                            <!-- 分页 -->
+                            <div class="flex justify-end mt-4">
+                                <el-pagination
+                                    v-model:current-page="loginLogPagination.currentPage"
+                                    v-model:page-size="loginLogPagination.pageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    :total="loginLogPagination.total"
+                                    layout="total, sizes, prev, pager, next, jumper">
+                                </el-pagination>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作日志页面 -->
+                    <div v-if="currentPage === 'operation'">
+                        <!-- 筛选条件 -->
+                        <div class="filter-section">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作用户</label>
+                                    <el-input v-model="operationLogFilter.username" placeholder="请输入用户名" clearable></el-input>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作模块</label>
+                                    <el-select v-model="operationLogFilter.moduleName" placeholder="请选择操作模块" clearable style="width: 100%">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="客户管理" value="客户管理"></el-option>
+                                        <el-option label="设备管理" value="设备管理"></el-option>
+                                        <el-option label="接入平台管理" value="接入平台管理"></el-option>
+                                        <el-option label="角色权限" value="角色权限"></el-option>
+                                        <el-option label="系统配置" value="系统配置"></el-option>
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作类型</label>
+                                    <el-select v-model="operationLogFilter.operationType" placeholder="请选择操作类型" clearable style="width: 100%">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="新增" value="CREATE"></el-option>
+                                        <el-option label="修改" value="UPDATE"></el-option>
+                                        <el-option label="删除" value="DELETE"></el-option>
+                                        <el-option label="启用" value="ENABLE"></el-option>
+                                        <el-option label="停用" value="DISABLE"></el-option>
+                                        <el-option label="授权" value="AUTHORIZE"></el-option>
+                                        <el-option label="导出" value="EXPORT"></el-option>
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作对象</label>
+                                    <el-input v-model="operationLogFilter.targetObjectDesc" placeholder="请输入操作对象" clearable></el-input>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作结果</label>
+                                    <el-select v-model="operationLogFilter.operationStatus" placeholder="请选择操作结果" clearable style="width: 100%">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="成功" value="SUCCESS"></el-option>
+                                        <el-option label="失败" value="FAILURE"></el-option>
+                                    </el-select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">操作时间</label>
+                                    <el-date-picker
+                                        v-model="operationLogFilter.timeRange"
+                                        type="datetimerange"
+                                        range-separator="至"
+                                        start-placeholder="开始日期"
+                                        end-placeholder="结束日期"
+                                        format="YYYY-MM-DD HH:mm:ss"
+                                        value-format="YYYY-MM-DD HH:mm:ss"
+                                        style="width: 100%">
+                                    </el-date-picker>
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-4 space-x-2">
+                                <el-button @click="resetOperationLogFilter">重置</el-button>
+                                <el-button type="primary" @click="searchOperationLogs">
+                                    <el-icon><Search /></el-icon>
+                                    查询
+                                </el-button>
+                            </div>
+                        </div>
+
+                        <!-- 操作日志列表 -->
+                        <div class="content-card p-6">
+                            <el-table :data="filteredOperationLogs" stripe style="width: 100%" v-loading="operationLogLoading">
+                                <el-table-column prop="logId" label="序号" width="80"></el-table-column>
+                                <el-table-column prop="username" label="操作用户" width="120"></el-table-column>
+                                <el-table-column prop="userIp" label="用户IP" width="140"></el-table-column>
+                                <el-table-column prop="moduleName" label="操作模块" width="120"></el-table-column>
+                                <el-table-column prop="functionName" label="功能名称" width="150"></el-table-column>
+                                <el-table-column prop="operationType" label="操作类型" width="100">
+                                    <template #default="scope">
+                                        <el-tag :type="getOperationTypeTagType(scope.row.operationType)">
+                                            {{ getOperationTypeText(scope.row.operationType) }}
+                                        </el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="targetObjectDesc" label="操作对象" width="200" show-overflow-tooltip></el-table-column>
+                                <el-table-column prop="operationTime" label="操作时间" width="180"></el-table-column>
+                                <el-table-column prop="operationStatus" label="操作结果" width="100">
+                                    <template #default="scope">
+                                        <el-tag :type="scope.row.operationStatus === 'SUCCESS' ? 'success' : 'danger'">
+                                            {{ scope.row.operationStatus === 'SUCCESS' ? '成功' : '失败' }}
+                                        </el-tag>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="resultMessage" label="操作描述" show-overflow-tooltip></el-table-column>
+                                <el-table-column label="操作" width="120" fixed="right">
+                                    <template #default="scope">
+                                        <el-button type="primary" size="small" @click="viewOperationLogDetail(scope.row)">详情</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                            
+                            <!-- 分页 -->
+                            <div class="flex justify-end mt-4">
+                                <el-pagination
+                                    v-model:current-page="operationLogPagination.currentPage"
+                                    v-model:page-size="operationLogPagination.pageSize"
+                                    :page-sizes="[10, 20, 50, 100]"
+                                    :total="operationLogPagination.total"
+                                    layout="total, sizes, prev, pager, next, jumper">
+                                </el-pagination>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登录日志详情对话框 -->
+        <el-dialog v-model="loginLogDetailVisible" title="登录日志详情" width="60%" class="log-detail-dialog">
+            <div v-if="selectedLoginLog">
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="日志ID">{{ selectedLoginLog.logId }}</el-descriptions-item>
+                    <el-descriptions-item label="用户名">{{ selectedLoginLog.username }}</el-descriptions-item>
+                    <el-descriptions-item label="登录IP地址">{{ selectedLoginLog.loginIp }}</el-descriptions-item>
+                    <el-descriptions-item label="登录地理位置">{{ selectedLoginLog.loginLocation }}</el-descriptions-item>
+                    <el-descriptions-item label="登录时间" :span="2">{{ selectedLoginLog.loginTime }}</el-descriptions-item>
+                    <el-descriptions-item label="登录结果">
+                        <el-tag :type="selectedLoginLog.loginStatus === 'SUCCESS' ? 'success' : 'danger'">
+                            {{ selectedLoginLog.loginStatus === 'SUCCESS' ? '成功' : '失败' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="失败原因">{{ selectedLoginLog.failureReason || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="会话ID" :span="2">{{ selectedLoginLog.sessionId || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="客户端信息" :span="2">
+                        <div class="json-viewer">{{ selectedLoginLog.clientInfo }}</div>
+                    </el-descriptions-item>
+                </el-descriptions>
+            </div>
+        </el-dialog>
+
+        <!-- 操作日志详情对话框 -->
+        <el-dialog v-model="operationLogDetailVisible" title="操作日志详情" width="70%" class="log-detail-dialog">
+            <div v-if="selectedOperationLog">
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="日志ID">{{ selectedOperationLog.logId }}</el-descriptions-item>
+                    <el-descriptions-item label="操作用户">{{ selectedOperationLog.username }}</el-descriptions-item>
+                    <el-descriptions-item label="用户IP地址">{{ selectedOperationLog.userIp }}</el-descriptions-item>
+                    <el-descriptions-item label="操作模块">{{ selectedOperationLog.moduleName }}</el-descriptions-item>
+                    <el-descriptions-item label="功能名称">{{ selectedOperationLog.functionName }}</el-descriptions-item>
+                    <el-descriptions-item label="操作类型">
+                        <el-tag :type="getOperationTypeTagType(selectedOperationLog.operationType)">
+                            {{ getOperationTypeText(selectedOperationLog.operationType) }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="操作对象类型">{{ selectedOperationLog.targetObjectType || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="操作对象ID">{{ selectedOperationLog.targetObjectId || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="操作对象描述" :span="2">{{ selectedOperationLog.targetObjectDesc || '-' }}</el-descriptions-item>
+                    <el-descriptions-item label="操作时间" :span="2">{{ selectedOperationLog.operationTime }}</el-descriptions-item>
+                    <el-descriptions-item label="操作结果">
+                        <el-tag :type="selectedOperationLog.operationStatus === 'SUCCESS' ? 'success' : 'danger'">
+                            {{ selectedOperationLog.operationStatus === 'SUCCESS' ? '成功' : '失败' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="结果描述">{{ selectedOperationLog.resultMessage || '-' }}</el-descriptions-item>
+                </el-descriptions>
+                
+                <div v-if="selectedOperationLog.requestPayload" class="mt-4">
+                    <h4 class="text-lg font-medium mb-2">请求参数</h4>
+                    <div class="json-viewer">{{ selectedOperationLog.requestPayload }}</div>
+                </div>
+                
+                <div v-if="selectedOperationLog.dataBefore || selectedOperationLog.dataAfter" class="mt-4">
+                    <h4 class="text-lg font-medium mb-2">数据变更对比</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div v-if="selectedOperationLog.dataBefore">
+                            <h5 class="font-medium mb-2 text-red-600">变更前</h5>
+                            <div class="json-viewer">{{ selectedOperationLog.dataBefore }}</div>
+                        </div>
+                        <div v-if="selectedOperationLog.dataAfter">
+                            <h5 class="font-medium mb-2 text-green-600">变更后</h5>
+                            <div class="json-viewer">{{ selectedOperationLog.dataAfter }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    activeMenuItem: '1-6-1',
+                    currentPage: 'login',
+                    
+                    // 用户信息
+                    currentUser: {
+                        name: '王管理员',
+                        role: '系统管理员',
+                        avatar: ''
+                    },
+                    
+                    // 登录日志相关
+                    loginLogLoading: false,
+                    loginLogDetailVisible: false,
+                    selectedLoginLog: null,
+                    loginLogFilter: {
+                        username: '',
+                        loginIp: '',
+                        loginStatus: '',
+                        timeRange: []
+                    },
+                    loginLogPagination: {
+                        currentPage: 1,
+                        pageSize: 20,
+                        total: 0
+                    },
+                    loginLogs: [
+                        {
+                            logId: 1,
+                            username: 'admin',
+                            loginIp: '192.168.1.100',
+                            loginLocation: '北京市海淀区',
+                            clientInfo: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            loginTime: '2024-01-15 09:30:25',
+                            loginStatus: 'SUCCESS',
+                            failureReason: '',
+                            sessionId: 'sess_1234567890abcdef'
+                        },
+                        {
+                            logId: 2,
+                            username: 'operator01',
+                            loginIp: '192.168.1.101',
+                            loginLocation: '上海市浦东新区',
+                            clientInfo: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                            loginTime: '2024-01-15 09:25:18',
+                            loginStatus: 'FAILURE',
+                            failureReason: '密码错误',
+                            sessionId: ''
+                        },
+                        {
+                            logId: 3,
+                            username: 'viewer02',
+                            loginIp: '192.168.1.102',
+                            loginLocation: '广州市天河区',
+                            clientInfo: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            loginTime: '2024-01-15 09:20:45',
+                            loginStatus: 'SUCCESS',
+                            failureReason: '',
+                            sessionId: 'sess_abcdef1234567890'
+                        },
+                        {
+                            logId: 4,
+                            username: 'test_user',
+                            loginIp: '192.168.1.103',
+                            loginLocation: '深圳市南山区',
+                            clientInfo: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+                            loginTime: '2024-01-15 09:15:32',
+                            loginStatus: 'FAILURE',
+                            failureReason: '用户不存在',
+                            sessionId: ''
+                        },
+                        {
+                            logId: 5,
+                            username: 'admin',
+                            loginIp: '192.168.1.100',
+                            loginLocation: '北京市海淀区',
+                            clientInfo: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            loginTime: '2024-01-15 08:45:12',
+                            loginStatus: 'SUCCESS',
+                            failureReason: '',
+                            sessionId: 'sess_fedcba0987654321'
+                        }
+                    ],
+                    
+                    // 操作日志相关
+                    operationLogLoading: false,
+                    operationLogDetailVisible: false,
+                    selectedOperationLog: null,
+                    operationLogFilter: {
+                        username: '',
+                        moduleName: '',
+                        operationType: '',
+                        targetObjectDesc: '',
+                        operationStatus: '',
+                        timeRange: []
+                    },
+                    operationLogPagination: {
+                        currentPage: 1,
+                        pageSize: 20,
+                        total: 0
+                    },
+                    operationLogs: [
+                        {
+                            logId: 1,
+                            username: 'admin',
+                            userIp: '192.168.1.100',
+                            moduleName: '客户管理',
+                            functionName: '新增客户',
+                            operationType: 'CREATE',
+                            targetObjectType: 'Customer',
+                            targetObjectId: 'CUST_001',
+                            targetObjectDesc: '北京科技有限公司',
+                            operationTime: '2024-01-15 10:30:25',
+                            operationStatus: 'SUCCESS',
+                            resultMessage: '客户创建成功',
+                            requestPayload: '{"name":"北京科技有限公司","contact":"张经理","phone":"13800138000"}',
+                            dataBefore: '',
+                            dataAfter: '{"id":"CUST_001","name":"北京科技有限公司","contact":"张经理","phone":"13800138000","status":"ACTIVE"}'
+                        },
+                        {
+                            logId: 2,
+                            username: 'operator01',
+                            userIp: '192.168.1.101',
+                            moduleName: '设备管理',
+                            functionName: '修改设备信息',
+                            operationType: 'UPDATE',
+                            targetObjectType: 'Device',
+                            targetObjectId: 'DEV_001',
+                            targetObjectDesc: '摄像头设备001',
+                            operationTime: '2024-01-15 10:25:18',
+                            operationStatus: 'SUCCESS',
+                            resultMessage: '设备信息更新成功',
+                            requestPayload: '{"deviceName":"摄像头设备001-更新","location":"大厅入口"}',
+                            dataBefore: '{"id":"DEV_001","name":"摄像头设备001","location":"大厅","status":"ONLINE"}',
+                            dataAfter: '{"id":"DEV_001","name":"摄像头设备001-更新","location":"大厅入口","status":"ONLINE"}'
+                        },
+                        {
+                            logId: 3,
+                            username: 'admin',
+                            userIp: '192.168.1.100',
+                            moduleName: '角色权限',
+                            functionName: '用户授权',
+                            operationType: 'AUTHORIZE',
+                            targetObjectType: 'User',
+                            targetObjectId: 'USER_002',
+                            targetObjectDesc: '操作员02',
+                            operationTime: '2024-01-15 10:20:45',
+                            operationStatus: 'SUCCESS',
+                            resultMessage: '用户权限分配成功',
+                            requestPayload: '{"userId":"USER_002","roles":["OPERATOR","VIEWER"]}',
+                            dataBefore: '{"userId":"USER_002","roles":["VIEWER"]}',
+                            dataAfter: '{"userId":"USER_002","roles":["OPERATOR","VIEWER"]}'
+                        },
+                        {
+                            logId: 4,
+                            username: 'viewer02',
+                            userIp: '192.168.1.102',
+                            moduleName: '客户管理',
+                            functionName: '导出客户列表',
+                            operationType: 'EXPORT',
+                            targetObjectType: 'Customer',
+                            targetObjectId: '',
+                            targetObjectDesc: '客户列表数据',
+                            operationTime: '2024-01-15 10:15:32',
+                            operationStatus: 'SUCCESS',
+                            resultMessage: '数据导出成功，共导出50条记录',
+                            requestPayload: '{"exportType":"EXCEL","filters":{"status":"ACTIVE"}}',
+                            dataBefore: '',
+                            dataAfter: ''
+                        },
+                        {
+                            logId: 5,
+                            username: 'operator01',
+                            userIp: '192.168.1.101',
+                            moduleName: '接入平台管理',
+                            functionName: '删除接入平台',
+                            operationType: 'DELETE',
+                            targetObjectType: 'Platform',
+                            targetObjectId: 'PLAT_003',
+                            targetObjectDesc: '测试平台03',
+                            operationTime: '2024-01-15 10:10:15',
+                            operationStatus: 'FAILURE',
+                            resultMessage: '删除失败：平台下还有关联设备',
+                            requestPayload: '{"platformId":"PLAT_003"}',
+                            dataBefore: '{"id":"PLAT_003","name":"测试平台03","status":"ACTIVE","deviceCount":5}',
+                            dataAfter: ''
+                        }
+                    ]
+                };
+            },
+            computed: {
+                currentPageTitle() {
+                    switch(this.currentPage) {
+                        case 'login': return '登录日志';
+                        case 'operation': return '操作日志';
+                        default: return '日志管理';
+                    }
+                },
+                currentPageDescription() {
+                    switch(this.currentPage) {
+                        case 'login': return '查看和管理用户登录行为记录，包括成功和失败的登录尝试';
+                        case 'operation': return '查看和管理用户在系统中执行的关键操作记录';
+                        default: return '系统日志管理功能';
+                    }
+                },
+                filteredLoginLogs() {
+                    let logs = this.loginLogs;
+                    
+                    if (this.loginLogFilter.username) {
+                        logs = logs.filter(log => log.username.includes(this.loginLogFilter.username));
+                    }
+                    if (this.loginLogFilter.loginIp) {
+                        logs = logs.filter(log => log.loginIp.includes(this.loginLogFilter.loginIp));
+                    }
+                    if (this.loginLogFilter.loginStatus) {
+                        logs = logs.filter(log => log.loginStatus === this.loginLogFilter.loginStatus);
+                    }
+                    
+                    this.loginLogPagination.total = logs.length;
+                    return logs;
+                },
+                filteredOperationLogs() {
+                    let logs = this.operationLogs;
+                    
+                    if (this.operationLogFilter.username) {
+                        logs = logs.filter(log => log.username.includes(this.operationLogFilter.username));
+                    }
+                    if (this.operationLogFilter.moduleName) {
+                        logs = logs.filter(log => log.moduleName === this.operationLogFilter.moduleName);
+                    }
+                    if (this.operationLogFilter.operationType) {
+                        logs = logs.filter(log => log.operationType === this.operationLogFilter.operationType);
+                    }
+                    if (this.operationLogFilter.targetObjectDesc) {
+                        logs = logs.filter(log => log.targetObjectDesc.includes(this.operationLogFilter.targetObjectDesc));
+                    }
+                    if (this.operationLogFilter.operationStatus) {
+                        logs = logs.filter(log => log.operationStatus === this.operationLogFilter.operationStatus);
+                    }
+                    
+                    this.operationLogPagination.total = logs.length;
+                    return logs;
+                }
+            },
+            methods: {
+                handleMenuSelect(index) {
+                    this.activeMenuItem = index;
+                    if (index === '1-6-1') {
+                        this.currentPage = 'login';
+                    } else if (index === '1-6-2') {
+                        this.currentPage = 'operation';
+                    }
+                },
+                
+                // 登录日志相关方法
+                searchLoginLogs() {
+                    this.loginLogLoading = true;
+                    // 模拟API调用
+                    setTimeout(() => {
+                        this.loginLogLoading = false;
+                        ElMessage.success('查询完成');
+                    }, 1000);
+                },
+                resetLoginLogFilter() {
+                    this.loginLogFilter = {
+                        username: '',
+                        loginIp: '',
+                        loginStatus: '',
+                        timeRange: []
+                    };
+                },
+                viewLoginLogDetail(row) {
+                    this.selectedLoginLog = row;
+                    this.loginLogDetailVisible = true;
+                },
+                
+                // 操作日志相关方法
+                searchOperationLogs() {
+                    this.operationLogLoading = true;
+                    // 模拟API调用
+                    setTimeout(() => {
+                        this.operationLogLoading = false;
+                        ElMessage.success('查询完成');
+                    }, 1000);
+                },
+                resetOperationLogFilter() {
+                    this.operationLogFilter = {
+                        username: '',
+                        moduleName: '',
+                        operationType: '',
+                        targetObjectDesc: '',
+                        operationStatus: '',
+                        timeRange: []
+                    };
+                },
+                viewOperationLogDetail(row) {
+                    this.selectedOperationLog = row;
+                    this.operationLogDetailVisible = true;
+                },
+                
+                // 工具方法
+                getOperationTypeText(type) {
+                    const typeMap = {
+                        'CREATE': '新增',
+                        'UPDATE': '修改',
+                        'DELETE': '删除',
+                        'ENABLE': '启用',
+                        'DISABLE': '停用',
+                        'AUTHORIZE': '授权',
+                        'EXPORT': '导出',
+                        'TRIGGER_SYNC': '触发同步',
+                        'REMOTE_CONTROL': '远程控制'
+                    };
+                    return typeMap[type] || type;
+                },
+                getOperationTypeTagType(type) {
+                    const typeMap = {
+                        'CREATE': 'success',
+                        'UPDATE': 'warning',
+                        'DELETE': 'danger',
+                        'ENABLE': 'success',
+                        'DISABLE': 'info',
+                        'AUTHORIZE': 'primary',
+                        'EXPORT': 'info',
+                        'TRIGGER_SYNC': 'warning',
+                        'REMOTE_CONTROL': 'primary'
+                    };
+                    return typeMap[type] || 'info';
+                },
+                
+                // 用户相关方法
+                showProfile() {
+                    this.$message.info('跳转到个人中心页面');
+                },
+                
+                changePassword() {
+                    this.$message.info('打开修改密码对话框');
+                },
+                
+                logout() {
+                    this.$confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        this.$message.success('已退出登录');
+                        // 这里可以添加实际的退出登录逻辑
+                    }).catch(() => {});
+                },
+                
+                // 通用方法
+                refreshData() {
+                    if (this.currentPage === 'login') {
+                        this.searchLoginLogs();
+                    } else if (this.currentPage === 'operation') {
+                        this.searchOperationLogs();
+                    }
+                }
+            },
+            mounted() {
+                // 初始化数据
+                this.loginLogPagination.total = this.loginLogs.length;
+                this.operationLogPagination.total = this.operationLogs.length;
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
