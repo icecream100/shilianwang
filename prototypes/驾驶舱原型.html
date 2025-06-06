@@ -93,57 +93,79 @@
                         <div class="nav-item">
                             <i class="el-icon-user"></i> 客户管理
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'analysis'}" @click="activeMenu = 'analysis'">
                             <i class="el-icon-data-analysis"></i> 运营分析
-                            <div class="nav-submenu">
-                                <div class="nav-item">客户分析</div>
-                                <div class="nav-item">设备分析</div>
-                                <div class="nav-item">业务分析</div>
+                        </div>
+                        <!-- 运营分析二级菜单 -->
+                        <div v-if="activeMenu === 'analysis'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user"></i> 客户分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-cpu"></i> 设备分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-data-line"></i> 业务分析
                             </div>
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'monitor'}" @click="activeMenu = 'monitor'">
                             <i class="el-icon-monitor"></i> 运行监控
-                            <div class="nav-submenu">
-                                <div class="nav-item">告警规则管理</div>
-                                <div class="nav-item">告警事件管理</div>
+                        </div>
+                        <!-- 运行监控二级菜单 -->
+                        <div v-if="activeMenu === 'monitor'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-warning"></i> 告警规则管理
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-bell"></i> 告警事件管理
                             </div>
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'system'}" @click="activeMenu = 'system'">
                             <i class="el-icon-setting"></i> 系统配置
-                            <div class="nav-submenu">
-                                <div class="nav-item">用户管理</div>
-                                <div class="nav-item">角色管理</div>
+                        </div>
+                        <!-- 系统配置二级菜单 -->
+                        <div v-if="activeMenu === 'system'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user"></i> 用户管理
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-s-custom"></i> 角色管理
                             </div>
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'logs'}" @click="activeMenu = 'logs'">
                             <i class="el-icon-document"></i> 日志管理
-                            <div class="nav-submenu">
-                                <div class="nav-item">登录日志</div>
-                                <div class="nav-item">操作日志</div>
+                        </div>
+                        <!-- 日志管理二级菜单 -->
+                        <div v-if="activeMenu === 'logs'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-key"></i> 登录日志
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-edit"></i> 操作日志
                             </div>
                         </div>
                     </div>
                     <div class="nav-group">
                         <div class="nav-group-title">接口适配</div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'interface'}" @click="activeMenu = 'interface'">
                             <i class="el-icon-connection"></i> 接入平台管理
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'device'}" @click="activeMenu = 'device'">
                             <i class="el-icon-cpu"></i> 设备管理
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'channel'}" @click="activeMenu = 'channel'">
                             <i class="el-icon-link"></i> 通道管理
                         </div>
                     </div>
                     <div class="nav-group">
                         <div class="nav-group-title">业务数据采集</div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'collection'}" @click="activeMenu = 'collection'">
                             <i class="el-icon-data-board"></i> 业务采集设置
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'sync'}" @click="activeMenu = 'sync'">
                             <i class="el-icon-refresh"></i> 客户同步设置
                         </div>
-                        <div class="nav-item">
+                        <div class="nav-item" :class="{active: activeMenu === 'task'}" @click="activeMenu = 'task'">
                             <i class="el-icon-view"></i> 任务状态
                         </div>
                     </div>
@@ -471,6 +493,7 @@
         createApp({
             data() {
                 return {
+                    activeMenu: 'dashboard', // 添加导航状态变量
                     lastUpdateTime: new Date().toLocaleString(),
                     // 用户信息
                     userInfo: {
