@@ -120,8 +120,8 @@
                             <el-icon><DataAnalysis /></el-icon>
                             <span>业务数据采集</span>
                         </template>
-                        <el-menu-item index="3-1">运行业务数据采集配置</el-menu-item>
-                        <el-menu-item index="3-2">CRM客户数据同步配置</el-menu-item>
+                        <el-menu-item index="3-1">业务采集设置</el-menu-item>
+                        <el-menu-item index="3-2">客户同步设置</el-menu-item>
                         <el-menu-item index="3-3">任务状态</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
@@ -283,7 +283,7 @@
                                         </el-button>
                                         <el-button type="primary" @click="showAddDeviceDialog">
                                             <el-icon><Plus /></el-icon>
-                                            手动添加设备
+                                            添加设备
                                         </el-button>
                                     </div>
                                 </div>
@@ -308,7 +308,7 @@
                                         <template #default="scope">
                                             <div class="flex flex-wrap gap-1">
                                                 <el-button size="small" @click="viewDevice(scope.row)">详情</el-button>
-                                                <el-button size="small" type="primary" @click="editDeviceInfo(scope.row)">编辑补充信息</el-button>
+                                                <el-button size="small" type="primary" @click="editDeviceInfo(scope.row)">编辑信息</el-button>
                                                 <el-button size="small" type="warning" @click="viewChannels(scope.row)">查看通道</el-button>
                                                 <el-dropdown trigger="click">
                                                     <el-button size="small" type="info">

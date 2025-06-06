@@ -155,10 +155,10 @@
                             <div class="nav-item px-4 py-2 rounded cursor-pointer" 
                                  :class="{active: activeMenu === 'collection'}"
                                  @click="activeMenu = 'collection'">
-                                <i class="el-icon-download mr-2"></i>运行业务数据采集配置
+                                <i class="el-icon-download mr-2"></i>业务采集设置
                             </div>
                             <div class="nav-item px-4 py-2 rounded cursor-pointer">
-                                <i class="el-icon-user-solid mr-2"></i>CRM客户数据同步配置
+                                <i class="el-icon-user-solid mr-2"></i>客户同步设置
                             </div>
                             <div class="nav-item px-4 py-2 rounded cursor-pointer">
                                 <i class="el-icon-timer mr-2"></i>任务状态
@@ -181,14 +181,6 @@
                             <p class="text-gray-600 mt-1">{{ currentPageDescription }}</p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <div class="flex space-x-3">
-                                <el-button type="primary" @click="exportReport">
-                                    <i class="el-icon-download mr-1"></i>导出报表
-                                </el-button>
-                                <el-button @click="refreshData">
-                                    <i class="el-icon-refresh mr-1"></i>刷新数据
-                                </el-button>
-                            </div>
                             <!-- 用户信息 -->
                             <el-dropdown trigger="click">
                                 <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">

@@ -116,10 +116,10 @@
                         </div>
                         <!-- 运行监控二级菜单 -->
                         <div v-if="activeMenu === 'monitor'" class="nav-submenu">
-                            <div class="nav-item active">
+                            <div class="nav-item" :class="{active: currentTab === 'rules'}" @click="currentTab = 'rules'">
                                 <i class="el-icon-bell"></i> 告警规则管理
                             </div>
-                            <div class="nav-item">
+                            <div class="nav-item" :class="{active: currentTab === 'alarms'}" @click="currentTab = 'alarms'">
                                 <i class="el-icon-message"></i> 告警事件管理
                             </div>
                         </div>
@@ -163,63 +163,13 @@
                     <div class="nav-group">
                         <div class="nav-group-title">业务数据采集</div>
                         <div class="nav-item" :class="{active: activeMenu === 'collection'}" @click="activeMenu = 'collection'">
-                            <i class="el-icon-download"></i> 运行业务数据采集配置
+                            <i class="el-icon-download"></i> 业务采集设置
                         </div>
                         <div class="nav-item">
-                            <i class="el-icon-user-solid"></i> CRM客户数据同步配置
+                            <i class="el-icon-user-solid"></i> 客户同步设置
                         </div>
                         <div class="nav-item">
                             <i class="el-icon-timer"></i> 任务状态
-                            <div class="nav-submenu">
-                                <div class="nav-item">客户分析</div>
-                                <div class="nav-item">设备分析</div>
-                                <div class="nav-item">业务分析</div>
-                            </div>
-                        </div>
-                        <div class="nav-item active">
-                            <i class="el-icon-monitor"></i> 运行监控
-                            <div class="nav-submenu">
-                                <div class="nav-item" :class="{active: currentTab === 'rules'}" @click="currentTab = 'rules'">告警规则管理</div>
-                                <div class="nav-item" :class="{active: currentTab === 'alarms'}" @click="currentTab = 'alarms'">告警事件管理</div>
-                            </div>
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-setting"></i> 系统配置
-                            <div class="nav-submenu">
-                                <div class="nav-item">用户管理</div>
-                                <div class="nav-item">角色管理</div>
-                            </div>
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-document"></i> 日志管理
-                            <div class="nav-submenu">
-                                <div class="nav-item">登录日志</div>
-                                <div class="nav-item">操作日志</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-title">接口适配</div>
-                        <div class="nav-item">
-                            <i class="el-icon-connection"></i> 接入平台管理
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-cpu"></i> 设备管理
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-link"></i> 通道管理
-                        </div>
-                    </div>
-                    <div class="nav-group">
-                        <div class="nav-group-title">业务数据采集</div>
-                        <div class="nav-item">
-                            <i class="el-icon-data-board"></i> 运行业务数据采集配置
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-refresh"></i> CRM客户数据同步配置
-                        </div>
-                        <div class="nav-item">
-                            <i class="el-icon-view"></i> 任务状态
                         </div>
                     </div>
                 </nav>
@@ -265,17 +215,7 @@
 
                 <!-- 告警规则管理 -->
                 <div v-if="currentTab === 'rules'" class="p-6">
-                    <!-- 操作栏 -->
-                    <div class="mb-6 flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <el-button type="primary" @click="showAddRuleDialog = true">
-                                <i class="el-icon-plus mr-1"></i>新增规则
-                            </el-button>
-                            <el-button @click="refreshRules">
-                                <i class="el-icon-refresh mr-1"></i>刷新
-                            </el-button>
-                        </div>
-                    </div>
+
 
                     <!-- 筛选条件 -->
                     <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
@@ -314,7 +254,14 @@
                             <el-button type="primary" @click="searchRules">查询</el-button>
                         </div>
                     </div>
-
+                    <!-- 操作栏 -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <el-button type="primary" @click="showAddRuleDialog = true">
+                                <i class="el-icon-plus mr-1"></i>新增规则
+                            </el-button>
+                        </div>
+                    </div>
                     <!-- 规则列表 -->
                     <div class="bg-white rounded-lg shadow-sm">
                         <el-table :data="rules" style="width: 100%" v-loading="rulesLoading">
@@ -376,24 +323,6 @@
 
                 <!-- 告警事件管理 -->
                 <div v-if="currentTab === 'alarms'" class="p-6">
-                    <!-- 操作栏 -->
-                    <div class="mb-6 flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <el-button @click="refreshAlarms">
-                                <i class="el-icon-refresh mr-1"></i>刷新
-                            </el-button>
-                            <el-button @click="batchAcknowledge" :disabled="selectedAlarms.length === 0">
-                                <i class="el-icon-check mr-1"></i>批量确认
-                            </el-button>
-                            <el-button @click="batchClose" :disabled="selectedAlarms.length === 0">
-                                <i class="el-icon-close mr-1"></i>批量关闭
-                            </el-button>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-500">自动刷新:</span>
-                            <el-switch v-model="autoRefresh" @change="toggleAutoRefresh"></el-switch>
-                        </div>
-                    </div>
 
                     <!-- 筛选条件 -->
                     <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
@@ -436,6 +365,18 @@
                         </div>
                     </div>
 
+                                        <!-- 操作栏 -->
+                                        <div class="mb-6 flex items-center justify-between">
+                                            <div class="flex items-center space-x-4">
+                                                <el-button @click="batchAcknowledge" :disabled="selectedAlarms.length === 0">
+                                                    <i class="el-icon-check mr-1"></i>批量确认
+                                                </el-button>
+                                                <el-button @click="batchClose" :disabled="selectedAlarms.length === 0">
+                                                    <i class="el-icon-close mr-1"></i>批量关闭
+                                                </el-button>
+                                            </div>
+                                        </div>
+                    
                     <!-- 告警列表 -->
                     <div class="bg-white rounded-lg shadow-sm">
                         <el-table :data="alarms" style="width: 100%" v-loading="alarmsLoading" @selection-change="handleAlarmSelectionChange">
@@ -618,6 +559,7 @@
         createApp({
             data() {
                 return {
+                    activeMenu: 'monitor',
                     currentTab: 'rules',
                     autoRefresh: false,
                     autoRefreshTimer: null,
@@ -814,11 +756,7 @@
                     }, 500);
                 },
                 
-                refreshRules() {
-                    this.loadRules();
-                    ElMessage.success('规则列表已刷新');
-                },
-                
+
                 searchRules() {
                     this.loadRules();
                 },
@@ -1040,21 +978,6 @@
                         alarm.localStatus = 'CLOSED';
                     });
                     ElMessage.success(`已关闭 ${this.selectedAlarms.length} 个告警`);
-                },
-                
-                toggleAutoRefresh() {
-                    if (this.autoRefresh) {
-                        this.autoRefreshTimer = setInterval(() => {
-                            this.refreshAlarms();
-                        }, 30000); // 30秒刷新一次
-                        ElMessage.success('已开启自动刷新');
-                    } else {
-                        if (this.autoRefreshTimer) {
-                            clearInterval(this.autoRefreshTimer);
-                            this.autoRefreshTimer = null;
-                        }
-                        ElMessage.info('已关闭自动刷新');
-                    }
                 },
                 
                 // 分页方法

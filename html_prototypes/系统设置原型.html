@@ -140,10 +140,10 @@
                     <div class="nav-group">
                         <div class="nav-group-title">业务数据采集</div>
                         <div class="nav-item">
-                            <i class="el-icon-data-board"></i> 运行业务数据采集配置
+                            <i class="el-icon-data-board"></i> 业务采集设置
                         </div>
                         <div class="nav-item">
-                            <i class="el-icon-refresh"></i> CRM客户数据同步配置
+                            <i class="el-icon-refresh"></i> 客户同步设置
                         </div>
                         <div class="nav-item">
                             <i class="el-icon-view"></i> 任务状态
@@ -162,7 +162,37 @@
                             <p class="text-gray-600 mt-1">管理系统用户账户和角色权限配置</p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <span class="text-sm text-gray-500">当前用户: {{ currentUser.name }}</span>
+                            <!-- 用户信息 -->
+                            <div class="flex items-center space-x-3 ml-6 pl-6 border-l border-gray-200">
+                                <el-dropdown trigger="click" @command="handleUserCommand">
+                                    <div class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
+                                        <el-avatar :size="32" :src="userInfo.avatarUrl" class="border border-gray-200">
+                                            <el-icon><User /></el-icon>
+                                        </el-avatar>
+                                        <div class="text-left">
+                                            <div class="text-sm font-medium text-gray-800">{{userInfo.realName}}</div>
+                                            <div class="text-xs text-gray-500">{{userInfo.department}}</div>
+                                        </div>
+                                        <el-icon class="text-gray-400"><ArrowDown /></el-icon>
+                                    </div>
+                                    <template #dropdown>
+                                        <el-dropdown-menu>
+                                            <el-dropdown-item command="profile">
+                                                <el-icon><User /></el-icon>
+                                                个人中心
+                                            </el-dropdown-item>
+                                            <el-dropdown-item command="password">
+                                                <el-icon><Lock /></el-icon>
+                                                修改密码
+                                            </el-dropdown-item>
+                                            <el-dropdown-item command="logout" divided>
+                                                <el-icon><SwitchButton /></el-icon>
+                                                退出登录
+                                            </el-dropdown-item>
+                                        </el-dropdown-menu>
+                                    </template>
+                                </el-dropdown>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -177,7 +207,7 @@
                                 <p class="text-gray-600 mt-1">管理系统用户账户信息</p>
                             </div>
                                 <!-- 筛选区域 -->
-                                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                                <div class="mb-6">
                                     <el-form :inline="true" :model="userFilters" class="demo-form-inline">
                                         <el-form-item label="用户名">
                                             <el-input v-model="userFilters.username" placeholder="请输入用户名" clearable style="width: 200px"></el-input>
@@ -200,11 +230,18 @@
                                             <el-button @click="resetUserFilters">重置</el-button>
                                         </el-form-item>
                                     </el-form>
-                                </div>
-
-                                <!-- 操作按钮区 -->
-                                <div class="mb-4">
-                                    <el-button type="primary" @click="showAddUserDialog">新增用户</el-button>
+                                    
+                                    <!-- 分隔线和操作按钮区 -->
+                                    <div class="border-t border-gray-200 pt-4 mt-4">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <el-button type="primary" @click="showAddUserDialog">新增用户</el-button>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                共 {{ userPagination.total }} 条记录
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- 用户列表 -->
@@ -261,7 +298,7 @@
                                 <p class="text-gray-600 mt-1">管理系统角色和权限配置</p>
                             </div>
                                 <!-- 筛选区域 -->
-                                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                                <div class="mb-6">
                                     <el-form :inline="true" :model="roleFilters" class="demo-form-inline">
                                         <el-form-item label="角色名称">
                                             <el-input v-model="roleFilters.roleName" placeholder="请输入角色名称" clearable style="width: 200px"></el-input>
@@ -271,11 +308,18 @@
                                             <el-button @click="resetRoleFilters">重置</el-button>
                                         </el-form-item>
                                     </el-form>
-                                </div>
-
-                                <!-- 操作按钮区 -->
-                                <div class="mb-4">
-                                    <el-button type="primary" @click="showAddRoleDialog">新增角色</el-button>
+                                    
+                                    <!-- 分隔线和操作按钮区 -->
+                                    <div class="border-t border-gray-200 pt-4 mt-4">
+                                        <div class="flex justify-between items-center">
+                                            <div>
+                                                <el-button type="primary" @click="showAddRoleDialog">新增角色</el-button>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                共 {{ rolePagination.total }} 条记录
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- 角色列表 -->
@@ -444,6 +488,13 @@
                     activeTab: 'users',
                     currentUser: {
                         name: '系统管理员'
+                    },
+                    // 用户信息
+                    userInfo: {
+                        username: 'admin',
+                        realName: '张三',
+                        department: '系统管理员',
+                        avatarUrl: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png'
                     },
                     
                     // 用户管理相关数据
@@ -635,8 +686,8 @@
                             id: 3,
                             label: '业务数据采集',
                             children: [
-                                { id: 31, label: '运行业务数据采集配置' },
-                                { id: 32, label: 'CRM客户数据同步配置' },
+                                { id: 31, label: '业务采集设置' },
+                                { id: 32, label: '客户同步设置' },
                                 { id: 33, label: '任务状态' }
                             ]
                         }
@@ -671,6 +722,41 @@
                 }
             },
             methods: {
+                // 用户相关方法
+                handleUserCommand(command) {
+                    switch(command) {
+                        case 'profile':
+                            this.goToProfile();
+                            break;
+                        case 'password':
+                            this.showChangePassword();
+                            break;
+                        case 'logout':
+                            this.logout();
+                            break;
+                    }
+                },
+                goToProfile() {
+                    this.$message.info('跳转到个人中心');
+                    // 这里可以添加路由跳转逻辑
+                },
+                showChangePassword() {
+                    this.$message.info('打开修改密码对话框');
+                    // 这里可以添加修改密码的逻辑
+                },
+                logout() {
+                    this.$confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        this.$message.success('退出登录成功');
+                        // 这里可以添加退出登录的逻辑
+                    }).catch(() => {
+                        this.$message.info('已取消退出');
+                    });
+                },
+                
                 // 用户管理方法
                 searchUsers() {
                     this.userLoading = true;

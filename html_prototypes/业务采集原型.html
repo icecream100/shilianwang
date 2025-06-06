@@ -153,8 +153,8 @@
                             <el-icon><DataAnalysis /></el-icon>
                             <span>业务数据采集</span>
                         </template>
-                        <el-menu-item index="3-1">运行业务数据采集配置</el-menu-item>
-                        <el-menu-item index="3-2">CRM客户数据同步配置</el-menu-item>
+                        <el-menu-item index="3-1">业务采集设置</el-menu-item>
+                        <el-menu-item index="3-2">客户同步设置</el-menu-item>
                         <el-menu-item index="3-3">任务状态</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
@@ -170,10 +170,6 @@
                             <p class="text-sm text-gray-500 mt-1">{{currentPageDescription}}</p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <el-button type="primary" @click="refreshAllData">
-                                <el-icon><Refresh /></el-icon>
-                                刷新数据
-                            </el-button>
                             <!-- 用户信息 -->
                             <el-dropdown trigger="click">
                                 <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
@@ -203,7 +199,7 @@
 
                 <!-- 内容区域 -->
                 <div class="p-6">
-                    <!-- 运行业务数据采集配置页面 -->
+                    <!-- 业务采集设置页面 -->
                     <div v-if="currentPage === 'business'">
 
                             <div class="content-card p-6">
@@ -300,42 +296,30 @@
                             </div>
                     </div>
 
-                    <!-- CRM客户数据同步配置页面 -->
+                    <!-- 客户同步设置页面 -->
                     <div v-if="currentPage === 'crm'">
-                            <div class="content-card p-6">
-                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <!-- CRM接口配置 -->
-                                    <div class="bg-gray-50 p-6 rounded-lg">
-                                        <h3 class="text-lg font-semibold mb-4">CRM接口配置</h3>
-                                        <el-form :model="crmConfig" label-width="120px">
-                                            <el-form-item label="API地址">
-                                                <el-input v-model="crmConfig.apiUrl" placeholder="请输入CRM API地址"></el-input>
+                        <div class="content-card">
+                            <el-tabs v-model="crmActiveTab" class="px-6 pt-4">
+                                <el-tab-pane label="同步配置" name="config">
+                                    <div class="pb-6">
+                                        <el-form :model="crmConfig" label-width="100px" class="max-w-2xl">
+                                            <el-form-item label="CRM系统地址">
+                                                <el-input v-model="crmConfig.apiUrl" placeholder="https://api.crm.example.com"></el-input>
                                             </el-form-item>
                                             <el-form-item label="认证方式">
-                                                <el-select v-model="crmConfig.authType" placeholder="请选择认证方式" style="width: 100%">
-                                                    <el-option label="OAuth2" value="oauth2"></el-option>
-                                                    <el-option label="API Key" value="api_key"></el-option>
-                                                    <el-option label="Basic Auth" value="basic_auth"></el-option>
-                                                </el-select>
+                                                <el-input v-model="crmConfig.authType" placeholder="API Key"></el-input>
                                             </el-form-item>
-                                            <el-form-item label="认证参数" v-if="crmConfig.authType">
-                                                <el-input v-model="crmConfig.authParams" type="textarea" :rows="3" placeholder="请输入认证参数（JSON格式）"></el-input>
-                                            </el-form-item>
-                                            <el-form-item label="查询条件">
-                                                <el-input v-model="crmConfig.queryFilter" placeholder="可选，用于筛选客户数据"></el-input>
+                                            <el-form-item label="API密钥">
+                                                <el-input v-model="crmConfig.authParams" placeholder="请输入API密钥" show-password></el-input>
                                             </el-form-item>
                                             <el-form-item label="同步频率">
-                                                <el-select v-model="crmConfig.syncFrequency" placeholder="请选择同步频率" style="width: 100%">
-                                                    <el-option label="每小时" value="0 0 * * * ?"></el-option>
-                                                    <el-option label="每日凌晨2点" value="0 0 2 * * ?"></el-option>
-                                                    <el-option label="每周一凌晨" value="0 0 2 ? * MON"></el-option>
-                                                    <el-option label="自定义" value="custom"></el-option>
+                                                <el-select v-model="crmConfig.syncFrequency" placeholder="每天" style="width: 100%">
+                                                    <el-option label="每天" value="daily"></el-option>
+                                                    <el-option label="每周" value="weekly"></el-option>
+                                                    <el-option label="每月" value="monthly"></el-option>
                                                 </el-select>
                                             </el-form-item>
-                                            <el-form-item label="自定义CRON" v-if="crmConfig.syncFrequency === 'custom'">
-                                                <el-input v-model="crmConfig.customCron" placeholder="请输入CRON表达式"></el-input>
-                                            </el-form-item>
-                                            <el-form-item label="启用状态">
+                                            <el-form-item label="启用同步">
                                                 <el-switch v-model="crmConfig.enabled"></el-switch>
                                             </el-form-item>
                                             <el-form-item>
@@ -344,43 +328,83 @@
                                             </el-form-item>
                                         </el-form>
                                     </div>
-
-                                    <!-- 同步状态与日志 -->
-                                    <div class="bg-gray-50 p-6 rounded-lg">
-                                        <h3 class="text-lg font-semibold mb-4">同步状态与日志</h3>
-                                        <div class="space-y-4">
-                                            <div class="bg-white p-4 rounded border">
-                                                <div class="flex justify-between items-center mb-2">
-                                                    <span class="font-medium">最近同步状态</span>
-                                                    <el-tag :type="crmSyncStatus.status === 'success' ? 'success' : 'danger'">
-                                                        {{crmSyncStatus.status === 'success' ? '成功' : '失败'}}
-                                                    </el-tag>
-                                                </div>
-                                                <div class="text-sm text-gray-600">
-                                                    <p>同步时间：{{crmSyncStatus.lastSyncTime}}</p>
-                                                    <p>同步数量：{{crmSyncStatus.syncCount}} 条</p>
-                                                    <p>新增：{{crmSyncStatus.newCount}} 条，更新：{{crmSyncStatus.updateCount}} 条</p>
-                                                </div>
-                                            </div>
-                                            
-                                            <el-button type="warning" @click="triggerCrmSync" :loading="crmSyncLoading" style="width: 100%">
-                                                <el-icon><Refresh /></el-icon>
-                                                手动触发同步
-                                            </el-button>
-                                            
-                                            <el-button @click="showFieldMappingDialog" style="width: 100%">
-                                                <el-icon><Setting /></el-icon>
-                                                字段映射配置
-                                            </el-button>
-                                            
-                                            <el-button @click="showCrmSyncLogDialog" style="width: 100%">
-                                                <el-icon><Document /></el-icon>
-                                                查看同步日志
-                                            </el-button>
+                                </el-tab-pane>
+                                
+                                <el-tab-pane label="字段映射" name="mapping">
+                                    <div class="pb-6">
+                                        <div class="mb-4">
+                                            <el-button type="primary" @click="addFieldMapping">添加映射</el-button>
+                                        </div>
+                                        <el-table :data="fieldMappings" border>
+                                            <el-table-column prop="localField" label="本地字段" width="200">
+                                                <template #default="scope">
+                                                    <span class="text-gray-600">{{scope.row.localField}}</span>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column prop="crmField" label="CRM字段" width="200">
+                                                <template #default="scope">
+                                                    <el-input v-model="scope.row.crmField" placeholder="输入对应的CRM字段" size="small"></el-input>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column prop="fieldType" label="字段类型" width="150">
+                                                <template #default="scope">
+                                                    <el-select v-model="scope.row.fieldType" placeholder="选择类型" size="small" style="width: 100%">
+                                                        <el-option label="文本" value="text"></el-option>
+                                                        <el-option label="数字" value="number"></el-option>
+                                                        <el-option label="日期" value="date"></el-option>
+                                                    </el-select>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column prop="required" label="必填" width="80">
+                                                <template #default="scope">
+                                                    <el-switch v-model="scope.row.required" size="small"></el-switch>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column label="操作" width="100">
+                                                <template #default="scope">
+                                                    <el-button size="small" type="danger" @click="removeFieldMapping(scope.$index)">删除</el-button>
+                                                </template>
+                                            </el-table-column>
+                                        </el-table>
+                                        <div class="mt-4">
+                                            <el-button type="primary" @click="saveFieldMappings">保存配置</el-button>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </el-tab-pane>
+                                
+                                <el-tab-pane label="同步日志" name="logs">
+                                    <div class="pb-6">
+                                        <div class="mb-4 flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <el-button type="primary" @click="refreshSyncLogs">刷新日志</el-button>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                最后同步时间：{{crmSyncStatus.lastSyncTime}}
+                                            </div>
+                                        </div>
+                                        
+                                        <el-table :data="crmSyncLogs" border>
+                                            <el-table-column prop="syncTime" label="同步时间" width="150"></el-table-column>
+                                            <el-table-column prop="status" label="状态" width="100">
+                                                <template #default="scope">
+                                                    <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'" size="small">
+                                                        {{scope.row.status === 'success' ? '成功' : '失败'}}
+                                                    </el-tag>
+                                                </template>
+                                            </el-table-column>
+                                            <el-table-column prop="processedCount" label="处理记录" width="100"></el-table-column>
+                                            <el-table-column prop="successCount" label="成功记录" width="100"></el-table-column>
+                                            <el-table-column prop="errorMessage" label="错误信息" show-overflow-tooltip></el-table-column>
+                                            <el-table-column label="操作" width="100">
+                                                <template #default="scope">
+                                                    <el-button size="small" @click="viewSyncLogDetail(scope.row)">详情</el-button>
+                                                </template>
+                                            </el-table-column>
+                                        </el-table>
+                                    </div>
+                                </el-tab-pane>
+                            </el-tabs>
+                        </div>
                     </div>
 
                     <!-- 任务状态页面 -->
@@ -409,26 +433,218 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- 最近错误任务 -->
-                                    <div v-if="recentErrors.length > 0">
-                                        <h4 class="font-medium mb-3">最近错误任务</h4>
-                                        <el-table :data="recentErrors" size="small">
-                                            <el-table-column prop="taskName" label="任务名称" width="200"></el-table-column>
-                                            <el-table-column prop="errorTime" label="错误时间" width="150"></el-table-column>
-                                            <el-table-column prop="errorMessage" label="错误信息"></el-table-column>
-                                            <el-table-column label="操作" width="100">
-                                                <template #default="scope">
-                                                    <el-button size="small" type="primary" @click="viewErrorDetails(scope.row)">查看</el-button>
-                                                </template>
-                                            </el-table-column>
-                                        </el-table>
+                     
+                            
+                            <!-- 全部任务记录 -->
+                            <div class="content-card p-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-semibold">全部任务记录</h3>
+                                    <div class="flex space-x-2">
+                                        <el-select v-model="taskRecordStatusFilter" placeholder="状态筛选" clearable style="width: 120px">
+                                            <el-option label="全部" value=""></el-option>
+                                            <el-option label="成功" value="success"></el-option>
+                                            <el-option label="失败" value="error"></el-option>
+                                            <el-option label="运行中" value="running"></el-option>
+                                        </el-select>
+                                        <el-date-picker
+                                            v-model="taskRecordDateRange"
+                                            type="daterange"
+                                            range-separator="至"
+                                            start-placeholder="开始日期"
+                                            end-placeholder="结束日期"
+                                            size="default"
+                                            style="width: 240px">
+                                        </el-date-picker>
+                                        <el-button type="primary" @click="queryTaskRecords">查询</el-button>
+                                        <el-button @click="refreshTaskRecords">刷新</el-button>
                                     </div>
+                                </div>
+                                
+                                <el-table :data="getCurrentPageTaskRecords()" stripe>
+                                    <el-table-column prop="taskName" label="任务名称" width="200"></el-table-column>
+                                    <el-table-column prop="taskType" label="任务类型" width="120"></el-table-column>
+                                    <el-table-column prop="startTime" label="开始时间" width="150"></el-table-column>
+                                    <el-table-column prop="endTime" label="结束时间" width="150"></el-table-column>
+                                    <el-table-column prop="duration" label="执行时长" width="100"></el-table-column>
+                                    <el-table-column prop="status" label="状态" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="getTaskRecordStatusType(scope.row.status)" size="small">
+                                                {{getTaskRecordStatusText(scope.row.status)}}
+                                            </el-tag>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="processedCount" label="处理记录数" width="120"></el-table-column>
+                                    <el-table-column prop="errorMessage" label="错误信息" show-overflow-tooltip></el-table-column>
+                                    <el-table-column label="操作" width="120">
+                                        <template #default="scope">
+                                            <el-button size="small" @click="viewTaskRecordDetail(scope.row)">详情</el-button>
+                                            <el-button size="small" type="primary" @click="retryTask(scope.row)" v-if="scope.row.status === 'error'">重试</el-button>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                                
+                                <div class="flex justify-between items-center mt-4">
+                                    <div class="text-sm text-gray-500">
+                                        共 {{getTaskRecordTotal()}} 条记录
+                                    </div>
+                                    <el-pagination
+                                        v-model:current-page="taskRecordCurrentPage"
+                                        v-model:page-size="taskRecordPageSize"
+                                        :page-sizes="[10, 20, 50, 100]"
+                                        :total="getTaskRecordTotal()"
+                                        layout="total, sizes, prev, pager, next, jumper">
+                                    </el-pagination>
                                 </div>
                             </div>
                     </div>
+                    </div>
+                </div>
+                    </div>
+
+                    <!-- 同步日志详情弹窗 -->
+                    <el-dialog v-model="syncLogDetailDialogVisible" title="同步日志详情" width="800px">
+                        <div class="space-y-6">
+                            <!-- 基本信息 -->
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="text-lg font-medium mb-3 text-gray-800">基本信息</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="text-gray-600">同步时间：</span>
+                                        <span class="font-medium">{{ syncLogDetailData.syncTime }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">同步状态：</span>
+                                        <el-tag :type="syncLogDetailData.status === 'success' ? 'success' : 'danger'" size="small">
+                                            {{ syncLogDetailData.status === 'success' ? '成功' : '失败' }}
+                                        </el-tag>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">执行时长：</span>
+                                        <span class="font-medium">{{ syncLogDetailData.duration }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">同步类型：</span>
+                                        <span class="font-medium">{{ syncLogDetailData.syncType }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">数据源：</span>
+                                        <span class="font-medium">{{ syncLogDetailData.dataSource }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">目标系统：</span>
+                                        <span class="font-medium">{{ syncLogDetailData.targetSystem }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 同步统计 -->
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="text-lg font-medium mb-3 text-gray-800">同步统计</h4>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-blue-600">{{ syncLogDetailData.processedCount }}</div>
+                                        <div class="text-sm text-gray-600">处理记录数</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-600">{{ syncLogDetailData.successCount }}</div>
+                                        <div class="text-sm text-gray-600">成功记录数</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-red-600">{{ (syncLogDetailData.processedCount || 0) - (syncLogDetailData.successCount || 0) }}</div>
+                                        <div class="text-sm text-gray-600">失败记录数</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 字段同步详情 -->
+                            <div>
+                                <h4 class="text-lg font-medium mb-3 text-gray-800">字段同步详情</h4>
+                                <el-table :data="syncLogDetailData.details" border>
+                                    <el-table-column prop="field" label="字段名称" width="200"></el-table-column>
+                                    <el-table-column prop="count" label="同步数量" width="120"></el-table-column>
+                                    <el-table-column prop="status" label="状态" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'" size="small">
+                                                {{ scope.row.status === 'success' ? '成功' : '失败' }}
+                                            </el-tag>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column label="备注">
+                                        <template #default="scope">
+                                            <span class="text-gray-600">{{ scope.row.status === 'success' ? '同步完成' : '同步失败' }}</span>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+                            </div>
+                            
+                            <!-- 错误信息 -->
+                            <div v-if="syncLogDetailData.errorMessage" class="bg-red-50 p-4 rounded-lg">
+                                <h4 class="text-lg font-medium mb-3 text-red-800">错误信息</h4>
+                                <div class="text-red-700 bg-white p-3 rounded border border-red-200">
+                                    {{ syncLogDetailData.errorMessage }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <template #footer>
+                            <div class="flex justify-end space-x-2">
+                                <el-button @click="syncLogDetailDialogVisible = false">关闭</el-button>
+                                <el-button type="primary" @click="syncLogDetailDialogVisible = false">确定</el-button>
+                            </div>
+                        </template>
+                    </el-dialog>
+
+                    <!-- 配置详情弹窗 -->
+        <el-dialog v-model="configDetailDialogVisible" title="配置详情" width="800px">
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">配置名称</label>
+                        <div class="text-sm text-gray-900">{{configDetailData.configName}}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">数据源类型</label>
+                        <div class="text-sm text-gray-900">{{configDetailData.dataSourceType}}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">采集频率</label>
+                        <div class="text-sm text-gray-900">{{configDetailData.frequency}}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">状态</label>
+                        <el-tag :type="configDetailData.enabledStatus ? 'success' : 'danger'" size="small">
+                            {{configDetailData.enabledStatus ? '启用' : '停用'}}
+                        </el-tag>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">最后执行时间</label>
+                        <div class="text-sm text-gray-900">{{configDetailData.lastExecuteTime}}</div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">下次执行时间</label>
+                        <div class="text-sm text-gray-900">{{configDetailData.nextExecuteTime}}</div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API地址</label>
+                    <div class="text-sm text-gray-900 bg-gray-50 p-2 rounded">{{configDetailData.apiUrl}}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">采集参数</label>
+                    <div class="text-sm text-gray-900 bg-gray-50 p-2 rounded" style="white-space: pre-wrap;">{{configDetailData.collectionParams}}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                    <div class="text-sm text-gray-900">{{configDetailData.description}}</div>
                 </div>
             </div>
-        </div>
+            <template #footer>
+                <div class="dialog-footer">
+                    <el-button @click="configDetailDialogVisible = false">关闭</el-button>
+                    <el-button type="primary" @click="editBusinessConfig(configDetailData)">编辑配置</el-button>
+                </div>
+            </template>
+        </el-dialog>
 
         <!-- 新增/编辑业务数据采集配置对话框 -->
         <el-dialog v-model="businessConfigDialogVisible" :title="businessConfigDialogTitle" width="700px">
@@ -571,7 +787,7 @@
                         avatar: ''
                     },
                     
-                    // 运行业务数据采集配置
+                    // 业务采集设置
                     businessConfigs: [
                         {
                             id: 1,
@@ -621,12 +837,13 @@
                     },
                     
                     // CRM配置
+                    crmActiveTab: 'config',
                     crmConfig: {
-                        apiUrl: 'https://crm.example.com/api/customers',
-                        authType: 'oauth2',
+                        apiUrl: 'https://api.crm.example.com',
+                        authType: 'API Key',
                         authParams: '',
                         queryFilter: '',
-                        syncFrequency: '0 0 2 * * ?',
+                        syncFrequency: 'daily',
                         customCron: '',
                         enabled: true
                     },
@@ -642,6 +859,13 @@
                     crmSyncLogDialogVisible: false,
                     
                     // 字段映射
+                    fieldMappings: [
+                        { localField: '客户编号', crmField: 'customer_id', fieldType: 'text', required: true },
+                        { localField: '客户名称', crmField: 'company_name', fieldType: 'text', required: true },
+                        { localField: '联系人', crmField: 'contact_name', fieldType: 'text', required: true },
+                        { localField: '联系电话', crmField: 'phone', fieldType: 'text', required: false },
+                        { localField: '邮箱', crmField: 'email', fieldType: 'text', required: false }
+                    ],
                     crmSourceFields: [
                         { fieldName: 'customer_id', fieldType: 'String', description: '客户ID' },
                         { fieldName: 'customer_name', fieldType: 'String', description: '客户名称' },
@@ -691,6 +915,72 @@
                     logDateRange: [],
                     logStatusFilter: '',
                     
+                    // 任务记录相关数据
+                    taskRecords: [
+                        {
+                            taskName: '客户基础信息采集',
+                            taskType: '数据采集',
+                            startTime: '2024-01-20 14:30:00',
+                            endTime: '2024-01-20 14:32:15',
+                            duration: '2分15秒',
+                            status: 'success',
+                            processedCount: 156,
+                            errorMessage: ''
+                        },
+                        {
+                            taskName: '设备状态数据采集',
+                            taskType: '状态监控',
+                            startTime: '2024-01-20 15:00:00',
+                            endTime: '',
+                            duration: '',
+                            status: 'running',
+                            processedCount: 0,
+                            errorMessage: ''
+                        },
+                        {
+                            taskName: '业务日志采集',
+                            taskType: '日志采集',
+                            startTime: '2024-01-20 13:45:00',
+                            endTime: '2024-01-20 13:45:30',
+                            duration: '30秒',
+                            status: 'error',
+                            processedCount: 0,
+                            errorMessage: 'API认证失败，请检查密钥配置'
+                        },
+                        {
+                            taskName: 'CRM客户同步',
+                            taskType: '数据同步',
+                            startTime: '2024-01-20 12:00:00',
+                            endTime: '2024-01-20 12:05:22',
+                            duration: '5分22秒',
+                            status: 'success',
+                            processedCount: 89,
+                            errorMessage: ''
+                        },
+                        {
+                            taskName: '系统健康检查',
+                            taskType: '健康检查',
+                            startTime: '2024-01-20 11:30:00',
+                            endTime: '2024-01-20 11:30:45',
+                            duration: '45秒',
+                            status: 'success',
+                            processedCount: 4,
+                            errorMessage: ''
+                        }
+                    ],
+                    taskRecordStatusFilter: '',
+                    taskRecordDateRange: [],
+                    taskRecordCurrentPage: 1,
+                    taskRecordPageSize: 10,
+                    
+                    // 配置详情弹窗
+                    configDetailDialogVisible: false,
+                    configDetailData: {},
+                    
+                    // 同步日志详情弹窗
+                    syncLogDetailDialogVisible: false,
+                    syncLogDetailData: {},
+                    
                     // 系统状态
                     systemHealth: {
                         cpuUsage: 45,
@@ -731,10 +1021,10 @@
                         }
                     ],
                     taskOverview: {
-                        totalTasks: 12,
-                        runningTasks: 8,
-                        todaySuccess: 45,
-                        todayFailed: 3
+                        totalTasks: 5,
+                        runningTasks: 1,
+                        todaySuccess: 3,
+                        todayFailed: 1
                     },
                     recentErrors: [
                         {
@@ -754,8 +1044,8 @@
             computed: {
                 currentPageTitle() {
                     const titleMap = {
-                        'business': '运行业务数据采集配置',
-                        'crm': 'CRM客户数据同步配置',
+                        'business': '业务采集设置',
+                        'crm': '客户同步设置',
                         'status': '任务状态'
                     };
                     return titleMap[this.currentPage] || '业务数据采集';
@@ -832,7 +1122,8 @@
                 },
                 
                 viewBusinessConfig(config) {
-                    ElMessage.info(`查看配置详情：${config.configName}`);
+                    this.configDetailData = { ...config };
+                    this.configDetailDialogVisible = true;
                 },
                 
                 toggleBusinessConfig(config) {
@@ -912,7 +1203,24 @@
                 },
                 
                 viewSyncLogDetail(log) {
-                    ElMessage.info(`查看同步日志详情：${log.syncTime}`);
+                    this.syncLogDetailData = {
+                        syncTime: log.syncTime,
+                        status: log.status,
+                        processedCount: log.processedCount,
+                        successCount: log.successCount,
+                        errorMessage: log.errorMessage,
+                        duration: '2分30秒',
+                        syncType: '增量同步',
+                        dataSource: 'CRM系统',
+                        targetSystem: '视联网适配中心',
+                        details: [
+                            { field: '客户姓名', count: log.successCount || 0, status: 'success' },
+                            { field: '联系电话', count: log.successCount || 0, status: 'success' },
+                            { field: '客户地址', count: log.successCount || 0, status: 'success' },
+                            { field: '业务类型', count: log.successCount || 0, status: 'success' }
+                        ]
+                    };
+                    this.syncLogDetailDialogVisible = true;
                 },
                 
                 // 状态展示方法
@@ -1033,6 +1341,85 @@
                         'partial': '部分成功'
                     };
                     return textMap[status] || status;
+                },
+                
+                // 任务记录相关方法
+                getTaskStatusType(status) {
+                    const statusMap = {
+                        'success': 'success',
+                        'running': 'warning',
+                        'error': 'danger',
+                        'pending': 'info'
+                    };
+                    return statusMap[status] || 'info';
+                },
+                
+                getTaskStatusText(status) {
+                    const statusMap = {
+                        'success': '成功',
+                        'running': '运行中',
+                        'error': '失败',
+                        'pending': '等待中'
+                    };
+                    return statusMap[status] || '未知';
+                },
+                
+                // 筛选任务记录
+                getFilteredTaskRecords() {
+                    let filtered = this.taskRecords;
+                    
+                    // 状态筛选
+                    if (this.taskRecordStatusFilter) {
+                        filtered = filtered.filter(record => record.status === this.taskRecordStatusFilter);
+                    }
+                    
+                    // 日期范围筛选
+                    if (this.taskRecordDateRange && this.taskRecordDateRange.length === 2) {
+                        const startDate = this.taskRecordDateRange[0];
+                        const endDate = this.taskRecordDateRange[1];
+                        filtered = filtered.filter(record => {
+                            const recordDate = new Date(record.startTime);
+                            return recordDate >= startDate && recordDate <= endDate;
+                        });
+                    }
+                    
+                    return filtered;
+                },
+                
+                // 获取当前页任务记录
+                getCurrentPageTaskRecords() {
+                    const filtered = this.getFilteredTaskRecords();
+                    const start = (this.taskRecordCurrentPage - 1) * this.taskRecordPageSize;
+                    const end = start + this.taskRecordPageSize;
+                    return filtered.slice(start, end);
+                },
+                
+                // 获取任务记录总数
+                getTaskRecordTotal() {
+                    return this.getFilteredTaskRecords().length;
+                },
+                
+                // 任务记录页码变化
+                handleTaskRecordPageChange(page) {
+                    this.taskRecordCurrentPage = page;
+                },
+                
+                // 查看任务详情
+                viewTaskDetail(record) {
+                    ElMessage.info('查看任务详情：' + record.taskName);
+                },
+                
+                // 重新执行任务
+                retryTask(record) {
+                    ElMessageBox.confirm('确认重新执行该任务？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElMessage.success('任务已重新启动');
+                    }).catch(() => {
+                        ElMessage.info('已取消操作');
+                    });
                 }
             }
         }).use(ElementPlus).mount('#app');
