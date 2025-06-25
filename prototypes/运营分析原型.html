@@ -93,20 +93,7 @@
                                     <i class="el-icon-data-line mr-2"></i>业务分析
                                 </div>
                             </div>
-                            <div class="nav-item px-4 py-2 rounded cursor-pointer" 
-                                 :class="{active: activeMenu === 'monitor'}"
-                                 @click="activeMenu = 'monitor'">
-                                <i class="el-icon-warning mr-2"></i>运行监控
-                            </div>
-                            <!-- 运行监控二级菜单 -->
-                            <div v-if="activeMenu === 'monitor'" class="ml-4 mt-2">
-                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
-                                    <i class="el-icon-bell mr-2"></i>告警规则管理
-                                </div>
-                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
-                                    <i class="el-icon-message mr-2"></i>告警事件管理
-                                </div>
-                            </div>
+
                             <div class="nav-item px-4 py-2 rounded cursor-pointer" 
                                  :class="{active: activeMenu === 'system'}"
                                  @click="activeMenu = 'system'">

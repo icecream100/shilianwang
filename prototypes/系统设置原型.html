@@ -76,6 +76,15 @@
             border-radius: 6px;
             padding: 12px;
         }
+        .role-checkbox {
+            width: 100%;
+            margin-right: 0 !important;
+            padding: 8px 0;
+        }
+        .role-checkbox .el-checkbox__label {
+            width: 100%;
+            padding-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -110,18 +119,7 @@
                                 <i class="el-icon-data-line"></i> 业务分析
                             </div>
                         </div>
-                        <div class="nav-item" :class="{active: activeMenu === 'monitor'}" @click="activeMenu = 'monitor'">
-                            <i class="el-icon-monitor"></i> 运行监控
-                        </div>
-                        <!-- 运行监控二级菜单 -->
-                        <div v-if="activeMenu === 'monitor'" class="nav-submenu">
-                            <div class="nav-item">
-                                <i class="el-icon-warning"></i> 告警规则管理
-                            </div>
-                            <div class="nav-item">
-                                <i class="el-icon-bell"></i> 告警事件管理
-                            </div>
-                        </div>
+
                         <div class="nav-item" :class="{active: activeMenu === 'system'}" @click="activeMenu = 'system'">
                             <i class="el-icon-setting"></i> 系统配置
                         </div>
@@ -132,6 +130,9 @@
                             </div>
                             <div class="nav-item" :class="{active: activeTab === 'roles'}" @click="activeTab = 'roles'">
                                 <i class="el-icon-s-custom"></i> 角色管理
+                            </div>
+                            <div class="nav-item" :class="{active: activeTab === 'depts'}" @click="activeTab = 'depts'">
+                                <i class="el-icon-office-building"></i> 部门管理
                             </div>
                         </div>
                         <div class="nav-item" :class="{active: activeMenu === 'logs'}" @click="activeMenu = 'logs'">
@@ -312,6 +313,89 @@
                         </div>
                     </div>
 
+                    <!-- 部门管理 -->
+                    <div v-if="activeTab === 'depts'" class="content-card">
+                        <div class="tab-content p-6">
+                            <div class="mb-4">
+                                <h3 class="text-xl font-bold text-gray-800">部门管理</h3>
+                                <p class="text-gray-600 mt-1">管理组织架构和部门信息</p>
+                            </div>
+                            <!-- 筛选区域 -->
+                            <div class="mb-6">
+                                <el-form :inline="true" :model="deptFilters" class="demo-form-inline">
+                                    <el-form-item label="部门名称">
+                                        <el-input v-model="deptFilters.deptName" placeholder="请输入部门名称" clearable style="width: 200px"></el-input>
+                                    </el-form-item>
+                                    <el-form-item label="状态">
+                                        <el-select v-model="deptFilters.status" placeholder="请选择状态" clearable style="width: 120px">
+                                            <el-option label="启用" :value="1"></el-option>
+                                            <el-option label="禁用" :value="0"></el-option>
+                                        </el-select>
+                                    </el-form-item>
+                                    <el-form-item>
+                                        <el-button type="primary" @click="searchDepts">查询</el-button>
+                                        <el-button @click="resetDeptFilters">重置</el-button>
+                                    </el-form-item>
+                                </el-form>
+                                
+                                <!-- 分隔线和操作按钮区 -->
+                                <div class="border-t border-gray-200 pt-4 mt-4">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <el-button type="primary" @click="showAddDeptDialog">新增部门</el-button>
+                                            <el-button type="info" @click="expandAll">展开全部</el-button>
+                                            <el-button type="info" @click="collapseAll">折叠全部</el-button>
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            共 {{ deptPagination.total }} 条记录
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 部门树表格 -->
+                            <el-table 
+                                :data="filteredDepts" 
+                                v-loading="deptLoading" 
+                                row-key="id" 
+                                :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                                :default-expand-all="false"
+                                ref="deptTableRef"
+                                style="width: 100%">
+                                <el-table-column prop="deptName" label="部门名称" min-width="200">
+                                    <template #default="scope">
+                                        <i class="el-icon-office-building" style="margin-right: 5px; color: #409EFF;"></i>
+                                        {{ scope.row.deptName }}
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="orderNum" label="排序" width="80" align="center"></el-table-column>
+                                <el-table-column prop="leader" label="负责人" width="120" align="center"></el-table-column>
+                                <el-table-column prop="phone" label="联系电话" width="150" align="center"></el-table-column>
+                                <el-table-column prop="email" label="邮箱" width="180" align="center"></el-table-column>
+                                <el-table-column label="状态" width="80" align="center">
+                                    <template #default="scope">
+                                        <span :class="scope.row.status === 1 ? 'status-tag status-enabled' : 'status-tag status-disabled'">
+                                            {{ scope.row.status === 1 ? '启用' : '禁用' }}
+                                        </span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="createTime" label="创建时间" width="180" align="center"></el-table-column>
+                                <el-table-column label="操作" width="320" align="center">
+                                    <template #default="scope">
+                                        <el-button size="small" @click="editDept(scope.row)">编辑</el-button>
+                                        <el-button size="small" type="success" @click="addSubDept(scope.row)">新增下级</el-button>
+                                        <el-button size="small" :type="scope.row.status === 1 ? 'warning' : 'success'" @click="toggleDeptStatus(scope.row)">
+                                            {{ scope.row.status === 1 ? '禁用' : '启用' }}
+                                        </el-button>
+                                        <el-button size="small" type="danger" @click="deleteDept(scope.row)" :disabled="scope.row.children && scope.row.children.length > 0">
+                                            删除
+                                        </el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+
                     <!-- 角色管理 -->
                     <div v-if="activeTab === 'roles'" class="content-card">
                         <div class="tab-content p-6">
@@ -406,6 +490,11 @@
                         <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id"></el-option>
                     </el-select>
                 </el-form-item>
+                <el-form-item label="用户角色" prop="roleIds">
+                    <el-select v-model="userForm.roleIds" placeholder="请选择角色" multiple style="width: 100%">
+                        <el-option v-for="role in roles" :key="role.id" :label="role.roleName" :value="role.id"></el-option>
+                    </el-select>
+                </el-form-item>
                 <el-form-item label="初始密码" prop="password" v-if="!userForm.id">
                     <el-input v-model="userForm.password" type="password" placeholder="请输入初始密码" show-password></el-input>
                 </el-form-item>
@@ -452,21 +541,30 @@
         </el-dialog>
 
         <!-- 分配角色对话框 -->
-        <el-dialog v-model="assignRoleDialogVisible" title="分配角色" width="500px">
+        <el-dialog v-model="assignRoleDialogVisible" title="分配角色" width="400px">
             <div class="mb-4">
                 <strong>用户：</strong>{{ selectedUser.realName }} ({{ selectedUser.username }})
             </div>
-            <el-transfer
-                v-model="selectedUserRoles"
-                :data="allRoles"
-                :titles="['可选角色', '已分配角色']"
-                :button-texts="['移除', '分配']"
-                :format="{
-                    noChecked: '${total}',
-                    hasChecked: '${checked}/${total}'
-                }"
-                style="text-align: left; display: inline-block">
-            </el-transfer>
+            <div class="role-assignment-container">
+                <div class="mb-3">
+                    <span class="text-sm text-gray-600">请选择要分配的角色：</span>
+                </div>
+                <el-checkbox-group v-model="selectedUserRoleIds" class="flex flex-col space-y-2">
+                    <el-checkbox 
+                        v-for="role in roles" 
+                        :key="role.id" 
+                        :label="role.id"
+                        :disabled="role.status === 0"
+                        class="role-checkbox">
+                        <span class="flex items-center justify-between w-full">
+                            <span>{{ role.roleName }}</span>
+                            <el-tag :type="role.status === 1 ? 'success' : 'danger'" size="small">
+                                {{ role.status === 1 ? '启用' : '禁用' }}
+                            </el-tag>
+                        </span>
+                    </el-checkbox>
+                </el-checkbox-group>
+            </div>
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="assignRoleDialogVisible = false">取消</el-button>
@@ -495,6 +593,50 @@
                 <span class="dialog-footer">
                     <el-button @click="permissionDialogVisible = false">取消</el-button>
                     <el-button type="primary" @click="saveRolePermissions">确定</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 新增/编辑部门对话框 -->
+        <el-dialog v-model="deptDialogVisible" :title="deptDialogTitle" width="600px">
+            <el-form :model="deptForm" :rules="deptRules" ref="deptFormRef" label-width="100px">
+                <el-form-item label="上级部门">
+                    <el-tree-select
+                        v-model="deptForm.parentId"
+                        :data="deptTreeData"
+                        :props="{ children: 'children', label: 'deptName', value: 'id' }"
+                        placeholder="请选择上级部门"
+                        check-strictly
+                        :render-after-expand="false"
+                        style="width: 100%">
+                    </el-tree-select>
+                </el-form-item>
+                <el-form-item label="部门名称" prop="deptName">
+                    <el-input v-model="deptForm.deptName" placeholder="请输入部门名称"></el-input>
+                </el-form-item>
+                <el-form-item label="显示排序" prop="orderNum">
+                    <el-input-number v-model="deptForm.orderNum" :min="0" :max="999" controls-position="right" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="负责人">
+                    <el-input v-model="deptForm.leader" placeholder="请输入负责人"></el-input>
+                </el-form-item>
+                <el-form-item label="联系电话">
+                    <el-input v-model="deptForm.phone" placeholder="请输入联系电话"></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱">
+                    <el-input v-model="deptForm.email" placeholder="请输入邮箱"></el-input>
+                </el-form-item>
+                <el-form-item label="部门状态">
+                    <el-radio-group v-model="deptForm.status">
+                        <el-radio :label="1">启用</el-radio>
+                        <el-radio :label="0">禁用</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="deptDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveDept">确定</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -577,6 +719,7 @@
                         phoneNumber: '',
                         email: '',
                         deptId: null,
+                        roleIds: [],
                         password: '',
                         status: 1
                     },
@@ -647,8 +790,7 @@
                     // 分配角色相关数据
                     assignRoleDialogVisible: false,
                     selectedUser: {},
-                    selectedUserRoles: [],
-                    allRoles: [],
+                    selectedUserRoleIds: [],
                     
                     // 角色授权相关数据
                     permissionDialogVisible: false,
@@ -670,14 +812,7 @@
                                         { id: 133, label: '业务分析' }
                                     ]
                                 },
-                                {
-                                    id: 14,
-                                    label: '运行监控',
-                                    children: [
-                                        { id: 141, label: '告警规则管理' },
-                                        { id: 142, label: '告警事件管理' }
-                                    ]
-                                },
+
                                 {
                                     id: 15,
                                     label: '系统配置',
@@ -713,8 +848,319 @@
                                 { id: 32, label: '客户同步设置' },
                                 { id: 33, label: '任务状态' }
                             ]
+                        },
+                        {
+                            id: 17,
+                            deptName: '北京分公司',
+                            parentId: 0,
+                            orderNum: 2,
+                            leader: '张分总',
+                            phone: '13800138017',
+                            email: 'beijing@example.com',
+                            status: 1,
+                            createTime: '2024-01-15 10:00:00',
+                            children: [
+                                {
+                                    id: 18,
+                                    deptName: '北京技术部',
+                                    parentId: 17,
+                                    orderNum: 1,
+                                    leader: '李部长',
+                                    phone: '13800138018',
+                                    email: 'bjtech@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-15 10:00:00'
+                                },
+                                {
+                                    id: 19,
+                                    deptName: '北京销售部',
+                                    parentId: 17,
+                                    orderNum: 2,
+                                    leader: '王部长',
+                                    phone: '13800138019',
+                                    email: 'bjsales@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-15 10:00:00'
+                                }
+                            ]
+                        },
+                        {
+                            id: 20,
+                            deptName: '上海分公司',
+                            parentId: 0,
+                            orderNum: 3,
+                            leader: '赵分总',
+                            phone: '13800138020',
+                            email: 'shanghai@example.com',
+                            status: 1,
+                            createTime: '2024-02-01 10:00:00',
+                            children: [
+                                {
+                                    id: 21,
+                                    deptName: '上海运营部',
+                                    parentId: 20,
+                                    orderNum: 1,
+                                    leader: '陈部长',
+                                    phone: '13800138021',
+                                    email: 'shoperation@example.com',
+                                    status: 1,
+                                    createTime: '2024-02-01 10:00:00'
+                                },
+                                {
+                                    id: 22,
+                                    deptName: '上海客服部',
+                                    parentId: 20,
+                                    orderNum: 2,
+                                    leader: '刘部长',
+                                    phone: '13800138022',
+                                    email: 'shservice@example.com',
+                                    status: 1,
+                                    createTime: '2024-02-01 10:00:00'
+                                }
+                            ]
+                        },
+                        {
+                            id: 23,
+                            deptName: '深圳分公司',
+                            parentId: 0,
+                            orderNum: 4,
+                            leader: '周分总',
+                            phone: '13800138023',
+                            email: 'shenzhen@example.com',
+                            status: 0,
+                            createTime: '2024-03-01 10:00:00',
+                            children: [
+                                {
+                                    id: 24,
+                                    deptName: '深圳研发部',
+                                    parentId: 23,
+                                    orderNum: 1,
+                                    leader: '吴部长',
+                                    phone: '13800138024',
+                                    email: 'szrd@example.com',
+                                    status: 1,
+                                    createTime: '2024-03-01 10:00:00'
+                                }
+                            ]
                         }
-                    ]
+                    ],
+                    
+                    // 部门管理相关数据
+                    deptLoading: false,
+                    deptFilters: {
+                        deptName: '',
+                        status: ''
+                    },
+                    deptPagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
+                    departments: [
+                        {
+                            id: 1,
+                            deptName: '视联网科技有限公司',
+                            parentId: 0,
+                            orderNum: 1,
+                            leader: '张总',
+                            phone: '13800138000',
+                            email: 'ceo@example.com',
+                            status: 1,
+                            createTime: '2024-01-01 10:00:00',
+                            children: [
+                                {
+                                    id: 2,
+                                    deptName: '技术部',
+                                    parentId: 1,
+                                    orderNum: 1,
+                                    leader: '李经理',
+                                    phone: '13800138001',
+                                    email: 'tech@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-01 10:00:00',
+                                    children: [
+                                        {
+                                            id: 5,
+                                            deptName: '前端开发组',
+                                            parentId: 2,
+                                            orderNum: 1,
+                                            leader: '王组长',
+                                            phone: '13800138005',
+                                            email: 'frontend@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        },
+                                        {
+                                            id: 6,
+                                            deptName: '后端开发组',
+                                            parentId: 2,
+                                            orderNum: 2,
+                                            leader: '赵组长',
+                                            phone: '13800138006',
+                                            email: 'backend@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: 3,
+                                    deptName: '运营部',
+                                    parentId: 1,
+                                    orderNum: 2,
+                                    leader: '刘经理',
+                                    phone: '13800138002',
+                                    email: 'operation@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-01 10:00:00',
+                                    children: [
+                                        {
+                                            id: 7,
+                                            deptName: '市场推广组',
+                                            parentId: 3,
+                                            orderNum: 1,
+                                            leader: '周组长',
+                                            phone: '13800138007',
+                                            email: 'marketing@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        },
+                                        {
+                                            id: 8,
+                                            deptName: '客户服务组',
+                                            parentId: 3,
+                                            orderNum: 2,
+                                            leader: '吴组长',
+                                            phone: '13800138008',
+                                            email: 'service@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: 4,
+                                    deptName: '业务部',
+                                    parentId: 1,
+                                    orderNum: 3,
+                                    leader: '陈经理',
+                                    phone: '13800138003',
+                                    email: 'business@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-01 10:00:00',
+                                    children: [
+                                        {
+                                            id: 9,
+                                            deptName: '销售一组',
+                                            parentId: 4,
+                                            orderNum: 1,
+                                            leader: '郑组长',
+                                            phone: '13800138009',
+                                            email: 'sales1@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        },
+                                        {
+                                            id: 10,
+                                            deptName: '销售二组',
+                                            parentId: 4,
+                                            orderNum: 2,
+                                            leader: '孙组长',
+                                            phone: '13800138010',
+                                            email: 'sales2@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        },
+                                        {
+                                            id: 11,
+                                            deptName: '商务支持组',
+                                            parentId: 4,
+                                            orderNum: 3,
+                                            leader: '钱组长',
+                                            phone: '13800138011',
+                                            email: 'support@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: 12,
+                                    deptName: '人力资源部',
+                                    parentId: 1,
+                                    orderNum: 4,
+                                    leader: '许经理',
+                                    phone: '13800138012',
+                                    email: 'hr@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-01 10:00:00',
+                                    children: [
+                                        {
+                                            id: 13,
+                                            deptName: '招聘培训组',
+                                            parentId: 12,
+                                            orderNum: 1,
+                                            leader: '何组长',
+                                            phone: '13800138013',
+                                            email: 'recruit@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        },
+                                        {
+                                            id: 14,
+                                            deptName: '薪酬绩效组',
+                                            parentId: 12,
+                                            orderNum: 2,
+                                            leader: '卢组长',
+                                            phone: '13800138014',
+                                            email: 'salary@example.com',
+                                            status: 1,
+                                            createTime: '2024-01-01 10:00:00'
+                                        }
+                                    ]
+                                },
+                                {
+                                    id: 15,
+                                    deptName: '财务部',
+                                    parentId: 1,
+                                    orderNum: 5,
+                                    leader: '沈经理',
+                                    phone: '13800138015',
+                                    email: 'finance@example.com',
+                                    status: 1,
+                                    createTime: '2024-01-01 10:00:00'
+                                },
+                                {
+                                    id: 16,
+                                    deptName: '行政部',
+                                    parentId: 1,
+                                    orderNum: 6,
+                                    leader: '韩经理',
+                                    phone: '13800138016',
+                                    email: 'admin@example.com',
+                                    status: 0,
+                                    createTime: '2024-01-01 10:00:00'
+                                }
+                            ]
+                        }
+                    ],
+                    deptDialogVisible: false,
+                    deptDialogTitle: '',
+                    deptForm: {
+                        id: null,
+                        parentId: 0,
+                        deptName: '',
+                        orderNum: 1,
+                        leader: '',
+                        phone: '',
+                        email: '',
+                        status: 1
+                    },
+                    deptRules: {
+                        deptName: [{ required: true, message: '请输入部门名称', trigger: 'blur' }],
+                        orderNum: [{ required: true, message: '请输入显示排序', trigger: 'blur' }]
+                    },
+                    deptTreeData: []
                 };
             },
             computed: {
@@ -741,6 +1187,50 @@
                         filtered = filtered.filter(role => role.roleName.includes(this.roleFilters.roleName));
                     }
                     this.rolePagination.total = filtered.length;
+                    return filtered;
+                },
+                filteredDepts() {
+                    let filtered = this.departments;
+                    if (this.deptFilters.deptName) {
+                        // 递归过滤部门树
+                        const filterDeptTree = (depts) => {
+                            return depts.filter(dept => {
+                                const nameMatch = dept.deptName.includes(this.deptFilters.deptName);
+                                if (dept.children && dept.children.length > 0) {
+                                    dept.children = filterDeptTree(dept.children);
+                                    return nameMatch || dept.children.length > 0;
+                                }
+                                return nameMatch;
+                            });
+                        };
+                        filtered = filterDeptTree([...filtered]);
+                    }
+                    if (this.deptFilters.status !== '') {
+                        // 递归过滤状态
+                        const filterByStatus = (depts) => {
+                            return depts.filter(dept => {
+                                const statusMatch = dept.status == this.deptFilters.status;
+                                if (dept.children && dept.children.length > 0) {
+                                    dept.children = filterByStatus(dept.children);
+                                    return statusMatch || dept.children.length > 0;
+                                }
+                                return statusMatch;
+                            });
+                        };
+                        filtered = filterByStatus(filtered);
+                    }
+                    // 计算总数（包括子部门）
+                    const countDepts = (depts) => {
+                        let count = 0;
+                        depts.forEach(dept => {
+                            count++;
+                            if (dept.children && dept.children.length > 0) {
+                                count += countDepts(dept.children);
+                            }
+                        });
+                        return count;
+                    };
+                    this.deptPagination.total = countDepts(filtered);
                     return filtered;
                 }
             },
@@ -865,17 +1355,16 @@
                 },
                 assignRoles(user) {
                     this.selectedUser = user;
-                    this.allRoles = this.roles.map(role => ({
-                        key: role.id,
-                        label: role.roleName
-                    }));
-                    // 模拟用户已有角色
-                    this.selectedUserRoles = [1]; // 假设用户已有第一个角色
+                    // 获取用户当前角色ID列表
+                    const currentRoleNames = user.roles || [];
+                    this.selectedUserRoleIds = this.roles
+                        .filter(role => currentRoleNames.includes(role.roleName))
+                        .map(role => role.id);
                     this.assignRoleDialogVisible = true;
                 },
                 saveUserRoles() {
                     // 更新用户角色
-                    const roleNames = this.selectedUserRoles.map(roleId => {
+                    const roleNames = this.selectedUserRoleIds.map(roleId => {
                         const role = this.roles.find(r => r.id === roleId);
                         return role ? role.roleName : '';
                     }).filter(name => name);
@@ -988,12 +1477,147 @@
                     
                     this.permissionDialogVisible = false;
                     ElMessage.success('角色授权成功');
+                },
+                
+                // 部门管理方法
+                searchDepts() {
+                    this.deptLoading = true;
+                    setTimeout(() => {
+                        this.deptLoading = false;
+                    }, 500);
+                },
+                resetDeptFilters() {
+                    this.deptFilters = {
+                        deptName: '',
+                        status: ''
+                    };
+                },
+                showAddDeptDialog() {
+                    this.deptDialogTitle = '新增部门';
+                    this.deptForm = {
+                        id: null,
+                        parentId: 0,
+                        deptName: '',
+                        orderNum: 1,
+                        leader: '',
+                        phone: '',
+                        email: '',
+                        status: 1
+                    };
+                    this.deptDialogVisible = true;
+                },
+                editDept(dept) {
+                    this.deptDialogTitle = '编辑部门';
+                    this.deptForm = { ...dept };
+                    this.deptDialogVisible = true;
+                },
+                saveDept() {
+                    this.$refs.deptFormRef.validate((valid) => {
+                        if (valid) {
+                            if (this.deptForm.id) {
+                                // 编辑部门
+                                this.updateDeptInTree(this.departments, this.deptForm);
+                                ElMessage.success('部门信息修改成功');
+                            } else {
+                                // 新增部门
+                                this.deptForm.id = Date.now();
+                                this.deptForm.createTime = new Date().toLocaleString();
+                                this.addDeptToTree(this.departments, this.deptForm);
+                                ElMessage.success('新增部门成功');
+                            }
+                            this.deptDialogVisible = false;
+                        }
+                    });
+                },
+                updateDeptInTree(tree, dept) {
+                    for (let i = 0; i < tree.length; i++) {
+                        if (tree[i].id === dept.id) {
+                            Object.assign(tree[i], dept);
+                            return true;
+                        }
+                        if (tree[i].children && this.updateDeptInTree(tree[i].children, dept)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                addDeptToTree(tree, dept) {
+                    if (dept.parentId === 0) {
+                        tree.push(dept);
+                        return;
+                    }
+                    for (let i = 0; i < tree.length; i++) {
+                        if (tree[i].id === dept.parentId) {
+                            if (!tree[i].children) {
+                                tree[i].children = [];
+                            }
+                            tree[i].children.push(dept);
+                            return;
+                        }
+                        if (tree[i].children) {
+                            this.addDeptToTree(tree[i].children, dept);
+                        }
+                    }
+                },
+                toggleDeptStatus(dept) {
+                    const action = dept.status === 1 ? '禁用' : '启用';
+                    ElMessageBox.confirm(`确定要${action}部门 ${dept.deptName} 吗？${action === '禁用' ? '禁用后，该部门下的用户将无法正常使用系统。' : ''}`, '确认操作', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        dept.status = dept.status === 1 ? 0 : 1;
+                        ElMessage.success(`部门状态修改成功`);
+                    });
+                },
+                deleteDept(dept) {
+                    if (dept.children && dept.children.length > 0) {
+                        ElMessage.warning('该部门下存在子部门，请先删除子部门');
+                        return;
+                    }
+                    ElMessageBox.confirm(`确定要删除部门 ${dept.deptName} 吗？删除后，该部门下的用户将被移至上级部门。`, '确认删除', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        this.deleteDeptFromTree(this.departments, dept.id);
+                        ElMessage.success('部门删除成功');
+                    });
+                },
+                deleteDeptFromTree(tree, deptId) {
+                    for (let i = 0; i < tree.length; i++) {
+                        if (tree[i].id === deptId) {
+                            tree.splice(i, 1);
+                            return true;
+                        }
+                        if (tree[i].children && this.deleteDeptFromTree(tree[i].children, deptId)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                expandAll() {
+                    this.$refs.deptTableRef.store.states.expandRows.value = this.getAllDeptIds(this.departments);
+                },
+                collapseAll() {
+                    this.$refs.deptTableRef.store.states.expandRows.value = [];
+                },
+                getAllDeptIds(tree) {
+                    let ids = [];
+                    tree.forEach(dept => {
+                        ids.push(dept);
+                        if (dept.children) {
+                            ids = ids.concat(this.getAllDeptIds(dept.children));
+                        }
+                    });
+                    return ids;
                 }
             },
             mounted() {
                 // 初始化分页总数
                 this.userPagination.total = this.users.length;
                 this.rolePagination.total = this.roles.length;
+                this.deptPagination.total = this.departments.length;
             }
         }).use(ElementPlus).mount('#app');
     </script>
