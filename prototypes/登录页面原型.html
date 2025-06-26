@@ -53,7 +53,6 @@
                         <i class="el-icon-monitor"></i>
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">视联网适配中心</h2>
-                    <p class="text-gray-600 mt-2">请登录您的账户</p>
                 </div>
                 
                 <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" @submit.prevent="handleLogin">
@@ -94,8 +93,6 @@
                     
                     <el-form-item>
                         <div class="flex items-center justify-between w-full">
-                            <el-checkbox v-model="loginForm.rememberMe">记住我</el-checkbox>
-                            <el-link type="primary" @click="showForgotPassword = true">忘记密码？</el-link>
                         </div>
                     </el-form-item>
                     
@@ -114,25 +111,6 @@
             </div>
         </div>
 
-        <!-- 忘记密码对话框 -->
-        <el-dialog v-model="showForgotPassword" title="找回密码" width="400px">
-            <el-form :model="forgotPasswordForm" :rules="forgotPasswordRules" ref="forgotPasswordFormRef">
-                <el-form-item label="用户名" prop="username">
-                    <el-input v-model="forgotPasswordForm.username" placeholder="请输入用户名"></el-input>
-                </el-form-item>
-                <el-form-item label="邮箱" prop="email">
-                    <el-input v-model="forgotPasswordForm.email" placeholder="请输入注册邮箱"></el-input>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="showForgotPassword = false">取消</el-button>
-                    <el-button type="primary" @click="handleForgotPassword" :loading="forgotPasswordLoading">
-                        发送重置链接
-                    </el-button>
-                </span>
-            </template>
-        </el-dialog>
     </div>
 
     <script>
@@ -160,18 +138,7 @@
                 const captchaCode = ref('A8B9');
                 const loginFormRef = ref(null);
                 
-                // 忘记密码
-                const showForgotPassword = ref(false);
-                const forgotPasswordForm = reactive({
-                    username: '',
-                    email: ''
-                });
-                const forgotPasswordRules = {
-                    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-                    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }, { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }]
-                };
-                const forgotPasswordLoading = ref(false);
-                const forgotPasswordFormRef = ref(null);
+
                 
                 // 方法
                 const handleLogin = async () => {
@@ -215,23 +182,7 @@
                     captchaCode.value = result;
                 };
                 
-                const handleForgotPassword = async () => {
-                    if (!forgotPasswordFormRef.value) return;
-                    
-                    try {
-                        await forgotPasswordFormRef.value.validate();
-                        forgotPasswordLoading.value = true;
-                        
-                        // 模拟发送重置链接
-                        setTimeout(() => {
-                            ElMessage.success('重置链接已发送到您的邮箱，请查收');
-                            showForgotPassword.value = false;
-                            forgotPasswordLoading.value = false;
-                        }, 1000);
-                    } catch (error) {
-                        console.log('表单验证失败:', error);
-                    }
-                };
+
                 
                 return {
                     loginForm,
@@ -240,14 +191,8 @@
                     showCaptcha,
                     captchaCode,
                     loginFormRef,
-                    showForgotPassword,
-                    forgotPasswordForm,
-                    forgotPasswordRules,
-                    forgotPasswordLoading,
-                    forgotPasswordFormRef,
                     handleLogin,
-                    refreshCaptcha,
-                    handleForgotPassword
+                    refreshCaptcha
                 };
             }
         }).use(ElementPlus).mount('#app');

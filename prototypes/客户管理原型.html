@@ -483,10 +483,10 @@
                 </el-descriptions>
             </div>
             <template #footer>
-                <span class="dialog-footer">
+                <div class="dialog-footer">
                     <el-button @click="showCustomerDetail = false">关闭</el-button>
-                    <el-button type="primary" @click="editCustomer(selectedCustomer)">编辑</el-button>
-                </span>
+                    <el-button type="primary" @click="editCustomer(selectedCustomer)">编辑客户</el-button>
+                </div>
             </template>
         </el-dialog>
 
@@ -590,7 +590,12 @@
         const { createApp } = Vue;
         const { ElMessage, ElMessageBox } = ElementPlus;
         
-        createApp({
+        // 注册所有图标
+        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+            app.component(key, component);
+        }
+        
+        const app = createApp({
             data() {
                 return {
                     loading: false,
@@ -1082,88 +1087,14 @@
                     return texts[status] || status;
                 },
                 
-                // 授权资源管理相关方法
-                manageResources(customer) {
-                    this.selectedCustomer = customer;
-                    this.showResourceManagement = true;
-                    this.resourceActiveTab = 'resources';
-                },
-                
-                removeAuthorization(resource) {
-                    ElMessageBox.confirm(
-                        `确定要取消对 "${resource.resourceName}" 的授权吗？`,
-                        '确认取消授权',
-                        {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning',
-                        }
-                    ).then(() => {
-                        const index = this.authorizedResources.findIndex(r => r.id === resource.id);
-                        if (index > -1) {
-                            this.authorizedResources.splice(index, 1);
-                            ElMessage.success('授权已取消');
-                        }
-                    }).catch(() => {
-                        ElMessage.info('已取消操作');
-                    });
-                },
-                
-                handleResourceSelection(selection) {
-                    this.selectedResources = selection;
-                },
-                
-                confirmResourceAuthorization() {
-                    if (this.selectedResources.length === 0) {
-                        ElMessage.warning('请选择要授权的资源');
-                        return;
-                    }
-                    
-                    // 将选中的资源添加到已授权列表
-                    this.selectedResources.forEach(resource => {
-                        const exists = this.authorizedResources.find(r => r.id === resource.id);
-                        if (!exists) {
-                            this.authorizedResources.push({
-                                ...resource
-                            });
-                            
-                            // 添加权限记录
-                            this.resourcePermissions.push({
-                                resourceName: resource.resourceName,
-                                permission: '查看',
-                                grantTime: new Date().toLocaleString(),
-                                expireTime: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleString(),
-                                status: 'active'
-                            });
-                        }
-                    });
-                    
-                    // 从可用资源中移除已授权的资源
-                    this.selectedResources.forEach(resource => {
-                        const index = this.availableResources.findIndex(r => r.id === resource.id);
-                        if (index > -1) {
-                            this.availableResources.splice(index, 1);
-                        }
-                    });
-                    
-                    ElMessage.success(`成功授权 ${this.selectedResources.length} 个资源`);
-                    this.showAddResourceDialog = false;
-                    this.selectedResources = [];
-                },
-                
-                saveResourceAuthorization() {
-                    ElMessage.success('资源授权保存成功');
-                    this.showResourceManagement = false;
-                },
-                
                 handleMenuSelect(key) {
                     this.activeMenu = key;
                     // 这里可以添加不同菜单项的处理逻辑
                     if (key === 'customer') {
                         // 客户管理相关逻辑
                     } else if (key === 'resource') {
-                        // 授权资源管理相关逻辑
-                        ElMessage.info('授权资源管理功能开发中...');
+                        // 资源管理相关逻辑
+                        ElMessage.info('资源管理功能开发中...');
                     }
                 }
             }
