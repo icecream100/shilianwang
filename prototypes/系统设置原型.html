@@ -501,12 +501,6 @@
                 <el-form-item label="备注" prop="remark">
                     <el-input v-model="userForm.remark" type="textarea" :rows="3" placeholder="请输入备注" maxlength="200" show-word-limit></el-input>
                 </el-form-item>
-                <el-form-item label="状态">
-                    <el-radio-group v-model="userForm.status">
-                        <el-radio :label="1">启用</el-radio>
-                        <el-radio :label="0">禁用</el-radio>
-                    </el-radio-group>
-                </el-form-item>
             </el-form>
             <template #footer>
                 <span class="dialog-footer">
@@ -527,12 +521,6 @@
                 </el-form-item>
                 <el-form-item label="角色描述">
                     <el-input v-model="roleForm.description" type="textarea" :rows="3" placeholder="请输入角色描述"></el-input>
-                </el-form-item>
-                <el-form-item label="状态">
-                    <el-radio-group v-model="roleForm.status">
-                        <el-radio :label="1">启用</el-radio>
-                        <el-radio :label="0">禁用</el-radio>
-                    </el-radio-group>
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -628,12 +616,6 @@
                 </el-form-item>
                 <el-form-item label="邮箱">
                     <el-input v-model="deptForm.email" placeholder="请输入邮箱"></el-input>
-                </el-form-item>
-                <el-form-item label="部门状态">
-                    <el-radio-group v-model="deptForm.status">
-                        <el-radio :label="1">启用</el-radio>
-                        <el-radio :label="0">禁用</el-radio>
-                    </el-radio-group>
                 </el-form-item>
             </el-form>
             <template #footer>
@@ -1472,8 +1454,7 @@
                         roleIds: [],
                         password: '',
                         confirmPassword: '',
-                        remark: '',
-                        status: 1
+                        remark: ''
                     };
                     this.userDialogVisible = true;
                 },
@@ -1496,6 +1477,7 @@
                                 // 新增用户
                                 this.userForm.id = Date.now();
                                 this.userForm.createTime = new Date().toLocaleString();
+                                this.userForm.status = 1; // 新增用户默认启用
                                 this.users.push({ ...this.userForm });
                                 ElMessage.success('新增用户成功');
                             }
@@ -1574,8 +1556,7 @@
                         id: null,
                         roleName: '',
                         roleKey: '',
-                        description: '',
-                        status: 1
+                        description: ''
                     };
                     this.roleDialogVisible = true;
                 },
@@ -1598,6 +1579,7 @@
                                 // 新增角色
                                 this.roleForm.id = Date.now();
                                 this.roleForm.createTime = new Date().toLocaleString();
+                                this.roleForm.status = 1; // 新增角色默认启用
                                 this.roles.push({ ...this.roleForm });
                                 ElMessage.success('新增角色成功');
                             }
@@ -1679,8 +1661,7 @@
                         orderNum: 1,
                         leader: '',
                         phone: '',
-                        email: '',
-                        status: 1
+                        email: ''
                     };
                     this.deptDialogVisible = true;
                 },
@@ -1700,6 +1681,7 @@
                                 // 新增部门
                                 this.deptForm.id = Date.now();
                                 this.deptForm.createTime = new Date().toLocaleString();
+                                this.deptForm.status = 1; // 新增部门默认启用
                                 this.addDeptToTree(this.departments, this.deptForm);
                                 ElMessage.success('新增部门成功');
                             }
