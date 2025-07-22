@@ -26,18 +26,29 @@
             border-left: 4px solid #409eff;
         }
         .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .status-online { background-color: #67c23a; }
-        .status-warning { background-color: #e6a23c; }
-        .status-offline { background-color: #f56c6c; }
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    margin-right: 4px;
+                    box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+                }
+                .status-online { background-color: #67c23a; }
+                .status-warning { background-color: #e6a23c; }
+                .status-offline { background-color: #f56c6c; }
         .chart-container {
             height: 300px;
             width: 100%;
+        }
+        .el-table .el-table__header-wrapper th {
+            background: #f5f7fa !important;
+            color: #333 !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+        }
+        .el-table .el-table__body-wrapper td {
+            color: #333 !important;
+            font-size: 12px !important;
         }
         .sidebar {
             background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
@@ -262,16 +273,16 @@
                                 </div>
                             </div>
 
-                            <!-- 活动视频流数量 -->
+                            <!-- 业务数量 -->
                             <div class="metric-card">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm text-gray-600">活动视频流数量</p>
-                                        <p class="text-3xl font-bold text-orange-600">{{ metrics.activeStreams }}</p>
-                                        <p class="text-xs text-gray-500 mt-1">实时活跃</p>
+                                        <p class="text-sm text-gray-600">业务数量</p>
+                                        <p class="text-3xl font-bold text-orange-600">{{ metrics.totalBusiness }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">累计总量</p>
                                     </div>
                                     <div class="text-orange-500">
-                                        <i class="el-icon-video-camera text-3xl"></i>
+                                        <i class="el-icon-document text-3xl"></i>
                                     </div>
                                 </div>
                             </div>
@@ -293,69 +304,75 @@
                         </div>
                     </div>
 
-                    <!-- 4.2 适配状态与服务健康度监控区 -->
+                    <!-- 4.1.1 业务运营指标展示区 -->
                     <div class="mb-8">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">服务健康度监控</h3>
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <!-- 微服务状态 -->
-                            <div class="bg-white rounded-lg shadow p-6">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4">微服务状态</h4>
-                                <div class="space-y-3">
-                                    <div v-for="service in services" :key="service.name" class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                        <div class="flex items-center">
-                                            <span :class="['status-indicator', service.status === 'online' ? 'status-online' : service.status === 'warning' ? 'status-warning' : 'status-offline']"></span>
-                                            <span class="font-medium">{{ service.name }}</span>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-sm font-semibold" :class="service.status === 'online' ? 'text-green-600' : service.status === 'warning' ? 'text-yellow-600' : 'text-red-600'">
-                                                {{ service.score }}分
-                                            </div>
-                                            <div class="text-xs text-gray-500">{{ service.statusText }}</div>
-                                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">业务运营指标</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                            <!-- 订购业务总量 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">订购业务总量</p>
+                                        <p class="text-3xl font-bold text-blue-600">{{ metrics.subscribeTotal }}</p>
+                                        <p class="text-xs text-green-500 mt-1">
+                                            <i class="el-icon-arrow-up"></i> 增长率 {{ metrics.subscribeGrowth || 15.8 }}%
+                                        </p>
+                                    </div>
+                                    <div class="text-blue-500">
+                                        <i class="el-icon-plus text-3xl"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 协议适配成功率 -->
-                            <div class="bg-white rounded-lg shadow p-6">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4">协议适配成功率</h4>
-                                <div class="space-y-4">
+                            <!-- 退订业务总量 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
                                     <div>
-                                        <div class="flex justify-between items-center mb-2">
-                                            <span class="text-sm font-medium">GB/T 28181</span>
-                                            <span class="text-sm font-bold text-green-600">{{ protocolStats.gb28181 }}%</span>
-                                        </div>
-                                        <el-progress :percentage="protocolStats.gb28181" :show-text="false" stroke-width="8"></el-progress>
+                                        <p class="text-sm text-gray-600">退订业务总量</p>
+                                        <p class="text-3xl font-bold text-red-600">{{ metrics.unsubscribeTotal }}</p>
+                                        <p class="text-xs text-red-500 mt-1">
+                                            <i class="el-icon-minus"></i> 流失率 {{ metrics.churnRate }}%
+                                        </p>
                                     </div>
-                                    <div>
-                                        <div class="flex justify-between items-center mb-2">
-                                            <span class="text-sm font-medium">CRM数据同步</span>
-                                            <span class="text-sm font-bold text-blue-600">{{ protocolStats.crmSync }}%</span>
-                                        </div>
-                                        <el-progress :percentage="protocolStats.crmSync" :show-text="false" stroke-width="8" color="#409eff"></el-progress>
-                                    </div>
-                                    <div>
-                                        <div class="flex justify-between items-center mb-2">
-                                            <span class="text-sm font-medium">元数据同步</span>
-                                            <span class="text-sm font-bold text-purple-600">{{ protocolStats.metaSync }}%</span>
-                                        </div>
-                                        <el-progress :percentage="protocolStats.metaSync" :show-text="false" stroke-width="8" color="#722ed1"></el-progress>
+                                    <div class="text-red-500">
+                                        <i class="el-icon-remove text-3xl"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 核心性能指标 -->
-                            <div class="bg-white rounded-lg shadow p-6">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4">核心性能指标</h4>
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-600">设备在线率</span>
-                                        <span class="text-sm font-bold text-purple-600">{{ performance.deviceOnlineRate }}%</span>
+                            <!-- 装维业务总量 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">装维业务总量</p>
+                                        <p class="text-3xl font-bold text-orange-600">{{ metrics.maintenanceTotal }}</p>
+                                        <p class="text-xs text-green-500 mt-1">
+                                            <i class="el-icon-check"></i> 完成率 {{ metrics.completionRate }}%
+                                        </p>
+                                    </div>
+                                    <div class="text-orange-500">
+                                        <i class="el-icon-setting text-3xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 业务净增长 -->
+                            <div class="metric-card">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-600">业务净增长</p>
+                                        <p class="text-3xl font-bold text-green-600">{{ metrics.netGrowth }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">订购减退订</p>
+                                    </div>
+                                    <div class="text-green-500">
+                                        <i class="el-icon-trend-charts text-3xl"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+
 
                     <!-- 4.3 省级平台连接状态监控区 -->
                     <div class="mb-8">
@@ -364,16 +381,34 @@
                             <!-- 平台连接状态矩阵 -->
                             <div class="bg-white rounded-lg shadow p-6">
                                 <h4 class="text-md font-semibold text-gray-800 mb-4">平台连接状态</h4>
-                                <el-table :data="platformConnections" style="width: 100%" size="small">
+                                <el-table 
+                                    :data="platformConnections" 
+                                    style="width: 100%" 
+                                    stripe
+                                    border
+                                    size="small">
                                     <el-table-column prop="name" label="平台名称" width="120"></el-table-column>
-                                    <el-table-column label="连接状态" width="80">
+                                    <el-table-column label="连接状态" width="100">
                                         <template #default="scope">
-                                            <span :class="['status-indicator', scope.row.connectionStatus === 'connected' ? 'status-online' : 'status-offline']"></span>
+                                            <div class="flex items-center">
+                                                <span class="status-indicator" :class="{
+                                                    'status-online': scope.row.connectionStatus === 'connected',
+                                                    'status-offline': scope.row.connectionStatus !== 'connected'
+                                                }"></span>
+                                                <span class="text-xs ml-1">{{ scope.row.connectionStatus === 'connected' ? '已连接' : '已断开' }}</span>
+                                            </div>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column label="认证状态" width="80">
+                                    <el-table-column label="认证状态" width="100">
                                         <template #default="scope">
-                                            <span :class="['status-indicator', scope.row.authStatus === 'success' ? 'status-online' : scope.row.authStatus === 'pending' ? 'status-warning' : 'status-offline']"></span>
+                                            <div class="flex items-center">
+                                                <span class="status-indicator" :class="{
+                                                    'status-online': scope.row.authStatus === 'success',
+                                                    'status-warning': scope.row.authStatus === 'pending',
+                                                    'status-offline': scope.row.authStatus === 'failed'
+                                                }"></span>
+                                                <span class="text-xs ml-1">{{ scope.row.authStatus === 'success' ? '成功' : scope.row.authStatus === 'pending' ? '待处理' : '失败' }}</span>
+                                            </div>
                                         </template>
                                     </el-table-column>
                                     <el-table-column prop="lastHeartbeat" label="最新心跳" width="100">
@@ -384,10 +419,10 @@
                                 </el-table>
                             </div>
 
-                            <!-- 网络质量监控 -->
+                            <!-- 接入平台设备在线率排行榜 -->
                             <div class="bg-white rounded-lg shadow p-6">
-                                <h4 class="text-md font-semibold text-gray-800 mb-4">网络质量监控</h4>
-                                <div id="networkQualityChart" class="chart-container"></div>
+                                <h4 class="text-md font-semibold text-gray-800 mb-4">接入平台设备在线率排行榜</h4>
+                                <div id="onlineRateRankingChart" class="chart-container"></div>
                             </div>
                         </div>
                     </div>
@@ -415,26 +450,37 @@
                         avatarUrl: ''
                     },
                     metrics: {
-                        totalDevices: 15847,
+                        // 设备相关指标（来自运营分析-设备分析）
+                        totalDevices: 15680,
+                        onlineDevices: 14776,
+                        offlineDevices: 904,
+                        deviceOnlineRate: 94.2,
                         deviceGrowth: 12.5,
+                        
+                        // 平台相关指标
                         platformCount: 8,
-                        customerCount: 1256,
-                        customerGrowth: 8.3,
+                        
+                        // 客户相关指标（来自运营分析-客户分析）
+                        customerCount: 8956,
+                        monthlyNewCustomers: 156,
+                        yearlyNewCustomers: 1248,
+                        customerGrowth: 18.7,
+                        
+                        // 业务相关指标（来自运营分析-业务分析）
+                        subscribeTotal: 2890,
+                        unsubscribeTotal: 156,
+                        maintenanceTotal: 410,
+                        netGrowth: 2734,
+                        completionRate: 92.5,
+                        churnRate: 5.4,
+                        totalBusiness: 3456, // 总业务数量
+                        
+                        // 活动视频流数量
                         activeStreams: 2847
                     },
-                    services: [
-                        { name: '南向接入服务', status: 'online', score: 98, statusText: '正常运行' },
-                        { name: '流媒体服务', status: 'online', score: 95, statusText: '正常运行' },
-                        { name: '数据同步服务', status: 'online', score: 92, statusText: '正常运行' },
-                        { name: '监控告警服务', status: 'online', score: 96, statusText: '正常运行' }
-                    ],
-                    protocolStats: {
-                        gb28181: 98.5,
-                        crmSync: 95.2,
-                        metaSync: 97.8
-                    },
+
                     performance: {
-                        deviceOnlineRate: 94.8
+                        deviceOnlineRate: 94.2
                     },
                     platformConnections: [
                         { name: '千里眼平台A', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:45' },
@@ -483,6 +529,27 @@
                 updateMetrics() {
                     // 模拟实时数据更新
                     this.metrics.activeStreams = Math.floor(Math.random() * 1000) + 2500;
+                    
+                    // 模拟业务指标的小幅波动
+                    const variation = () => Math.floor(Math.random() * 10) - 5; // -5到+5的随机变化
+                    
+                    this.metrics.subscribeTotal += variation();
+                    this.metrics.unsubscribeTotal += Math.abs(variation()); // 退订只增不减
+                    this.metrics.maintenanceTotal += variation();
+                    
+                    // 重新计算净增长和总业务数量
+                    this.metrics.netGrowth = this.metrics.subscribeTotal - this.metrics.unsubscribeTotal;
+                    this.metrics.totalBusiness = this.metrics.subscribeTotal + this.metrics.unsubscribeTotal + this.metrics.maintenanceTotal;
+                    
+                    // 更新在线设备数（小幅波动）
+                    this.metrics.onlineDevices += variation();
+                    if (this.metrics.onlineDevices < 0) this.metrics.onlineDevices = 0;
+                    if (this.metrics.onlineDevices > this.metrics.totalDevices) this.metrics.onlineDevices = this.metrics.totalDevices;
+                    
+                    // 重新计算离线设备和在线率
+                    this.metrics.offlineDevices = this.metrics.totalDevices - this.metrics.onlineDevices;
+                    this.metrics.onlineRate = ((this.metrics.onlineDevices / this.metrics.totalDevices) * 100).toFixed(1);
+                    this.performance.deviceOnlineRate = parseFloat(this.metrics.onlineRate);
                 },
                 startAutoRefresh() {
                     setInterval(() => {
@@ -493,18 +560,29 @@
                 initCharts() {
                     this.initDeviceDistributionChart();
                     this.initBusinessVolumeChart();
-                    this.initNetworkQualityChart();
+                    this.initOnlineRateRankingChart();
                 },
                 initDeviceDistributionChart() {
                     const chart = echarts.init(document.getElementById('deviceDistributionChart'));
                     const option = {
                         tooltip: {
                             trigger: 'item',
-                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                            formatter: '{a} <br/>{b}: {c} ({d}%)',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
                         },
                         legend: {
                             orient: 'vertical',
-                            left: 'left'
+                            left: 'left',
+                            textStyle: {
+                                color: '#333',
+                                fontSize: 12
+                            }
                         },
                         series: [
                             {
@@ -512,10 +590,10 @@
                                 type: 'pie',
                                 radius: '50%',
                                 data: [
-                                    { value: 6520, name: '千里眼平台' },
-                                    { value: 4230, name: '移动看家' },
-                                    { value: 3180, name: '国标平台' },
-                                    { value: 1917, name: '其他平台' }
+                                    { value: 6520, name: '千里眼平台', itemStyle: { color: '#67c23a' } },
+                                    { value: 4230, name: '移动看家', itemStyle: { color: '#409eff' } },
+                                    { value: 3180, name: '国标平台', itemStyle: { color: '#e6a23c' } },
+                                    { value: 1917, name: '其他平台', itemStyle: { color: '#f56c6c' } }
                                 ],
                                 emphasis: {
                                     itemStyle: {
@@ -523,6 +601,10 @@
                                         shadowOffsetX: 0,
                                         shadowColor: 'rgba(0, 0, 0, 0.5)'
                                     }
+                                },
+                                label: {
+                                    fontSize: 12,
+                                    color: '#333'
                                 }
                             }
                         ]
@@ -532,82 +614,175 @@
                 initBusinessVolumeChart() {
                     const chart = echarts.init(document.getElementById('businessVolumeChart'));
                     const hours = [];
-                    const videoData = [];
-                    const apiData = [];
+                    const subscribeData = [];
+                    const unsubscribeData = [];
                     
                     for (let i = 0; i < 24; i++) {
                         hours.push(i + ':00');
-                        videoData.push(Math.floor(Math.random() * 500) + 200);
-                        apiData.push(Math.floor(Math.random() * 1000) + 500);
+                        subscribeData.push(Math.floor(Math.random() * 50) + 20);
+                        unsubscribeData.push(Math.floor(Math.random() * 15) + 5);
                     }
                     
                     const option = {
                         tooltip: {
-                            trigger: 'axis'
+                            trigger: 'axis',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
                         },
                         legend: {
-                            data: ['视频调阅', 'API调用']
+                            data: ['订购业务', '退订业务'],
+                            textStyle: {
+                                color: '#333',
+                                fontSize: 12
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
                         },
                         xAxis: {
                             type: 'category',
-                            data: hours
+                            data: hours,
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: '#f0f0f0'
+                                }
+                            }
                         },
                         series: [
                             {
-                                name: '视频调阅',
+                                name: '订购业务',
                                 type: 'line',
-                                data: videoData,
-                                smooth: true
+                                data: subscribeData,
+                                smooth: true,
+                                itemStyle: {
+                                    color: '#409eff'
+                                },
+                                lineStyle: {
+                                    width: 2
+                                },
+                                symbol: 'circle',
+                                symbolSize: 6
                             },
                             {
-                                name: 'API调用',
+                                name: '退订业务',
                                 type: 'line',
-                                data: apiData,
-                                smooth: true
+                                data: unsubscribeData,
+                                smooth: true,
+                                itemStyle: {
+                                    color: '#f56c6c'
+                                },
+                                lineStyle: {
+                                    width: 2
+                                },
+                                symbol: 'circle',
+                                symbolSize: 6
                             }
                         ]
                     };
                     chart.setOption(option);
                 },
-                initNetworkQualityChart() {
-                    const chart = echarts.init(document.getElementById('networkQualityChart'));
+                initOnlineRateRankingChart() {
+                    const chart = echarts.init(document.getElementById('onlineRateRankingChart'));
                     const option = {
                         tooltip: {
-                            trigger: 'axis'
+                            trigger: 'axis',
+                            formatter: '{b}: {c}%',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
                         },
-                        legend: {
-                            data: ['延时(ms)', '丢包率(%)']
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
                         },
                         xAxis: {
-                            type: 'category',
-                            data: ['千里眼A', '移动看家B', '国标平台C', '省平台D']
-                        },
-                        yAxis: [
-                            {
-                                type: 'value',
-                                name: '延时(ms)',
-                                position: 'left'
+                            type: 'value',
+                            min: 0,
+                            max: 100,
+                            axisLabel: {
+                                formatter: '{value}%',
+                                color: '#333',
+                                fontSize: 12
                             },
-                            {
-                                type: 'value',
-                                name: '丢包率(%)',
-                                position: 'right'
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: '#f0f0f0'
+                                }
                             }
-                        ],
+                        },
+                        yAxis: {
+                            type: 'category',
+                            data: ['千里眼平台A', '移动看家B', '国标平台C', '省平台D', '其他平台E'],
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
+                        },
                         series: [
                             {
-                                name: '延时(ms)',
+                                name: '设备在线率',
                                 type: 'bar',
-                                data: [25, 32, 45, 120]
-                            },
-                            {
-                                name: '丢包率(%)',
-                                type: 'line',
-                                yAxisIndex: 1,
-                                data: [0.1, 0.2, 0.8, 5.2]
+                                data: [96.8, 94.2, 91.5, 88.7, 85.3],
+                                itemStyle: {
+                                    color: function(params) {
+                                        const colors = ['#67c23a', '#409eff', '#e6a23c', '#f56c6c', '#909399'];
+                                        return colors[params.dataIndex];
+                                    },
+                                    borderRadius: [0, 2, 2, 0]
+                                },
+                                label: {
+                                    show: true,
+                                    position: 'right',
+                                    formatter: '{c}%',
+                                    color: '#333',
+                                    fontSize: 12,
+                                    fontWeight: 'bold'
+                                }
                             }
                         ]
                     };

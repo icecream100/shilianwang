@@ -137,7 +137,7 @@
                             <el-icon><Connection /></el-icon>
                             <span>接口适配</span>
                         </template>
-                        <el-menu-item index="2-1">接入平台管理</el-menu-item>
+                        <el-menu-item index="2-1">业务平台管理</el-menu-item>
                         <el-menu-item index="2-2">设备管理</el-menu-item>
                         <el-menu-item index="2-3">通道管理</el-menu-item>
                     </el-sub-menu>
@@ -147,7 +147,7 @@
                             <el-icon><DataAnalysis /></el-icon>
                             <span>业务数据采集</span>
                         </template>
-                        <el-menu-item index="platform">平台管理</el-menu-item>
+                        <el-menu-item index="platform">业务平台管理</el-menu-item>
                         <el-menu-item index="interface">接口管理</el-menu-item>
                         <el-menu-item index="task">任务管理</el-menu-item>
                         <el-menu-item index="log">同步日志</el-menu-item>
@@ -194,7 +194,7 @@
 
                 <!-- 内容区域 -->
                 <div class="p-6">
-                    <!-- 平台管理 -->
+                    <!-- 业务平台管理 -->
                     <div v-show="activeTab === 'platform'">
                         <div class="content-card p-6">
                             <!-- 操作栏 -->
@@ -475,7 +475,7 @@
             </div>
         </div>
 
-        <!-- 平台管理对话框 -->
+        <!-- 业务平台管理对话框 -->
         <el-dialog v-model="platformDialogVisible" :title="platformDialogTitle" width="600px">
             <el-form :model="platformForm" label-width="100px">
                 <el-form-item label="平台名称" required>
@@ -1245,7 +1245,7 @@
                         avatarUrl: ''
                     },
                     
-                    // 平台管理
+                    // 业务平台管理
                     platforms: [
                         {
                             id: 1,
@@ -1471,7 +1471,7 @@
             computed: {
                 currentPageTitle() {
                     const titles = {
-                        platform: '平台管理',
+                        platform: '业务平台管理',
                         interface: '接口管理',
                         task: '任务管理',
                         log: '同步日志'
@@ -1538,7 +1538,7 @@
                     }
                 },
                 
-                // 平台管理方法
+                // 业务平台管理方法
                 showAddPlatformDialog() {
                     this.platformDialogTitle = '新增平台';
                     this.platformForm = {
