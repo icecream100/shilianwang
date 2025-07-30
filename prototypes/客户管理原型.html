@@ -86,7 +86,7 @@
                             <el-icon><Monitor /></el-icon>
                             <span>运营门户</span>
                         </template>
-                        <el-menu-item index="1-1">驾驶舱</el-menu-item>
+                        <el-menu-item index="1-1">运营门户</el-menu-item>
                         <el-sub-menu index="1-2">
                             <template #title>客户管理</template>
                         </el-sub-menu>
@@ -179,77 +179,56 @@
                 <div class="p-6">
                     <!-- 搜索和筛选区域 -->
                     <div class="content-card p-6 mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-                            <el-input
-                                v-model="searchForm.customerId"
-                                placeholder="客户ID"
-                                clearable
-                                @input="handleSearch">
-                                <template #prefix>
-                                    <el-icon><Search /></el-icon>
-                                </template>
-                            </el-input>
-                            <el-input
-                                v-model="searchForm.customerName"
-                                placeholder="客户名称"
-                                clearable
-                                @input="handleSearch">
-                                <template #prefix>
-                                    <el-icon><Search /></el-icon>
-                                </template>
-                            </el-input>
-                            <el-input
-                                v-model="searchForm.contactPerson"
-                                placeholder="联系人"
-                                clearable
-                                @input="handleSearch">
-                                <template #prefix>
-                                    <el-icon><Search /></el-icon>
-                                </template>
-                            </el-input>
-                            <el-input
-                                v-model="searchForm.contactPhone"
-                                placeholder="联系电话"
-                                clearable
-                                @input="handleSearch">
-                                <template #prefix>
-                                    <el-icon><Search /></el-icon>
-                                </template>
-                            </el-input>
-                            <el-select v-model="searchForm.status" placeholder="客户状态" clearable>
-                                <el-option label="全部" value=""></el-option>
-                                <el-option label="正常" value="active"></el-option>
-                                <el-option label="暂停" value="inactive"></el-option>
-                                <el-option label="停用" value="disabled"></el-option>
-                            </el-select>
-                            <el-select v-model="searchForm.industry" placeholder="所属行业" clearable>
-                                <el-option label="全部" value=""></el-option>
-                                <el-option label="金融业" value="finance"></el-option>
-                                <el-option label="制造业" value="manufacturing"></el-option>
-                                <el-option label="教育" value="education"></el-option>
-                                <el-option label="医疗" value="healthcare"></el-option>
-                                <el-option label="政府" value="government"></el-option>
-                                <el-option label="其他" value="other"></el-option>
-                            </el-select>
-                        </div>
-                        <div class="flex space-x-2">
-                            <el-button type="primary" @click="handleSearch">
-                                <el-icon><Search /></el-icon>
-                                搜索
-                            </el-button>
-                            <el-button @click="resetSearch">
-                                <el-icon><Refresh /></el-icon>
-                                重置
-                            </el-button>
-                        </div>
-                        <!-- 操作按钮区域 -->
-                        <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                            <div class="flex space-x-3">
-                                <el-button type="primary" @click="showAddCustomer = true">
-                                    <el-icon><Plus /></el-icon>
-                                    新增客户
-                                </el-button>
-
+                        <!-- 筛选区域 -->
+                        <div class="mb-6">
+                            <el-form :inline="true" :model="searchForm" class="demo-form-inline" label-width="80px">
+                                <el-form-item label="客户ID">
+                                    <el-input v-model="searchForm.customerId" placeholder="请输入客户ID" clearable style="width: 200px" @input="handleSearch"></el-input>
+                                </el-form-item>
+                                <el-form-item label="客户名称">
+                                    <el-input v-model="searchForm.customerName" placeholder="请输入客户名称" clearable style="width: 200px" @input="handleSearch"></el-input>
+                                </el-form-item>
+                                <el-form-item label="联系人">
+                                    <el-input v-model="searchForm.contactPerson" placeholder="请输入联系人" clearable style="width: 200px" @input="handleSearch"></el-input>
+                                </el-form-item>
+                                <el-form-item label="联系电话">
+                                    <el-input v-model="searchForm.contactPhone" placeholder="请输入联系电话" clearable style="width: 200px" @input="handleSearch"></el-input>
+                                </el-form-item>
+                                <el-form-item label="客户状态">
+                                    <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="正常" value="active"></el-option>
+                                        <el-option label="暂停" value="inactive"></el-option>
+                                        <el-option label="停用" value="disabled"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item label="所属行业">
+                                    <el-select v-model="searchForm.industry" placeholder="请选择行业" clearable style="width: 120px">
+                                        <el-option label="全部" value=""></el-option>
+                                        <el-option label="金融业" value="finance"></el-option>
+                                        <el-option label="制造业" value="manufacturing"></el-option>
+                                        <el-option label="教育" value="education"></el-option>
+                                        <el-option label="医疗" value="healthcare"></el-option>
+                                        <el-option label="政府" value="government"></el-option>
+                                        <el-option label="其他" value="other"></el-option>
+                                    </el-select>
+                                </el-form-item>
+                                <el-form-item>
+                                    <el-button type="primary" @click="handleSearch">查询</el-button>
+                                    <el-button @click="resetSearch">重置</el-button>
+                                </el-form-item>
+                            </el-form>
+                            
+                            <!-- 分隔线和操作按钮区 -->
+                            <div class="border-t border-gray-200 pt-4 mt-4">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <el-button type="primary" @click="showAddCustomer = true">新增客户</el-button>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        共 {{ customers.length }} 条记录
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -263,13 +242,16 @@
                             </div>
                             
                             <el-table :data="filteredCustomers" style="width: 100%" v-loading="loading">
+                                <template #empty>
+                                    <el-empty description="暂无数据" :image-size="100"></el-empty>
+                                </template>
                                 <el-table-column prop="customerId" label="客户ID" width="120"></el-table-column>
                                 <el-table-column prop="customerName" label="客户名称" width="180"></el-table-column>
                                 <el-table-column prop="contactPerson" label="联系人" width="100"></el-table-column>
                                 <el-table-column prop="contactPhone" label="联系电话" width="130"></el-table-column>
                                 <el-table-column prop="industry" label="所属行业" width="100"></el-table-column>
                                 <el-table-column prop="customerLevel" label="客户级别" width="100"></el-table-column>
-                                <el-table-column prop="dataSource" label="信息来源" width="100">
+                                <el-table-column prop="dataSource" label="数据来源" width="100">
                                     <template #default="scope">
                                         <el-tag :type="scope.row.dataSource === 'MANUAL' ? 'primary' : 'success'" size="small">
                                             {{scope.row.dataSource === 'MANUAL' ? '手动创建' : 'CRM同步'}}
@@ -281,7 +263,7 @@
                                         <span :class="getStatusClass(scope.row.status)">{{getStatusText(scope.row.status)}}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="createTime" label="创建时间" width="150"></el-table-column>
+                                <el-table-column prop="createTime" label="新增时间" width="150"></el-table-column>
                                 <el-table-column label="操作" width="300" fixed="right">
                                     <template #default="scope">
                                         <el-button size="small" @click="viewCustomer(scope.row)">查看</el-button>
@@ -389,23 +371,26 @@
         <el-dialog v-model="showCustomerDetail" title="客户详情" width="600px">
             <div v-if="selectedCustomer">
                 <el-descriptions :column="2" border>
-                    <el-descriptions-item label="客户编号">{{selectedCustomer.customerCode}}</el-descriptions-item>
+                    <el-descriptions-item label="客户ID">{{selectedCustomer.customerId}}</el-descriptions-item>
                     <el-descriptions-item label="客户名称">{{selectedCustomer.customerName}}</el-descriptions-item>
                     <el-descriptions-item label="联系人">{{selectedCustomer.contactPerson}}</el-descriptions-item>
                     <el-descriptions-item label="联系电话">{{selectedCustomer.contactPhone}}</el-descriptions-item>
-                    <el-descriptions-item label="状态">
+                    <el-descriptions-item label="所属行业">{{getIndustryText(selectedCustomer.industry)}}</el-descriptions-item>
+                    <el-descriptions-item label="客户级别">{{getCustomerLevelText(selectedCustomer.customerLevel)}}</el-descriptions-item>
+                    <el-descriptions-item label="详细地址" :span="2">{{selectedCustomer.address || '无'}}</el-descriptions-item>
+                    <el-descriptions-item label="客户状态">
                         <span :class="getStatusClass(selectedCustomer.status)">{{getStatusText(selectedCustomer.status)}}</span>
                     </el-descriptions-item>
-                    <el-descriptions-item label="创建时间">{{selectedCustomer.createTime}}</el-descriptions-item>
-                    <el-descriptions-item label="最后同步时间" :span="2">{{selectedCustomer.lastSyncTime}}</el-descriptions-item>
-                    <el-descriptions-item label="备注" :span="2">{{selectedCustomer.remark || '无'}}</el-descriptions-item>
+                    <el-descriptions-item label="数据来源">
+                        <el-tag :type="selectedCustomer.dataSource === 'MANUAL' ? 'primary' : 'success'" size="small">
+                            {{selectedCustomer.dataSource === 'MANUAL' ? '手动创建' : 'CRM同步'}}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="新增时间">{{selectedCustomer.createTime}}</el-descriptions-item>
+                    <el-descriptions-item label="最后更新时间">{{selectedCustomer.lastUpdateTime}}</el-descriptions-item>
+                    <el-descriptions-item label="备注" :span="2">{{selectedCustomer.remarks || '无'}}</el-descriptions-item>
                 </el-descriptions>
             </div>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="showCustomerDetail = false">关闭</el-button>
-                </span>
-            </template>
         </el-dialog>
 
     </div>
@@ -928,6 +913,27 @@
                         'disabled': '停用'
                     };
                     return texts[status] || status;
+                },
+                
+                getIndustryText(industry) {
+                    const texts = {
+                        'finance': '金融业',
+                        'manufacturing': '制造业',
+                        'education': '教育',
+                        'healthcare': '医疗',
+                        'government': '政府',
+                        'other': '其他'
+                    };
+                    return texts[industry] || industry;
+                },
+                
+                getCustomerLevelText(level) {
+                    const texts = {
+                        'important': '重要客户',
+                        'normal': '普通客户',
+                        'potential': '潜在客户'
+                    };
+                    return texts[level] || level;
                 },
                 
                 // 授权资源管理相关方法

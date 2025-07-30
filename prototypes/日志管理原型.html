@@ -98,7 +98,7 @@
                             <el-icon><Monitor /></el-icon>
                             <span>运营门户</span>
                         </template>
-                        <el-menu-item index="1-1">驾驶舱</el-menu-item>
+                        <el-menu-item index="1-1">运营门户</el-menu-item>
                         <el-sub-menu index="1-2">
                             <template #title>客户管理</template>
                         </el-sub-menu>
@@ -186,7 +186,7 @@
                     <div v-if="currentPage === 'login'">
                         <!-- 筛选条件 -->
                         <div class="filter-section">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
                                     <el-input v-model="loginLogFilter.username" placeholder="请输入用户名" clearable></el-input>
@@ -195,14 +195,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">登录IP地址</label>
                                     <el-input v-model="loginLogFilter.loginIp" placeholder="请输入IP地址" clearable></el-input>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">登录结果</label>
-                                    <el-select v-model="loginLogFilter.loginStatus" placeholder="请选择登录结果" clearable style="width: 100%">
-                                        <el-option label="全部" value=""></el-option>
-                                        <el-option label="成功" value="SUCCESS"></el-option>
-                                        <el-option label="失败" value="FAILURE"></el-option>
-                                    </el-select>
-                                </div>
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">登录时间</label>
                                     <el-date-picker
@@ -229,20 +222,16 @@
                         <!-- 登录日志列表 -->
                         <div class="content-card p-6">
                             <el-table :data="filteredLoginLogs" stripe style="width: 100%" v-loading="loginLogLoading">
+                                <template #empty>
+                                    <el-empty description="暂无数据" :image-size="100"></el-empty>
+                                </template>
                                 <el-table-column prop="logId" label="序号" width="80"></el-table-column>
                                 <el-table-column prop="username" label="用户名" width="120"></el-table-column>
                                 <el-table-column prop="loginIp" label="登录IP地址" width="140"></el-table-column>
                                 <el-table-column prop="loginLocation" label="登录地理位置" width="150"></el-table-column>
                                 <el-table-column prop="clientInfo" label="客户端类型" width="200" show-overflow-tooltip></el-table-column>
                                 <el-table-column prop="loginTime" label="登录时间" width="180"></el-table-column>
-                                <el-table-column prop="loginStatus" label="登录结果" width="100">
-                                    <template #default="scope">
-                                        <el-tag :type="scope.row.loginStatus === 'SUCCESS' ? 'success' : 'danger'">
-                                            {{ scope.row.loginStatus === 'SUCCESS' ? '成功' : '失败' }}
-                                        </el-tag>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column prop="failureReason" label="失败原因" show-overflow-tooltip></el-table-column>
+
                                 <el-table-column label="操作" width="120" fixed="right">
                                     <template #default="scope">
                                         <el-button type="primary" size="small" @click="viewLoginLogDetail(scope.row)">详情</el-button>
@@ -276,11 +265,10 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">操作模块</label>
                                     <el-select v-model="operationLogFilter.moduleName" placeholder="请选择操作模块" clearable style="width: 100%">
                                         <el-option label="全部" value=""></el-option>
+                                        <el-option label="角色管理" value="角色管理"></el-option>
                                         <el-option label="客户管理" value="客户管理"></el-option>
-                                        <el-option label="设备管理" value="设备管理"></el-option>
-                                        <el-option label="接入平台管理" value="接入平台管理"></el-option>
-                                        <el-option label="角色权限" value="角色权限"></el-option>
-                                        <el-option label="系统配置" value="系统配置"></el-option>
+                                        <el-option label="部门管理" value="部门管理"></el-option>
+                                        <el-option label="用户管理" value="用户管理"></el-option>
                                     </el-select>
                                 </div>
                                 <div>
@@ -334,6 +322,9 @@
                         <!-- 操作日志列表 -->
                         <div class="content-card p-6">
                             <el-table :data="filteredOperationLogs" stripe style="width: 100%" v-loading="operationLogLoading">
+                                <template #empty>
+                                    <el-empty description="暂无数据" :image-size="100"></el-empty>
+                                </template>
                                 <el-table-column prop="logId" label="序号" width="80"></el-table-column>
                                 <el-table-column prop="username" label="操作用户" width="120"></el-table-column>
                                 <el-table-column prop="userIp" label="用户IP" width="140"></el-table-column>
@@ -388,12 +379,7 @@
                     <el-descriptions-item label="登录IP地址">{{ selectedLoginLog.loginIp }}</el-descriptions-item>
                     <el-descriptions-item label="登录地理位置">{{ selectedLoginLog.loginLocation }}</el-descriptions-item>
                     <el-descriptions-item label="登录时间" :span="2">{{ selectedLoginLog.loginTime }}</el-descriptions-item>
-                    <el-descriptions-item label="登录结果">
-                        <el-tag :type="selectedLoginLog.loginStatus === 'SUCCESS' ? 'success' : 'danger'">
-                            {{ selectedLoginLog.loginStatus === 'SUCCESS' ? '成功' : '失败' }}
-                        </el-tag>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="失败原因">{{ selectedLoginLog.failureReason || '-' }}</el-descriptions-item>
+
                     <el-descriptions-item label="会话ID" :span="2">{{ selectedLoginLog.sessionId || '-' }}</el-descriptions-item>
                     <el-descriptions-item label="客户端信息" :span="2">
                         <div class="json-viewer">{{ selectedLoginLog.clientInfo }}</div>
@@ -459,7 +445,6 @@
                     loginLogFilter: {
                         username: '',
                         loginIp: '',
-                        loginStatus: '',
                         timeRange: []
                     },
                     loginLogPagination: {
@@ -641,7 +626,7 @@
                 },
                 currentPageDescription() {
                     switch(this.currentPage) {
-                        case 'login': return '查看和管理用户登录行为记录，包括成功和失败的登录尝试';
+                        case 'login': return '查看和管理用户登录行为记录';
                         case 'operation': return '查看和管理用户在系统中执行的关键操作记录';
                         default: return '系统日志管理功能';
                     }
@@ -655,9 +640,7 @@
                     if (this.loginLogFilter.loginIp) {
                         logs = logs.filter(log => log.loginIp.includes(this.loginLogFilter.loginIp));
                     }
-                    if (this.loginLogFilter.loginStatus) {
-                        logs = logs.filter(log => log.loginStatus === this.loginLogFilter.loginStatus);
-                    }
+
                     
                     this.loginLogPagination.total = logs.length;
                     return logs;
@@ -708,7 +691,6 @@
                     this.loginLogFilter = {
                         username: '',
                         loginIp: '',
-                        loginStatus: '',
                         timeRange: []
                     };
                 },

@@ -110,7 +110,7 @@
                             <el-icon><Monitor /></el-icon>
                             <span>运营门户</span>
                         </template>
-                        <el-menu-item index="1-1">驾驶舱</el-menu-item>
+                        <el-menu-item index="1-1">运营门户</el-menu-item>
                         <el-sub-menu index="1-2">
                             <template #title>客户管理</template>
                         </el-sub-menu>
@@ -197,34 +197,41 @@
                     <!-- 业务平台管理 -->
                     <div v-show="activeTab === 'platform'">
                         <div class="content-card p-6">
-                            <!-- 操作栏 -->
-                            <div class="flex justify-between items-center mb-6">
-                                <div class="flex items-center space-x-4">
-                                    <el-input
-                                        v-model="platformSearch"
-                                        placeholder="搜索平台名称、连接地址"
-                                        style="width: 300px"
-                                        clearable>
-                                        <template #prefix>
-                                            <el-icon><Search /></el-icon>
-                                        </template>
-                                    </el-input>
-                                    <el-select v-model="platformTypeFilter" placeholder="连接类型" clearable style="width: 150px">
-                                        <el-option label="全部" value=""></el-option>
-                                        <el-option label="HTTP" value="http"></el-option>
-                                        <el-option label="数据库" value="database"></el-option>
-                                        <el-option label="消息队列" value="mq"></el-option>
-                                    </el-select>
+                            <!-- 筛选查询区域 -->
+                            <div class="mb-6">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex flex-wrap gap-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">平台名称:</span>
+                                            <el-input
+                                                v-model="platformSearch"
+                                                placeholder="搜索平台名称"
+                                                style="width: 200px"
+                                                clearable>
+                                                <template #prefix>
+                                                    <el-icon><Search /></el-icon>
+                                                </template>
+                                            </el-input>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">连接类型:</span>
+                                            <el-select v-model="platformTypeFilter" placeholder="请选择" clearable style="width: 150px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option label="HTTP" value="http"></el-option>
+                                                <el-option label="数据库" value="database"></el-option>
+                                                <el-option label="消息队列" value="mq"></el-option>
+                                            </el-select>
+                                        </div>
+                                    </div>
+                                    <el-button type="primary" @click="showAddPlatformDialog">
+                                        <el-icon><Plus /></el-icon>
+                                        新增平台
+                                    </el-button>
                                 </div>
-                                <el-button type="primary" @click="showAddPlatformDialog">
-                                    <el-icon><Plus /></el-icon>
-                                    新增平台
-                                </el-button>
                             </div>
 
                             <!-- 平台列表 -->
                             <el-table :data="filteredPlatforms" stripe>
-                                <el-table-column type="selection" width="55"></el-table-column>
                                 <el-table-column prop="name" label="平台名称" width="150"></el-table-column>
                                 <el-table-column prop="type" label="连接类型" width="120">
                                     <template #default="scope">
@@ -241,7 +248,7 @@
                                         </span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                                <el-table-column prop="createTime" label="新增时间" width="180"></el-table-column>
                                 <el-table-column label="操作" width="280">
                                     <template #default="scope">
                                         <div class="flex items-center gap-1">
@@ -269,27 +276,35 @@
                     <!-- 接口管理 -->
                     <div v-show="activeTab === 'interface'">
                         <div class="content-card p-6">
-                            <!-- 操作栏 -->
-                            <div class="flex justify-between items-center mb-6">
-                                <div class="flex items-center space-x-4">
-                                    <el-input
-                                        v-model="interfaceSearch"
-                                        placeholder="搜索接口名称、路径"
-                                        style="width: 300px"
-                                        clearable>
-                                        <template #prefix>
-                                            <el-icon><Search /></el-icon>
-                                        </template>
-                                    </el-input>
-                                    <el-select v-model="interfacePlatformFilter" placeholder="所属平台" clearable style="width: 150px">
-                                        <el-option label="全部" value=""></el-option>
-                                        <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.id"></el-option>
-                                    </el-select>
+                            <!-- 筛选查询区域 -->
+                            <div class="mb-6">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex flex-wrap gap-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">接口名称:</span>
+                                            <el-input
+                                                v-model="interfaceSearch"
+                                                placeholder="搜索接口名称"
+                                                style="width: 200px"
+                                                clearable>
+                                                <template #prefix>
+                                                    <el-icon><Search /></el-icon>
+                                                </template>
+                                            </el-input>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">所属平台:</span>
+                                            <el-select v-model="interfacePlatformFilter" placeholder="请选择" clearable style="width: 150px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.id"></el-option>
+                                            </el-select>
+                                        </div>
+                                    </div>
+                                    <el-button type="primary" @click="showAddInterfaceDialog">
+                                        <el-icon><Plus /></el-icon>
+                                        新增接口
+                                    </el-button>
                                 </div>
-                                <el-button type="primary" @click="showAddInterfaceDialog">
-                                    <el-icon><Plus /></el-icon>
-                                    新增接口
-                                </el-button>
                             </div>
 
                             <!-- 接口列表 -->
@@ -304,7 +319,7 @@
                                 </el-table-column>
                                 <el-table-column prop="fieldCount" label="字段数量" width="100"></el-table-column>
                                 <el-table-column prop="description" label="描述" width="200"></el-table-column>
-                                <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                                <el-table-column prop="createTime" label="新增时间" width="180"></el-table-column>
                                 <el-table-column label="操作" width="200">
                                     <template #default="scope">
                                         <div class="flex gap-1">
@@ -332,32 +347,40 @@
                     <div v-show="activeTab === 'task'">
                         <div class="content-card p-6">
                             <!-- 操作栏 -->
-                            <div class="flex justify-between items-center mb-6">
-                                <div class="flex items-center space-x-4">
-                                    <el-input
-                                        v-model="taskSearch"
-                                        placeholder="搜索任务名称"
-                                        style="width: 300px"
-                                        clearable>
-                                        <template #prefix>
-                                            <el-icon><Search /></el-icon>
-                                        </template>
-                                    </el-input>
-                                    <el-select v-model="taskStatusFilter" placeholder="任务状态" clearable style="width: 150px">
-                                        <el-option label="全部" value=""></el-option>
-                                        <el-option label="启用" value="enabled"></el-option>
-                                        <el-option label="停用" value="disabled"></el-option>
-                                    </el-select>
+                            <!-- 筛选查询区域 -->
+                            <div class="mb-6">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex flex-wrap gap-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">任务名称:</span>
+                                            <el-input
+                                                v-model="taskSearch"
+                                                placeholder="搜索任务名称"
+                                                style="width: 200px"
+                                                clearable>
+                                                <template #prefix>
+                                                    <el-icon><Search /></el-icon>
+                                                </template>
+                                            </el-input>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">任务状态:</span>
+                                            <el-select v-model="taskStatusFilter" placeholder="请选择" clearable style="width: 150px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option label="启用" value="enabled"></el-option>
+                                                <el-option label="停用" value="disabled"></el-option>
+                                            </el-select>
+                                        </div>
+                                    </div>
+                                    <el-button type="primary" @click="showTaskWizard">
+                                        <el-icon><Plus /></el-icon>
+                                        新建任务
+                                    </el-button>
                                 </div>
-                                <el-button type="primary" @click="showTaskWizard">
-                                    <el-icon><Plus /></el-icon>
-                                    新建任务
-                                </el-button>
                             </div>
 
                             <!-- 任务列表 -->
                             <el-table :data="filteredTasks" stripe>
-                                <el-table-column type="selection" width="55"></el-table-column>
                                 <el-table-column prop="name" label="任务名称" width="150"></el-table-column>
                                 <el-table-column prop="sourceInfo" label="源平台/接口" width="200">
                                     <template #default="scope">
@@ -381,7 +404,7 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="lastRunTime" label="最近运行" width="180"></el-table-column>
-                                <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                                <el-table-column prop="createTime" label="新增时间" width="180"></el-table-column>
                                 <el-table-column label="操作" width="280">
                                     <template #default="scope">
                                         <div class="flex flex-wrap gap-1">
@@ -411,31 +434,52 @@
                     <!-- 同步日志 -->
                     <div v-show="activeTab === 'log'">
                         <div class="content-card p-6">
-                            <!-- 筛选区域 -->
-                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                                <el-select v-model="logTaskFilter" placeholder="选择任务" clearable>
-                                    <el-option label="全部任务" value=""></el-option>
-                                    <el-option v-for="task in tasks" :key="task.id" :label="task.name" :value="task.id"></el-option>
-                                </el-select>
-                                <el-date-picker
-                                    v-model="logDateRange"
-                                    type="datetimerange"
-                                    range-separator="至"
-                                    start-placeholder="开始时间"
-                                    end-placeholder="结束时间"
-                                    format="YYYY-MM-DD HH:mm:ss"
-                                    value-format="YYYY-MM-DD HH:mm:ss">
-                                </el-date-picker>
-                                <el-select v-model="logStatusFilter" placeholder="调用状态" clearable>
-                                    <el-option label="全部" value=""></el-option>
-                                    <el-option label="成功" value="success"></el-option>
-                                    <el-option label="失败" value="failure"></el-option>
-                                </el-select>
-                                <el-input v-model="logKeywordSearch" placeholder="关键词搜索" clearable></el-input>
-                                <el-button type="primary" @click="searchLogs">
-                                    <el-icon><Search /></el-icon>
-                                    查询
-                                </el-button>
+                            <!-- 筛选查询区域 -->
+                            <div class="mb-6">
+                                <div class="flex flex-col gap-4">
+                                    <!-- 第一行 -->
+                                    <div class="flex flex-wrap gap-4">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">任务名称:</span>
+                                            <el-select v-model="logTaskFilter" placeholder="请选择" clearable style="width: 150px">
+                                                <el-option label="全部任务" value=""></el-option>
+                                                <el-option v-for="task in tasks" :key="task.id" :label="task.name" :value="task.id"></el-option>
+                                            </el-select>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">时间范围:</span>
+                                            <el-date-picker
+                                                v-model="logDateRange"
+                                                type="datetimerange"
+                                                range-separator="至"
+                                                start-placeholder="开始时间"
+                                                end-placeholder="结束时间"
+                                                format="YYYY-MM-DD HH:mm:ss"
+                                                value-format="YYYY-MM-DD HH:mm:ss"
+                                                style="width: 350px">
+                                            </el-date-picker>
+                                        </div>
+                                    </div>
+                                    <!-- 第二行 -->
+                                    <div class="flex flex-wrap gap-4 items-center">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">调用状态:</span>
+                                            <el-select v-model="logStatusFilter" placeholder="请选择" clearable style="width: 150px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option label="成功" value="success"></el-option>
+                                                <el-option label="失败" value="failure"></el-option>
+                                            </el-select>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">关键词:</span>
+                                            <el-input v-model="logKeywordSearch" placeholder="关键词搜索" clearable style="width: 200px"></el-input>
+                                        </div>
+                                        <el-button type="primary" @click="searchLogs">
+                                            <el-icon><Search /></el-icon>
+                                            查询
+                                        </el-button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- 日志列表 -->
@@ -557,98 +601,37 @@
         </el-dialog>
 
         <!-- 平台详情查看对话框 -->
-        <el-dialog v-model="platformDetailVisible" title="平台详情" width="600px">
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">平台名称</label>
-                        <div class="text-gray-900">{{platformDetail.name}}</div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">连接类型</label>
-                        <el-tag :type="getPlatformTypeTagType(platformDetail.type)">{{getPlatformTypeName(platformDetail.type)}}</el-tag>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">平台描述</label>
-                    <div class="text-gray-900">{{platformDetail.description || '暂无描述'}}</div>
-                </div>
-                <div v-if="platformDetail.type === 'http'">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">连接地址</label>
-                            <div class="text-gray-900">{{platformDetail.baseUrl}}</div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">认证方式</label>
-                            <div class="text-gray-900">{{getAuthTypeName(platformDetail.authType)}}</div>
-                        </div>
-                    </div>
-                </div>
-                <div v-if="platformDetail.type === 'database'">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">数据库类型</label>
-                            <div class="text-gray-900">{{platformDetail.dbType}}</div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">连接地址</label>
-                            <div class="text-gray-900">{{platformDetail.host}}</div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">数据库名</label>
-                            <div class="text-gray-900">{{platformDetail.database}}</div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-                            <div class="text-gray-900">{{platformDetail.dbUsername}}</div>
-                        </div>
-                    </div>
-                </div>
-                <div v-if="platformDetail.type === 'mq'">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">消息队列类型</label>
-                            <div class="text-gray-900">{{platformDetail.mqType}}</div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">连接地址</label>
-                            <div class="text-gray-900">{{platformDetail.mqHost}}</div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">虚拟主机/命名空间</label>
-                            <div class="text-gray-900">{{platformDetail.virtualHost || '/'}}</div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
-                            <div class="text-gray-900">{{platformDetail.mqUsername || 'guest'}}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">连接状态</label>
-                        <span :class="getConnectionStatusClass(platformDetail.status)">
-                            <el-icon><CircleFilled /></el-icon>
-                            {{getConnectionStatusText(platformDetail.status)}}
-                        </span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
-                        <div class="text-gray-900">{{platformDetail.createTime}}</div>
-                    </div>
-                </div>
-            </div>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="platformDetailVisible = false">关闭</el-button>
-                    <el-button type="primary" @click="editPlatform(platformDetail)">编辑</el-button>
-                </span>
-            </template>
+        <el-dialog v-model="platformDetailVisible" title="平台详情" width="700px">
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="平台名称">{{platformDetail.name}}</el-descriptions-item>
+                <el-descriptions-item label="连接类型">
+                    <el-tag :type="getPlatformTypeTagType(platformDetail.type)">{{getPlatformTypeName(platformDetail.type)}}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="平台描述" :span="2">{{platformDetail.description || '暂无描述'}}</el-descriptions-item>
+                <template v-if="platformDetail.type === 'http'">
+                    <el-descriptions-item label="连接地址">{{platformDetail.baseUrl}}</el-descriptions-item>
+                    <el-descriptions-item label="认证方式">{{getAuthTypeName(platformDetail.authType)}}</el-descriptions-item>
+                </template>
+                <template v-if="platformDetail.type === 'database'">
+                    <el-descriptions-item label="数据库类型">{{platformDetail.dbType}}</el-descriptions-item>
+                    <el-descriptions-item label="连接地址">{{platformDetail.host}}</el-descriptions-item>
+                    <el-descriptions-item label="数据库名">{{platformDetail.database}}</el-descriptions-item>
+                    <el-descriptions-item label="用户名">{{platformDetail.dbUsername}}</el-descriptions-item>
+                </template>
+                <template v-if="platformDetail.type === 'mq'">
+                    <el-descriptions-item label="消息队列类型">{{platformDetail.mqType}}</el-descriptions-item>
+                    <el-descriptions-item label="连接地址">{{platformDetail.mqHost}}</el-descriptions-item>
+                    <el-descriptions-item label="虚拟主机/命名空间">{{platformDetail.virtualHost || '/'}}</el-descriptions-item>
+                    <el-descriptions-item label="用户名">{{platformDetail.mqUsername || 'guest'}}</el-descriptions-item>
+                </template>
+                <el-descriptions-item label="连接状态">
+                    <span :class="getConnectionStatusClass(platformDetail.status)">
+                        <el-icon><CircleFilled /></el-icon>
+                        {{getConnectionStatusText(platformDetail.status)}}
+                    </span>
+                </el-descriptions-item>
+                <el-descriptions-item label="新增时间">{{platformDetail.createTime}}</el-descriptions-item>
+            </el-descriptions>
         </el-dialog>
 
         <!-- 接口管理对话框 -->
@@ -871,41 +854,26 @@
         </el-dialog>
 
         <!-- 接口详情弹窗 -->
-        <el-dialog v-model="interfaceDetailVisible" title="接口详情" width="70%">
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">接口名称</label>
-                        <p class="text-gray-900">{{ interfaceDetail.name }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">所属平台</label>
-                        <p class="text-gray-900">{{ interfaceDetail.platformName }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">接口路径</label>
-                        <p class="text-gray-900">{{ interfaceDetail.path }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">请求方法</label>
-                        <el-tag :type="interfaceDetail.method === 'POST' ? 'primary' : 'success'">{{ interfaceDetail.method }}</el-tag>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">接口描述</label>
-                        <p class="text-gray-900">{{ interfaceDetail.description }}</p>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">字段结构</label>
-                    <div class="border rounded-lg p-4 bg-gray-50">
-                        <div v-for="field in interfaceDetail.fields" :key="field.id" class="field-display" :style="{paddingLeft: field.level * 20 + 'px', marginBottom: '8px'}">
-                            <div class="flex items-center space-x-2">
-                                <span v-if="field.level > 0" class="text-gray-400">└─</span>
-                                <span class="font-medium">{{ field.name }}</span>
-                                <el-tag size="small" :type="getFieldTypeColor(field.type)">{{ field.type }}</el-tag>
-                                <el-tag v-if="field.required" size="small" type="danger">必填</el-tag>
-                                <span class="text-gray-600">{{ field.description }}</span>
-                            </div>
+        <el-dialog v-model="interfaceDetailVisible" title="接口详情" width="800px">
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="接口名称">{{ interfaceDetail.name }}</el-descriptions-item>
+                <el-descriptions-item label="所属平台">{{ interfaceDetail.platformName }}</el-descriptions-item>
+                <el-descriptions-item label="接口路径">{{ interfaceDetail.path }}</el-descriptions-item>
+                <el-descriptions-item label="请求方法">
+                    <el-tag :type="interfaceDetail.method === 'POST' ? 'primary' : 'success'">{{ interfaceDetail.method }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="接口描述" :span="2">{{ interfaceDetail.description }}</el-descriptions-item>
+            </el-descriptions>
+            <div class="mt-6">
+                <h4 class="text-lg font-medium mb-4">字段结构</h4>
+                <div class="border rounded-lg p-4 bg-gray-50">
+                    <div v-for="field in interfaceDetail.fields" :key="field.id" class="field-display" :style="{paddingLeft: field.level * 20 + 'px', marginBottom: '8px'}">
+                        <div class="flex items-center space-x-2">
+                            <span v-if="field.level > 0" class="text-gray-400">└─</span>
+                            <span class="font-medium">{{ field.name }}</span>
+                            <el-tag size="small" :type="getFieldTypeColor(field.type)">{{ field.type }}</el-tag>
+                            <el-tag v-if="field.required" size="small" type="danger">必填</el-tag>
+                            <span class="text-gray-600">{{ field.description }}</span>
                         </div>
                     </div>
                 </div>
@@ -916,38 +884,32 @@
         <el-dialog v-model="logDetailVisible" title="调用详情" width="1400px" class="log-detail-dialog">
             <!-- 基本信息卡片 -->
             <div class="mb-6">
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-                    <div class="grid grid-cols-4 gap-4 text-sm">
+                <el-descriptions :column="4" border>
+                    <el-descriptions-item label="调用时间">
                         <div class="flex items-center space-x-2">
                             <el-icon class="text-blue-500"><Clock /></el-icon>
-                            <div>
-                                <div class="text-gray-500">调用时间</div>
-                                <div class="font-medium">2024-01-20 14:30:15</div>
-                            </div>
+                            <span class="font-medium">2024-01-20 14:30:15</span>
                         </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="任务名称">
                         <div class="flex items-center space-x-2">
                             <el-icon class="text-green-500"><Connection /></el-icon>
-                            <div>
-                                <div class="text-gray-500">任务名称</div>
-                                <div class="font-medium">移动订购数据同步</div>
-                            </div>
+                            <span class="font-medium">移动订购数据同步</span>
                         </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="执行耗时">
                         <div class="flex items-center space-x-2">
                             <el-icon class="text-purple-500"><Timer /></el-icon>
-                            <div>
-                                <div class="text-gray-500">执行耗时</div>
-                                <div class="font-medium">245ms</div>
-                            </div>
+                            <span class="font-medium">245ms</span>
                         </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="调用状态">
                         <div class="flex items-center space-x-2">
                             <el-icon class="text-orange-500"><CircleCheck /></el-icon>
-                            <div>
-                                <div class="text-gray-500">调用状态</div>
-                                <el-tag type="success" size="small">成功</el-tag>
-                            </div>
+                            <el-tag type="success" size="small">成功</el-tag>
                         </div>
-                    </div>
-                </div>
+                    </el-descriptions-item>
+                </el-descriptions>
             </div>
             
             <!-- 报文内容区域 -->
@@ -1030,46 +992,19 @@
 
         <!-- 任务详情弹窗 -->
         <el-dialog v-model="taskDetailDialogVisible" title="任务详情" width="800px">
-            <div class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
-                        <p class="text-gray-900">{{ taskDetailForm.name }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">任务状态</label>
-                        <el-tag :type="getTaskStatusTagType(taskDetailForm.status)">{{ getTaskStatusText(taskDetailForm.status) }}</el-tag>
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
-                        <p class="text-gray-900">{{ taskDetailForm.description || '暂无描述' }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">源平台</label>
-                        <p class="text-gray-900">{{ taskDetailForm.sourcePlatformName }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">源接口</label>
-                        <p class="text-gray-900">{{ taskDetailForm.sourceInterfaceName }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">目标平台</label>
-                        <p class="text-gray-900">{{ taskDetailForm.targetPlatformName }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">目标接口</label>
-                        <p class="text-gray-900">{{ taskDetailForm.targetInterfaceName }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">最近运行时间</label>
-                        <p class="text-gray-900">{{ taskDetailForm.lastRunTime || '暂未运行' }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">创建时间</label>
-                        <p class="text-gray-900">{{ taskDetailForm.createTime }}</p>
-                    </div>
-                </div>
-            </div>
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="任务名称">{{ taskDetailForm.name }}</el-descriptions-item>
+                <el-descriptions-item label="任务状态">
+                    <el-tag :type="getTaskStatusTagType(taskDetailForm.status)">{{ getTaskStatusText(taskDetailForm.status) }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="任务描述" :span="2">{{ taskDetailForm.description || '暂无描述' }}</el-descriptions-item>
+                <el-descriptions-item label="源平台">{{ taskDetailForm.sourcePlatformName }}</el-descriptions-item>
+                <el-descriptions-item label="源接口">{{ taskDetailForm.sourceInterfaceName }}</el-descriptions-item>
+                <el-descriptions-item label="目标平台">{{ taskDetailForm.targetPlatformName }}</el-descriptions-item>
+                <el-descriptions-item label="目标接口">{{ taskDetailForm.targetInterfaceName }}</el-descriptions-item>
+                <el-descriptions-item label="最近运行时间">{{ taskDetailForm.lastRunTime || '暂未运行' }}</el-descriptions-item>
+                <el-descriptions-item label="新增时间">{{ taskDetailForm.createTime }}</el-descriptions-item>
+            </el-descriptions>
         </el-dialog>
 
         <!-- 任务编辑向导弹窗 -->
@@ -1311,7 +1246,15 @@
                             method: 'POST',
                             fieldCount: 8,
                             description: '业务订购接口',
-                            createTime: '2024-01-18 11:00:00'
+                            createTime: '2024-01-18 11:00:00',
+                            fields: [
+                                { id: 1, name: 'mainOrderNo', type: 'string', required: true, description: '主订单号', level: 0 },
+                                { id: 2, name: 'customerInfo', type: 'object', required: true, description: '客户信息', level: 0 },
+                                { id: 3, name: 'customName', type: 'string', required: true, description: '客户姓名', level: 1 },
+                                { id: 4, name: 'phoneNumber', type: 'string', required: true, description: '手机号码', level: 1 },
+                                { id: 5, name: 'productCode', type: 'string', required: true, description: '产品编码', level: 0 },
+                                { id: 6, name: 'orderTime', type: 'string', required: true, description: '订购时间', level: 0 }
+                            ]
                         },
                         {
                             id: 2,
@@ -1322,7 +1265,12 @@
                             method: 'POST',
                             fieldCount: 5,
                             description: '业务退订接口',
-                            createTime: '2024-01-18 11:30:00'
+                            createTime: '2024-01-18 11:30:00',
+                            fields: [
+                                { id: 1, name: 'orderNo', type: 'string', required: true, description: '订单号', level: 0 },
+                                { id: 2, name: 'phoneNumber', type: 'string', required: true, description: '手机号码', level: 0 },
+                                { id: 3, name: 'cancelReason', type: 'string', required: false, description: '退订原因', level: 0 }
+                            ]
                         },
                         {
                             id: 3,
@@ -1333,7 +1281,14 @@
                             method: 'POST',
                             fieldCount: 10,
                             description: '订单数据同步接口',
-                            createTime: '2024-01-19 15:45:00'
+                            createTime: '2024-01-19 15:45:00',
+                            fields: [
+                                { id: 1, name: 'syncId', type: 'string', required: true, description: '同步ID', level: 0 },
+                                { id: 2, name: 'orderData', type: 'array', required: true, description: '订单数据', level: 0 },
+                                { id: 3, name: 'orderId', type: 'string', required: true, description: '订单ID', level: 1 },
+                                { id: 4, name: 'status', type: 'string', required: true, description: '订单状态', level: 1 },
+                                { id: 5, name: 'timestamp', type: 'string', required: true, description: '时间戳', level: 0 }
+                            ]
                         }
                     ],
                     interfaceSearch: '',
@@ -1565,11 +1520,48 @@
                     this.platformForm = { ...platform };
                     this.platformDialogVisible = true;
                 },
+                // 检查平台下是否有接口
+                hasInterfacesInPlatform(platformId) {
+                    return this.interfaces.some(interface => interface.platformId === platformId);
+                },
+                // 检查接口下是否有任务
+                hasTasksInInterface(interfaceId) {
+                    // 根据interfaceId找到接口名称
+                    const interface = this.interfaces.find(i => i.id === interfaceId);
+                    if (!interface) return false;
+                    
+                    return this.tasks.some(task => 
+                        task.sourceInfo.interfaceName === interface.name || 
+                        task.targetInfo.interfaceName === interface.name
+                    );
+                },
+                // 检查任务是否正在运行
+                isTaskRunning(taskId) {
+                    const task = this.tasks.find(t => t.id === taskId);
+                    return task && task.status === 'enabled';
+                },
                 deletePlatform(platform) {
-                    ElMessageBox.confirm('确认删除该平台吗？平台下的所有接口定义也将被删除。', '确认删除', {
-                        type: 'warning'
-                    }).then(() => {
-                        ElMessage.success('删除成功');
+                    // 检查该平台下是否存在接口
+                    if (this.hasInterfacesInPlatform(platform.id)) {
+                        ElMessage.error('该平台存在接口，无法删除');
+                        return;
+                    }
+                    
+                    ElMessageBox.confirm(
+                        `确定要删除平台"${platform.name}"吗？`,
+                        '删除确认',
+                        {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        }
+                    ).then(() => {
+                        // 实际删除逻辑
+                        const index = this.platforms.findIndex(p => p.id === platform.id);
+                        if (index > -1) {
+                            this.platforms.splice(index, 1);
+                            ElMessage.success('平台删除成功');
+                        }
                     });
                 },
                 testPlatformConnection() {
@@ -1645,14 +1637,34 @@
                 },
                 editInterface(interface) {
                     this.interfaceDialogTitle = '编辑接口';
-                    this.interfaceForm = { ...interface };
+                    this.interfaceForm = { 
+                        ...interface,
+                        fields: interface.fields || []
+                    };
                     this.interfaceDialogVisible = true;
                 },
                 deleteInterface(interface) {
-                    ElMessageBox.confirm('确认删除该接口吗？', '确认删除', {
-                        type: 'warning'
-                    }).then(() => {
-                        ElMessage.success('删除成功');
+                    // 检查该接口下是否存在任务
+                    if (this.hasTasksInInterface(interface.id)) {
+                        ElMessage.error('该接口存在任务，无法删除');
+                        return;
+                    }
+                    
+                    ElMessageBox.confirm(
+                        `确定要删除接口"${interface.name}"吗？`,
+                        '删除确认',
+                        {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        }
+                    ).then(() => {
+                        // 实际删除逻辑
+                        const index = this.interfaces.findIndex(i => i.id === interface.id);
+                        if (index > -1) {
+                            this.interfaces.splice(index, 1);
+                            ElMessage.success('接口删除成功');
+                        }
                     });
                 },
                 saveInterface() {
@@ -1809,10 +1821,28 @@
                     this.taskEditDialogVisible = true;
                 },
                 deleteTask(task) {
-                    ElMessageBox.confirm('确认删除该任务吗？', '确认删除', {
-                        type: 'warning'
-                    }).then(() => {
-                        ElMessage.success('删除成功');
+                    let confirmMessage = `确定要删除任务"${task.name}"吗？`;
+                    
+                    // 如果任务正在运行，给出特殊提示
+                    if (this.isTaskRunning(task.id)) {
+                        confirmMessage = `任务"${task.name}"正在运行中，删除后将停止执行，确定要删除吗？`;
+                    }
+                    
+                    ElMessageBox.confirm(
+                        confirmMessage,
+                        '删除确认',
+                        {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        }
+                    ).then(() => {
+                        // 实际删除逻辑
+                        const index = this.tasks.findIndex(t => t.id === task.id);
+                        if (index > -1) {
+                            this.tasks.splice(index, 1);
+                            ElMessage.success('任务删除成功');
+                        }
                     });
                 },
                 toggleTaskStatus(task) {

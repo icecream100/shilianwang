@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视联网适配中心 - 驾驶舱</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue/dist/index.iife.js"></script>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dashboard-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #409eff;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #409eff, #67c23a);
+        }
+        .metric-card-primary {
+            border-left-color: #409eff;
+            background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+        }
+        .metric-card-success {
+            border-left-color: #67c23a;
+            background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+        }
+        .metric-card-warning {
+            border-left-color: #e6a23c;
+            background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+        }
+        .metric-card-danger {
+            border-left-color: #f56c6c;
+            background: linear-gradient(135deg, #fef0f0 0%, #ffffff 100%);
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+            animation: pulse 2s infinite;
+        }
+        .status-online {
+            background-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+        .status-offline {
+            background-color: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+        .status-warning {
+            background-color: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* 状态标签样式 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge-online {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-badge-offline {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        .status-badge-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        /* 表格美化 */
+        .platform-table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .platform-table .el-table__header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .platform-table .el-table__header th {
+            background: transparent;
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .platform-table .el-table__body tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .platform-table .el-table__row {
+            transition: all 0.3s ease;
+        }
+        
+        .platform-table .el-table__row td {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 12px 8px;
+        }
+        
+        /* 心跳时间样式 */
+        .heartbeat-time {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #64748b;
+        }
+        .chart-container {
+            height: 350px;
+            width: 100%;
+            padding: 10px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+        .chart-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            position: relative;
+        }
+        .section-title::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #409eff, #67c23a);
+        }
+        .dashboard-section {
+            margin-bottom: 32px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+        }
+        .el-table .el-table__header-wrapper th {
+            background: #f5f7fa !important;
+            color: #333 !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+        }
+        .el-table .el-table__body-wrapper td {
+            color: #333 !important;
+            font-size: 12px !important;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            color: #bdc3c7;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .nav-item.active {
+            background-color: rgba(64, 158, 255, 0.2);
+            color: #409eff;
+            border-left-color: #409eff;
+        }
+        .nav-group {
+            margin-bottom: 10px;
+        }
+        .nav-group-title {
+            padding: 8px 20px;
+            color: #95a5a6;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .nav-submenu {
+            padding-left: 40px;
+            font-size: 14px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .metric-card {
+                padding: 20px;
+            }
+            .metric-card .text-4xl {
+                font-size: 2.5rem;
+            }
+            .dashboard-section {
+                margin-bottom: 24px;
+            }
+            .section-title {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .metric-card .text-4xl {
+                font-size: 2rem;
+            }
+            .chart-container {
+                height: 280px;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dashboard-section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .metric-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .chart-card {
+            animation: fadeInUp 0.8s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="flex h-screen bg-gray-50">
+            <!-- 左侧导航 -->
+            <div class="w-64 sidebar">
+                <div class="p-6 border-b border-gray-600">
+                    <h1 class="text-xl font-bold text-white">视联网适配中心</h1>
+                </div>
+                <nav class="mt-6">
+                    <div class="nav-group">
+                        <div class="nav-group-title">运营门户</div>
+                        <div class="nav-item active">
+                            <i class="el-icon-monitor"></i> 驾驶舱
+                        </div>
+                        <div class="nav-item">
+                            <i class="el-icon-user"></i> 客户管理
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'analysis'}" @click="activeMenu = 'analysis'">
+                            <i class="el-icon-data-analysis"></i> 运营分析
+                        </div>
+                        <!-- 运营分析二级菜单 -->
+                        <div v-if="activeMenu === 'analysis'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user"></i> 客户分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-cpu"></i> 设备分析
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-data-line"></i> 业务分析
+                            </div>
+                        </div>
+
+                        <div class="nav-item" :class="{active: activeMenu === 'system'}" @click="activeMenu = 'system'">
+                            <i class="el-icon-setting"></i> 系统配置
+                        </div>
+                        <!-- 系统配置二级菜单 -->
+                        <div v-if="activeMenu === 'system'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-user"></i> 用户管理
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-s-custom"></i> 角色管理
+                            </div>
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'logs'}" @click="activeMenu = 'logs'">
+                            <i class="el-icon-document"></i> 日志管理
+                        </div>
+                        <!-- 日志管理二级菜单 -->
+                        <div v-if="activeMenu === 'logs'" class="nav-submenu">
+                            <div class="nav-item">
+                                <i class="el-icon-key"></i> 登录日志
+                            </div>
+                            <div class="nav-item">
+                                <i class="el-icon-edit"></i> 操作日志
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">接口适配</div>
+                        <div class="nav-item" :class="{active: activeMenu === 'interface'}" @click="activeMenu = 'interface'">
+                            <i class="el-icon-connection"></i> 接入平台管理
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'device'}" @click="activeMenu = 'device'">
+                            <i class="el-icon-cpu"></i> 设备管理
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'channel'}" @click="activeMenu = 'channel'">
+                            <i class="el-icon-link"></i> 通道管理
+                        </div>
+                    </div>
+                    <div class="nav-group">
+                        <div class="nav-group-title">业务数据采集</div>
+                        <div class="nav-item" :class="{active: activeMenu === 'collection'}" @click="activeMenu = 'collection'">
+                            <i class="el-icon-data-board"></i> 业务采集设置
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'sync'}" @click="activeMenu = 'sync'">
+                            <i class="el-icon-refresh"></i> 客户同步设置
+                        </div>
+                        <div class="nav-item" :class="{active: activeMenu === 'task'}" @click="activeMenu = 'task'">
+                            <i class="el-icon-view"></i> 任务状态
+                        </div>
+                    </div>
+                </nav>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- 顶部导航栏 -->
+                <div class="bg-white shadow-sm border-b px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">运营驾驶舱</h2>
+                            <p class="text-gray-600 mt-1">实时监控省级适配中心运营状态与关键指标</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <!-- 用户信息 -->
+                            <el-dropdown trigger="click">
+                                <div class="flex items-center cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-100">
+                                    <el-avatar size="small" class="mr-2" :src="userInfo.avatarUrl">
+                                        <i class="el-icon-user"></i>
+                                    </el-avatar>
+                                    <span class="text-gray-700 font-medium">{{ userInfo.realName }}</span>
+                                    <i class="el-icon-arrow-down ml-1 text-gray-500"></i>
+                                </div>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item @click="navigateToProfile">
+                                            <i class="el-icon-user mr-2"></i>个人中心
+                                        </el-dropdown-item>
+                                        <el-dropdown-item @click="navigateToPassword">
+                                            <i class="el-icon-key mr-2"></i>修改密码
+                                        </el-dropdown-item>
+                                        <el-dropdown-item divided @click="logout">
+                                            <i class="el-icon-switch-button mr-2"></i>退出登录
+                                        </el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="bg-white px-6 py-4 border-b shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-6">
+                            <el-button type="primary" size="default" @click="refreshData" class="shadow-md hover:shadow-lg transition-all duration-300">
+                                <i class="el-icon-refresh mr-2"></i>刷新数据
+                            </el-button>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="el-icon-time mr-2 text-gray-400"></i>
+                                <span>最后更新: {{ lastUpdateTime }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center text-sm text-gray-500">
+                                <span class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                                <span>实时监控中</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 驾驶舱内容 -->
+                <div class="flex-1 overflow-auto p-8 bg-gray-50">
+                    <!-- 4.1 省侧核心运营指标展示区 -->
+                    <div class="dashboard-section">
+                        <h3 class="section-title">核心运营指标</h3>
+                        <div class="metrics-grid">
+                            <!-- 已接入设备总数 -->
+                            <div class="metric-card metric-card-primary">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">已接入设备总数</p>
+                                        <p class="text-4xl font-bold text-blue-600 mb-2">{{ metrics.totalDevices }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="el-icon-arrow-up mr-1"></i> +{{ metrics.deviceGrowth }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-blue-500 opacity-20">
+                                        <i class="el-icon-cpu text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 省级平台接入数量 -->
+                            <div class="metric-card metric-card-success">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">省级平台接入数量</p>
+                                        <p class="text-4xl font-bold text-green-600 mb-2">{{ metrics.platformCount }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                                已启用平台
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-green-500 opacity-20">
+                                        <i class="el-icon-connection text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 服务客户总数 -->
+                            <div class="metric-card metric-card-warning">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">服务客户总数</p>
+                                        <p class="text-4xl font-bold text-purple-600 mb-2">{{ metrics.customerCount }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="el-icon-arrow-up mr-1"></i> +{{ metrics.customerGrowth }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-purple-500 opacity-20">
+                                        <i class="el-icon-user text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 业务数量 -->
+                            <div class="metric-card metric-card-danger">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">业务数量</p>
+                                        <p class="text-4xl font-bold text-orange-600 mb-2">{{ metrics.totalBusiness }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                                                累计总量
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-orange-500 opacity-20">
+                                        <i class="el-icon-document text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 设备分布统计和实时业务量监控 -->
+                        <div class="charts-grid">
+                            <!-- 设备分布统计 -->
+                            <div class="chart-card">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-lg font-semibold text-gray-800">各省级平台设备接入统计</h4>
+                                </div>
+                                <div id="deviceDistributionChart" class="chart-container"></div>
+                            </div>
+
+                            <!-- 实时业务量监控 -->
+                            <div class="chart-card">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-lg font-semibold text-gray-800">今日业务量趋势</h4>
+                                </div>
+                                <div id="businessVolumeChart" class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4.1.1 业务运营指标展示区 -->
+                    <div class="dashboard-section">
+                        <h3 class="section-title">业务运营指标</h3>
+                        <div class="metrics-grid">
+                            <!-- 订购业务总量 -->
+                            <div class="metric-card metric-card-primary">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">订购业务总量</p>
+                                        <p class="text-4xl font-bold text-blue-600 mb-2">{{ metrics.subscribeTotal }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="el-icon-arrow-up mr-1"></i> 增长率 {{ metrics.subscribeGrowth || 15.8 }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-blue-500 opacity-20">
+                                        <i class="el-icon-plus text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 退订业务总量 -->
+                            <div class="metric-card metric-card-danger">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">退订业务总量</p>
+                                        <p class="text-4xl font-bold text-red-600 mb-2">{{ metrics.unsubscribeTotal }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
+                                                <i class="el-icon-minus mr-1"></i> 流失率 {{ metrics.churnRate }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-red-500 opacity-20">
+                                        <i class="el-icon-remove text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 装维业务总量 -->
+                            <div class="metric-card metric-card-warning">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">装维业务总量</p>
+                                        <p class="text-4xl font-bold text-orange-600 mb-2">{{ metrics.maintenanceTotal }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                                <i class="el-icon-check mr-1"></i> 完成率 {{ metrics.completionRate }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-orange-500 opacity-20">
+                                        <i class="el-icon-setting text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 业务净增长 -->
+                            <div class="metric-card metric-card-success">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-600 mb-2">业务净增长</p>
+                                        <p class="text-4xl font-bold text-green-600 mb-2">{{ metrics.netGrowth }}</p>
+                                        <div class="flex items-center">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                                订购减退订
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-green-500 opacity-20">
+                                        <i class="el-icon-trend-charts text-5xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4.3 省级平台连接状态监控区 -->
+                    <div class="dashboard-section">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="section-title flex items-center">
+                                <i class="el-icon-connection text-indigo-500 mr-3 text-2xl"></i>
+                                省级平台连接状态
+                            </h3>
+                        </div>
+                        <div class="chart-card overflow-hidden bg-gradient-to-br from-white to-gray-50 border-2 border-gray-100">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-96">
+                                <!-- 平台连接状态矩阵 -->
+                                <div class="h-full flex flex-col">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                                            <i class="el-icon-monitor text-blue-500 mr-2"></i>
+                                            平台连接状态
+                                        </h4>
+                                        <div class="flex items-center space-x-2">
+                                            <el-button size="mini" type="text" @click="refreshData">
+                                                <i class="el-icon-refresh"></i>
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-h-0">
+                                        <el-table 
+                                            :data="platformConnections" 
+                                            style="width: 100%; height: 100%" 
+                                            class="platform-table"
+                                            size="small">
+                                        <el-table-column prop="name" label="平台名称" width="140">
+                                            <template #default="scope">
+                                                <div class="flex items-center">
+                                                    <i class="el-icon-connection text-blue-500 mr-2"></i>
+                                                    <span class="font-medium text-gray-800">{{ scope.row.name }}</span>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="连接状态" width="120">
+                                            <template #default="scope">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="status-badge" :class="{
+                                                        'status-badge-online': scope.row.connectionStatus === 'connected',
+                                                        'status-badge-offline': scope.row.connectionStatus !== 'connected'
+                                                    }">
+                                                        <span class="status-indicator" :class="{
+                                                            'status-online': scope.row.connectionStatus === 'connected',
+                                                            'status-offline': scope.row.connectionStatus !== 'connected'
+                                                        }"></span>
+                                                        {{ scope.row.connectionStatus === 'connected' ? '已连接' : '已断开' }}
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column label="认证状态" width="120">
+                                            <template #default="scope">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="status-badge" :class="{
+                                                        'status-badge-online': scope.row.authStatus === 'success',
+                                                        'status-badge-warning': scope.row.authStatus === 'pending',
+                                                        'status-badge-offline': scope.row.authStatus === 'failed'
+                                                    }">
+                                                        <span class="status-indicator" :class="{
+                                                            'status-online': scope.row.authStatus === 'success',
+                                                            'status-warning': scope.row.authStatus === 'pending',
+                                                            'status-offline': scope.row.authStatus === 'failed'
+                                                        }"></span>
+                                                        {{ scope.row.authStatus === 'success' ? '成功' : scope.row.authStatus === 'pending' ? '待处理' : '失败' }}
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        <el-table-column prop="lastHeartbeat" label="最新心跳" width="100">
+                                            <template #default="scope">
+                                                <div class="flex items-center justify-center">
+                                                    <span class="heartbeat-time">{{ scope.row.lastHeartbeat }}</span>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        </el-table>
+                                    </div>
+                                </div>
+
+                                <!-- 接入平台设备在线率排行榜 -->
+                                <div class="h-full flex flex-col">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                                            <i class="el-icon-data-line text-blue-500 mr-2"></i>
+                                            接入平台设备在线率排行榜
+                                        </h4>
+                                    </div>
+                                    <div class="flex-1 min-h-0">
+                                        <div id="onlineRateRankingChart" class="chart-container bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 h-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    activeMenu: 'dashboard', // 添加导航状态变量
+                    lastUpdateTime: new Date().toLocaleString(),
+                    // 用户信息
+                    userInfo: {
+                        username: 'admin',
+                        realName: '张三',
+                        department: '技术部',
+                        avatarUrl: ''
+                    },
+                    metrics: {
+                        // 设备相关指标（来自运营分析-设备分析）
+                        totalDevices: 15680,
+                        onlineDevices: 14776,
+                        offlineDevices: 904,
+                        deviceOnlineRate: 94.2,
+                        deviceGrowth: 12.5,
+                        
+                        // 平台相关指标
+                        platformCount: 8,
+                        
+                        // 客户相关指标（来自运营分析-客户分析）
+                        customerCount: 8956,
+                        monthlyNewCustomers: 156,
+                        yearlyNewCustomers: 1248,
+                        customerGrowth: 18.7,
+                        
+                        // 业务相关指标（来自运营分析-业务分析）
+                        subscribeTotal: 2890,
+                        unsubscribeTotal: 156,
+                        maintenanceTotal: 410,
+                        netGrowth: 2734,
+                        completionRate: 92.5,
+                        churnRate: 5.4,
+                        totalBusiness: 3456, // 总业务数量
+                        
+                        // 活动视频流数量
+                        activeStreams: 2847
+                    },
+
+                    performance: {
+                        deviceOnlineRate: 94.2
+                    },
+                    platformConnections: [
+                        { name: '千里眼平台A', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:45' },
+                        { name: '移动看家B', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:42' },
+                        { name: '国标平台C', connectionStatus: 'connected', authStatus: 'pending', lastHeartbeat: '10:22:15' },
+                        { name: '省平台D', connectionStatus: 'disconnected', authStatus: 'failed', lastHeartbeat: '10:15:30' },
+                        { name: '其他平台E', connectionStatus: 'connected', authStatus: 'success', lastHeartbeat: '10:23:38' }
+                    ],
+
+                };
+            },
+            mounted() {
+                this.initCharts();
+                this.startAutoRefresh();
+            },
+            methods: {
+                // 用户相关方法
+                navigateToProfile() {
+                    ElMessage.info('跳转到个人中心');
+                    // 这里可以添加路由跳转逻辑
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                navigateToPassword() {
+                    ElMessage.info('跳转到修改密码');
+                    // 这里可以添加路由跳转逻辑
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                logout() {
+                    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElMessage.success('已退出登录');
+                        // 这里可以添加退出登录逻辑
+                        window.location.href = './登录页面原型.html';
+                    }).catch(() => {
+                        // 取消退出
+                    });
+                },
+                refreshData() {
+                    this.lastUpdateTime = new Date().toLocaleString();
+                    ElMessage.success('数据已刷新');
+                    // 模拟数据更新
+                    this.updateMetrics();
+                },
+                updateMetrics() {
+                    // 模拟实时数据更新
+                    this.metrics.activeStreams = Math.floor(Math.random() * 1000) + 2500;
+                    
+                    // 模拟业务指标的小幅波动
+                    const variation = () => Math.floor(Math.random() * 10) - 5; // -5到+5的随机变化
+                    
+                    this.metrics.subscribeTotal += variation();
+                    this.metrics.unsubscribeTotal += Math.abs(variation()); // 退订只增不减
+                    this.metrics.maintenanceTotal += variation();
+                    
+                    // 重新计算净增长和总业务数量
+                    this.metrics.netGrowth = this.metrics.subscribeTotal - this.metrics.unsubscribeTotal;
+                    this.metrics.totalBusiness = this.metrics.subscribeTotal + this.metrics.unsubscribeTotal + this.metrics.maintenanceTotal;
+                    
+                    // 更新在线设备数（小幅波动）
+                    this.metrics.onlineDevices += variation();
+                    if (this.metrics.onlineDevices < 0) this.metrics.onlineDevices = 0;
+                    if (this.metrics.onlineDevices > this.metrics.totalDevices) this.metrics.onlineDevices = this.metrics.totalDevices;
+                    
+                    // 重新计算离线设备和在线率
+                    this.metrics.offlineDevices = this.metrics.totalDevices - this.metrics.onlineDevices;
+                    this.metrics.onlineRate = ((this.metrics.onlineDevices / this.metrics.totalDevices) * 100).toFixed(1);
+                    this.performance.deviceOnlineRate = parseFloat(this.metrics.onlineRate);
+                },
+                startAutoRefresh() {
+                    setInterval(() => {
+                        this.updateMetrics();
+                        this.lastUpdateTime = new Date().toLocaleString();
+                    }, 30000); // 每30秒自动刷新
+                },
+                initCharts() {
+                    this.initDeviceDistributionChart();
+                    this.initBusinessVolumeChart();
+                    this.initOnlineRateRankingChart();
+                },
+                initDeviceDistributionChart() {
+                    const chart = echarts.init(document.getElementById('deviceDistributionChart'));
+                    const option = {
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left',
+                            textStyle: {
+                                color: '#333',
+                                fontSize: 12
+                            }
+                        },
+                        series: [
+                            {
+                                name: '设备分布',
+                                type: 'pie',
+                                radius: '50%',
+                                data: [
+                                    { value: 6520, name: '千里眼平台', itemStyle: { color: '#67c23a' } },
+                                    { value: 4230, name: '移动看家', itemStyle: { color: '#409eff' } },
+                                    { value: 3180, name: '国标平台', itemStyle: { color: '#e6a23c' } },
+                                    { value: 1917, name: '其他平台', itemStyle: { color: '#f56c6c' } }
+                                ],
+                                emphasis: {
+                                    itemStyle: {
+                                        shadowBlur: 10,
+                                        shadowOffsetX: 0,
+                                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                    }
+                                },
+                                label: {
+                                    fontSize: 12,
+                                    color: '#333'
+                                }
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                },
+                initBusinessVolumeChart() {
+                    const chart = echarts.init(document.getElementById('businessVolumeChart'));
+                    const hours = [];
+                    const subscribeData = [];
+                    const unsubscribeData = [];
+                    
+                    for (let i = 0; i < 24; i++) {
+                        hours.push(i + ':00');
+                        subscribeData.push(Math.floor(Math.random() * 50) + 20);
+                        unsubscribeData.push(Math.floor(Math.random() * 15) + 5);
+                    }
+                    
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
+                        },
+                        legend: {
+                            data: ['订购业务', '退订业务'],
+                            textStyle: {
+                                color: '#333',
+                                fontSize: 12
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: hours,
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: '#f0f0f0'
+                                }
+                            }
+                        },
+                        series: [
+                            {
+                                name: '订购业务',
+                                type: 'line',
+                                data: subscribeData,
+                                smooth: true,
+                                itemStyle: {
+                                    color: '#409eff'
+                                },
+                                lineStyle: {
+                                    width: 2
+                                },
+                                symbol: 'circle',
+                                symbolSize: 6
+                            },
+                            {
+                                name: '退订业务',
+                                type: 'line',
+                                data: unsubscribeData,
+                                smooth: true,
+                                itemStyle: {
+                                    color: '#f56c6c'
+                                },
+                                lineStyle: {
+                                    width: 2
+                                },
+                                symbol: 'circle',
+                                symbolSize: 6
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                },
+                initOnlineRateRankingChart() {
+                    const chart = echarts.init(document.getElementById('onlineRateRankingChart'));
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: '{b}: {c}%',
+                            backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 12
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'value',
+                            min: 0,
+                            max: 100,
+                            axisLabel: {
+                                formatter: '{value}%',
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: '#f0f0f0'
+                                }
+                            }
+                        },
+                        yAxis: {
+                            type: 'category',
+                            data: ['省平台D', '其他平台E', '国标平台C', '移动看家B', '千里眼平台A'],
+                            axisLabel: {
+                                color: '#333',
+                                fontSize: 12
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
+                        },
+                        series: [
+                            {
+                                name: '设备在线率',
+                                type: 'bar',
+                                data: [78.4, 85.3, 91.5, 94.2, 96.8],
+                                barCategoryGap: '30%',
+                                itemStyle: {
+                                    color: function(params) {
+                                        const colors = ['#67c23a', '#409eff', '#e6a23c', '#f56c6c', '#909399'];
+                                        return colors[params.dataIndex];
+                                    },
+                                    borderRadius: [0, 2, 2, 0]
+                                },
+                                label: {
+                                    show: true,
+                                    position: 'right',
+                                    formatter: '{c}%',
+                                    color: '#333',
+                                    fontSize: 12,
+                                    fontWeight: 'bold'
+                                }
+                            }
+                        ]
+                    };
+                    chart.setOption(option);
+                }
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
