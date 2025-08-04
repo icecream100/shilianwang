@@ -165,7 +165,6 @@
                     <div class="flex justify-between items-center">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800">{{ currentPageTitle }}</h2>
-                            <p class="text-gray-600 mt-1">{{ currentPageDescription }}</p>
                         </div>
                         <div class="flex items-center space-x-4">
                             <!-- 用户信息 -->
@@ -458,23 +457,17 @@
                     
                     // 客户分析筛选条件
                     customerFilters: {
-                        dateRange: [],
-                        industry: '',
-                        region: ''
+                        dateRange: []
                     },
                     
                     // 设备分析筛选条件
                     deviceFilters: {
-                        dateRange: [],
-                        platform: '',
-                        status: ''
+                        dateRange: []
                     },
                     
                     // 业务分析筛选条件
                     businessFilters: {
-                        dateRange: [],
-                        businessType: '',
-                        region: ''
+                        dateRange: []
                     },
                     
                     // 客户分析指标
@@ -531,14 +524,7 @@
                     };
                     return titles[this.activeTab] || '运营分析';
                 },
-                currentPageDescription() {
-                    const descriptions = {
-                        customer: '深入分析客户分布、活跃度和价值，为客户运营策略提供数据支撑',
-                        device: '全面监控设备状态、性能和利用率，优化设备资源配置和运维效率',
-                        business: '统计分析业务使用情况、性能指标和用户行为，支持业务决策优化'
-                    };
-                    return descriptions[this.activeTab] || '全面分析客户、设备和业务数据，为运营决策提供数据支撑';
-                }
+
             },
             mounted() {
                 this.$nextTick(() => {
@@ -993,15 +979,7 @@
                     });
                 },
                 
-                exportReport() {
-                    ElMessage.success('报表导出功能开发中...');
-                },
-                
-                refreshData() {
-                    ElMessage.success('数据刷新成功！');
-                    this.initCharts();
-                },
-                
+
                 // 查询方法
                 queryCustomerData() {
                     ElMessage.success('客户数据查询成功！');

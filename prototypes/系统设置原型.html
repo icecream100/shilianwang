@@ -529,7 +529,7 @@
                 <el-form-item label="角色标识" prop="roleKey">
                     <el-input v-model="roleForm.roleKey" :disabled="roleForm.id" placeholder="请输入角色标识（英文）"></el-input>
                 </el-form-item>
-                <el-form-item label="角色描述">
+                <el-form-item label="角色描述" prop="description">
                     <el-input v-model="roleForm.description" type="textarea" :rows="3" placeholder="请输入角色描述"></el-input>
                 </el-form-item>
             </el-form>
@@ -810,7 +810,11 @@
                     },
                     roleRules: {
                         roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-                        roleKey: [{ required: true, message: '请输入角色标识', trigger: 'blur' }]
+                        roleKey: [{ required: true, message: '请输入角色标识', trigger: 'blur' }],
+                        description: [
+                            { max: 200, message: '角色描述不能超过200个字符', trigger: 'blur' },
+                            { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9\s\.,;:!?()\[\]{}"'\-_+=*&%$#@~`|\\\/<>]*$/, message: '角色描述支持中英文、数字及常见符号', trigger: 'blur' }
+                        ]
                     },
                     
                     // 分配角色相关数据
