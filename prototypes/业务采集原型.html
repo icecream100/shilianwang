@@ -150,7 +150,7 @@
                         <el-menu-item index="platform">业务平台管理</el-menu-item>
                         <el-menu-item index="interface">接口管理</el-menu-item>
                         <el-menu-item index="task">任务管理</el-menu-item>
-                        <el-menu-item index="log">同步日志</el-menu-item>
+                        <el-menu-item index="log">同步记录</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
             </div>
@@ -162,7 +162,6 @@
                     <div class="flex justify-between items-center">
                         <div>
                             <h1 class="text-xl font-semibold text-gray-800">{{ currentPageTitle }}</h1>
-                            <p class="text-sm text-gray-500 mt-1">{{ currentPageDesc }}</p>
                         </div>
                         <div class="flex items-center space-x-4">
                             <!-- 用户信息 -->
@@ -398,12 +397,27 @@
                                         </div>
                                     </template>
                                 </el-table-column>
+                                <el-table-column prop="runMode" label="运行模式" width="100">
+                                    <template #default="scope">
+                                        <el-tag :type="scope.row.runMode === 'once' ? 'info' : 'primary'">
+                                            {{ scope.row.runMode === 'once' ? '单次' : '循环' }}
+                                        </el-tag>
+                                    </template>
+                                </el-table-column>
                                 <el-table-column prop="status" label="状态" width="100">
                                     <template #default="scope">
                                         <el-tag :type="getTaskStatusTagType(scope.row.status)">{{getTaskStatusText(scope.row.status)}}</el-tag>
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="lastRunTime" label="最近运行" width="180"></el-table-column>
+                                <el-table-column prop="nextRunTime" label="下次运行" width="180">
+                                    <template #default="scope">
+                                        <span v-if="scope.row.runMode === 'cycle' && scope.row.status === 'enabled'">
+                                            {{ scope.row.nextRunTime || '-' }}
+                                        </span>
+                                        <span v-else>-</span>
+                                    </template>
+                                </el-table-column>
                                 <el-table-column prop="createTime" label="新增时间" width="180"></el-table-column>
                                 <el-table-column label="操作" width="280">
                                     <template #default="scope">
@@ -431,7 +445,7 @@
                         </div>
                     </div>
 
-                    <!-- 同步日志 -->
+                    <!-- 同步记录 -->
                     <div v-show="activeTab === 'log'">
                         <div class="content-card p-6">
                             <!-- 筛选查询区域 -->
@@ -463,20 +477,42 @@
                                     <!-- 第二行 -->
                                     <div class="flex flex-wrap gap-4 items-center">
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">调用状态:</span>
-                                            <el-select v-model="logStatusFilter" placeholder="请选择" clearable style="width: 150px">
+                                            <span class="text-sm font-medium text-gray-700 w-16">源平台:</span>
+                                            <el-select v-model="logSourcePlatformFilter" placeholder="请选择" clearable style="width: 120px">
                                                 <el-option label="全部" value=""></el-option>
-                                                <el-option label="成功" value="success"></el-option>
-                                                <el-option label="失败" value="failure"></el-option>
+                                                <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.name"></el-option>
                                             </el-select>
                                         </div>
                                         <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">目标平台:</span>
+                                            <el-select v-model="logTargetPlatformFilter" placeholder="请选择" clearable style="width: 120px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.name"></el-option>
+                                            </el-select>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">调用状态:</span>
+                                            <el-select v-model="logStatusFilter" placeholder="请选择" clearable style="width: 120px">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option label="成功" value="success"></el-option>
+                                                <el-option label="失败" value="failure"></el-option>
+                                                <el-option label="部分成功" value="partial"></el-option>
+                                            </el-select>
+                                        </div>
+                                    </div>
+                                    <!-- 第三行 -->
+                                    <div class="flex flex-wrap gap-4 items-center">
+                                        <div class="flex items-center space-x-2">
                                             <span class="text-sm font-medium text-gray-700 w-16">关键词:</span>
-                                            <el-input v-model="logKeywordSearch" placeholder="关键词搜索" clearable style="width: 200px"></el-input>
+                                            <el-input v-model="logKeywordSearch" placeholder="搜索任务名称、接口名称、错误信息" clearable style="width: 300px"></el-input>
                                         </div>
                                         <el-button type="primary" @click="searchLogs">
                                             <el-icon><Search /></el-icon>
                                             查询
+                                        </el-button>
+                                        <el-button @click="resetLogFilters">
+                                            <el-icon><Refresh /></el-icon>
+                                            重置
                                         </el-button>
                                     </div>
                                 </div>
@@ -484,22 +520,31 @@
 
                             <!-- 日志列表 -->
                             <el-table :data="filteredLogs" stripe>
-                                <el-table-column prop="callTime" label="调用时间" width="180"></el-table-column>
-                                <el-table-column prop="taskName" label="任务名称" width="150"></el-table-column>
-                                <el-table-column prop="sourcePlatform" label="源平台" width="120"></el-table-column>
-                                <el-table-column prop="targetPlatform" label="目标平台" width="120"></el-table-column>
-                                <el-table-column prop="status" label="调用状态" width="100">
+                                <el-table-column prop="callTime" label="调用时间" width="160"></el-table-column>
+                                <el-table-column prop="taskName" label="任务名称" width="140"></el-table-column>
+                                <el-table-column prop="sourcePlatform" label="源平台" width="100"></el-table-column>
+                                <el-table-column prop="sourceInterface" label="源接口" width="100"></el-table-column>
+                                <el-table-column prop="targetPlatform" label="目标平台" width="100"></el-table-column>
+                                <el-table-column prop="targetInterface" label="目标接口" width="100"></el-table-column>
+                                <el-table-column prop="status" label="状态" width="80">
                                     <template #default="scope">
-                                        <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'">
-                                            {{scope.row.status === 'success' ? '成功' : '失败'}}
+                                        <el-tag :type="getLogStatusType(scope.row.status)">
+                                            {{getLogStatusText(scope.row.status)}}
                                         </el-tag>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="duration" label="耗时(ms)" width="100"></el-table-column>
-                                <el-table-column prop="errorMessage" label="错误信息" width="200" show-overflow-tooltip></el-table-column>
-                                <el-table-column label="操作" width="120">
+                                <el-table-column prop="dataCount" label="数据量" width="80"></el-table-column>
+                                <el-table-column label="成功/失败" width="100">
                                     <template #default="scope">
-                                        <el-button size="small" type="primary" @click="viewLogDetail(scope.row)">查看详情</el-button>
+                                        <span style="color: #67C23A;">{{scope.row.successCount}}</span> / 
+                                        <span style="color: #F56C6C;">{{scope.row.failureCount}}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="duration" label="耗时(ms)" width="90"></el-table-column>
+                                <el-table-column prop="errorMessage" label="错误信息" width="150" show-overflow-tooltip></el-table-column>
+                                <el-table-column label="操作" width="100">
+                                    <template #default="scope">
+                                        <el-button size="small" type="primary" @click="viewLogDetail(scope.row)">详情</el-button>
                                     </template>
                                 </el-table-column>
                             </el-table>
@@ -707,6 +752,7 @@
                 <el-steps :active="taskWizardStep" finish-status="success">
                     <el-step title="基本信息"></el-step>
                     <el-step title="字段映射"></el-step>
+                    <el-step title="运行配置"></el-step>
                     <el-step title="配置确认"></el-step>
                 </el-steps>
             </div>
@@ -749,8 +795,6 @@
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="font-medium">字段映射配置</h4>
                         <div class="space-x-2">
-                            <el-button size="small" @click="addMappingRow">添加映射</el-button>
-                            <el-button size="small" @click="autoMatchFields">智能匹配</el-button>
                             <el-button size="small" type="warning" @click="clearAllMappings">清空映射</el-button>
                         </div>
                     </div>
@@ -765,14 +809,14 @@
                     
                     <!-- 映射行 -->
                     <div class="space-y-2 max-h-96 overflow-y-auto">
-                        <div v-for="(mapping, index) in fieldMappings" :key="index" class="grid grid-cols-12 gap-2 p-3 bg-white border rounded hover:bg-gray-50">
+                        <div v-for="(targetField, index) in targetFields" :key="index" class="grid grid-cols-12 gap-2 p-3 bg-white border rounded hover:bg-gray-50">
                             <!-- 源字段选择 -->
                             <div class="col-span-5">
-                                <el-select v-model="mapping.sourceField" placeholder="选择源字段" size="small" class="w-full" @change="onMappingChange(index)">
-                                    <el-option v-for="field in sourceFields" :key="field.name" :label="`${field.name} (${field.type})`" :value="field.name">
+                                <el-select v-model="fieldMappings[targetField.name]" placeholder="选择源字段" size="small" class="w-full" clearable>
+                                    <el-option v-for="sourceField in availableSourceFields(targetField.name)" :key="sourceField.name" :label="`${sourceField.name} (${sourceField.type})`" :value="sourceField.name" :disabled="isSourceFieldUsed(sourceField.name, targetField.name)">
                                         <div class="flex justify-between items-center">
-                                            <span>{{field.name}}</span>
-                                            <el-tag size="small" :type="getFieldTypeColor(field.type)">{{field.type}}</el-tag>
+                                            <span>{{sourceField.name}}</span>
+                                            <el-tag size="small" :type="getFieldTypeColor(sourceField.type)">{{sourceField.type}}</el-tag>
                                         </div>
                                     </el-option>
                                 </el-select>
@@ -783,28 +827,18 @@
                                 <el-icon class="text-blue-500"><Right /></el-icon>
                             </div>
                             
-                            <!-- 目标字段选择 -->
-                            <div class="col-span-5">
-                                <el-select v-model="mapping.targetField" placeholder="选择目标字段" size="small" class="w-full" @change="onMappingChange(index)">
-                                    <el-option v-for="field in targetFields" :key="field.name" :label="`${field.name} (${field.type})`" :value="field.name">
-                                        <div class="flex justify-between items-center">
-                                            <span>{{field.name}}</span>
-                                            <el-tag size="small" :type="getFieldTypeColor(field.type)">{{field.type}}</el-tag>
-                                        </div>
-                                    </el-option>
-                                </el-select>
-                            </div>
-                            
-                            <!-- 删除按钮 -->
-                            <div class="col-span-1 flex items-center justify-center">
-                                <el-button size="small" type="danger" :icon="Delete" circle @click="removeMappingRow(index)"></el-button>
+                            <!-- 目标字段展示 -->
+                            <div class="col-span-6 flex items-center">
+                                <span class="font-mono text-sm">{{ targetField.name }}</span>
+                                <el-tag size="small" :type="getFieldTypeColor(targetField.type)" class="mx-2">{{ targetField.type }}</el-tag>
+                                <el-tag v-if="targetField.required" size="small" type="danger">必填</el-tag>
                             </div>
                         </div>
                         
                         <!-- 空状态 -->
-                        <div v-if="fieldMappings.length === 0" class="text-center py-8 text-gray-500">
-                            <el-icon class="text-4xl mb-2"><Connection /></el-icon>
-                            <p>暂无字段映射，点击"添加映射"开始配置</p>
+                        <div v-if="targetFields.length === 0" class="text-center py-8 text-gray-500">
+                            <el-icon class="text-4xl mb-2"><MessageBox /></el-icon>
+                            <p>请先在上方选择目标接口</p>
                         </div>
                     </div>
                     
@@ -818,8 +852,73 @@
                 </div>
             </div>
             
-            <!-- 步骤3：配置确认 -->
+            <!-- 步骤3：运行模式配置 -->
             <div v-show="taskWizardStep === 2">
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-medium mb-4">运行模式</h4>
+                        <el-radio-group v-model="taskForm.runMode" class="mb-4">
+                            <el-radio label="once">单次执行</el-radio>
+                            <el-radio label="cycle">循环执行</el-radio>
+                        </el-radio-group>
+                    </div>
+                    
+                    <!-- 循环配置 -->
+                    <div v-if="taskForm.runMode === 'cycle'" class="space-y-4">
+                        <div>
+                            <h5 class="font-medium mb-2">循环类型</h5>
+                            <el-radio-group v-model="taskForm.cycleType">
+                                <el-radio label="monthly">每月</el-radio>
+                                <el-radio label="weekly">每周</el-radio>
+                                <el-radio label="daily">每日</el-radio>
+                            </el-radio-group>
+                        </div>
+                        
+                        <!-- 每月配置 -->
+                        <div v-if="taskForm.cycleType === 'monthly'" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行日期</label>
+                                <el-select v-model="taskForm.monthlyDay" placeholder="选择日期">
+                                    <el-option v-for="day in 31" :key="day" :label="`${day}日`" :value="day"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
+                            </div>
+                        </div>
+                        
+                        <!-- 每周配置 -->
+                        <div v-if="taskForm.cycleType === 'weekly'" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行星期</label>
+                                <el-select v-model="taskForm.weeklyDay" placeholder="选择星期">
+                                    <el-option label="星期一" value="1"></el-option>
+                                    <el-option label="星期二" value="2"></el-option>
+                                    <el-option label="星期三" value="3"></el-option>
+                                    <el-option label="星期四" value="4"></el-option>
+                                    <el-option label="星期五" value="5"></el-option>
+                                    <el-option label="星期六" value="6"></el-option>
+                                    <el-option label="星期日" value="0"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
+                            </div>
+                        </div>
+                        
+                        <!-- 每日配置 -->
+                        <div v-if="taskForm.cycleType === 'daily'">
+                            <label class="block text-sm font-medium mb-1">执行时间</label>
+                            <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步骤4：配置确认 -->
+            <div v-show="taskWizardStep === 3">
                 <div class="space-y-4">
                     <div>
                         <h4 class="font-medium mb-2">基本信息</h4>
@@ -831,11 +930,23 @@
                         </div>
                     </div>
                     <div>
+                        <h4 class="font-medium mb-2">运行配置</h4>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p><strong>运行模式：</strong>{{taskForm.runMode === 'once' ? '单次执行' : '循环执行'}}</p>
+                            <div v-if="taskForm.runMode === 'cycle'">
+                                <p><strong>循环类型：</strong>{{getCycleTypeText(taskForm.cycleType)}}</p>
+                                <p v-if="taskForm.cycleType === 'monthly'"><strong>执行时间：</strong>每月{{taskForm.monthlyDay}}日 {{formatTime(taskForm.executeTime)}}</p>
+                                <p v-if="taskForm.cycleType === 'weekly'"><strong>执行时间：</strong>每周{{getWeekDayText(taskForm.weeklyDay)}} {{formatTime(taskForm.executeTime)}}</p>
+                                <p v-if="taskForm.cycleType === 'daily'"><strong>执行时间：</strong>每日 {{formatTime(taskForm.executeTime)}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
                         <h4 class="font-medium mb-2">字段映射概览</h4>
                         <div class="bg-gray-50 p-4 rounded">
-                            <p><strong>映射数量：</strong>{{fieldMappings.length}} 个</p>
-                            <div v-for="mapping in fieldMappings" :key="mapping.sourceField" class="text-sm">
-                                {{mapping.sourceField}} → {{mapping.targetField}}
+                            <p><strong>映射数量：</strong>{{ validMappingCount }} 个</p>
+                            <div v-for="(sourceField, targetField) in fieldMappings" :key="targetField" class="text-sm">
+                                <p v-if="sourceField">{{ sourceField }} → {{ targetField }}</p>
                             </div>
                         </div>
                     </div>
@@ -846,9 +957,9 @@
                 <span class="dialog-footer">
                     <el-button @click="taskWizardVisible = false">取消</el-button>
                     <el-button v-if="taskWizardStep > 0" @click="taskWizardStep--">上一步</el-button>
-                    <el-button v-if="taskWizardStep < 2" type="primary" @click="taskWizardStep++">下一步</el-button>
-                    <el-button v-if="taskWizardStep === 2" type="success" @click="saveTask">保存并激活</el-button>
-                    <el-button v-if="taskWizardStep === 2" @click="saveDraftTask">存为草稿</el-button>
+                    <el-button v-if="taskWizardStep < 3" type="primary" @click="taskWizardStep++">下一步</el-button>
+                    <el-button v-if="taskWizardStep === 3" type="success" @click="saveTask">保存并激活</el-button>
+                    <el-button v-if="taskWizardStep === 3" @click="saveDraftTask">存为草稿</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -882,38 +993,70 @@
 
         <!-- 日志详情对话框 -->
         <el-dialog v-model="logDetailVisible" title="调用详情" width="1400px" class="log-detail-dialog">
-            <!-- 基本信息卡片 -->
+            <!-- 基本信息 -->
             <div class="mb-6">
                 <el-descriptions :column="4" border>
-                    <el-descriptions-item label="调用时间">
+                    <el-descriptions-item v-for="(value, key) in logDetail.basicInfo" :key="key" :label="key">
                         <div class="flex items-center space-x-2">
-                            <el-icon class="text-blue-500"><Clock /></el-icon>
-                            <span class="font-medium">2024-01-20 14:30:15</span>
-                        </div>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="任务名称">
-                        <div class="flex items-center space-x-2">
-                            <el-icon class="text-green-500"><Connection /></el-icon>
-                            <span class="font-medium">移动订购数据同步</span>
-                        </div>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="执行耗时">
-                        <div class="flex items-center space-x-2">
-                            <el-icon class="text-purple-500"><Timer /></el-icon>
-                            <span class="font-medium">245ms</span>
-                        </div>
-                    </el-descriptions-item>
-                    <el-descriptions-item label="调用状态">
-                        <div class="flex items-center space-x-2">
-                            <el-icon class="text-orange-500"><CircleCheck /></el-icon>
-                            <el-tag type="success" size="small">成功</el-tag>
+                            <span class="font-medium">{{ value }}</span>
                         </div>
                     </el-descriptions-item>
                 </el-descriptions>
             </div>
-            
+
+            <!-- 成功状态：显示同步成果 -->
+            <div v-if="logDetail.status === 'success' || logDetail.status === 'partial'">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-b">
+                        <div class="flex items-center space-x-2 text-gray-700">
+                            <el-icon><DataAnalysis /></el-icon>
+                            <h4 class="font-medium">同步成果数据</h4>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-bold text-green-600">{{ logDetail.data.length }}</span> 条数据同步成功
+                            </div>
+                            <el-button type="success" size="small">
+                                <el-icon class="mr-1"><Download /></el-icon>
+                                导出数据
+                            </el-button>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <el-table :data="logDetail.data" stripe height="400" style="width: 100%">
+                            <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
+                            <el-table-column prop="customerName" label="客户姓名" width="120"></el-table-column>
+                            <el-table-column prop="phone" label="联系电话" width="150"></el-table-column>
+                            <el-table-column prop="businessType" label="业务类型"></el-table-column>
+                            <el-table-column prop="bandwidth" label="带宽"></el-table-column>
+                            <el-table-column prop="installAddress" label="安装地址" min-width="250"></el-table-column>
+                            <el-table-column prop="orderTime" label="订购时间" width="180"></el-table-column>
+                            <el-table-column prop="syncStatus" label="同步状态" width="100">
+                                <template #default="scope">
+                                    <el-tag type="success" size="small">{{ scope.row.syncStatus }}</el-tag>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 失败状态：显示失败原因 -->
+            <div v-else-if="logDetail.status === 'failure'">
+                 <div class="bg-red-50 border-l-4 border-red-400 rounded-r-lg p-6 my-4">
+                    <div class="flex items-center">
+                        <el-icon class="text-red-500 mr-3" size="24"><CircleCloseFilled /></el-icon>
+                        <h4 class="font-bold text-lg text-red-800">同步失败</h4>
+                    </div>
+                    <div class="mt-4 pl-10">
+                        <p class="text-md font-semibold text-red-700">失败原因:</p>
+                        <p class="mt-2 text-gray-700 bg-red-100 p-3 rounded">{{ logDetail.errorMessage }}</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- 报文内容区域 -->
-            <div class="grid grid-cols-3 gap-6">
+            <div class="grid grid-cols-3 gap-6" style="display: none;">
                 <!-- 原始请求 -->
                 <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                     <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center justify-between">
@@ -1013,6 +1156,7 @@
                 <el-steps :active="taskEditWizardStep" finish-status="success">
                     <el-step title="基本信息"></el-step>
                     <el-step title="字段映射"></el-step>
+                    <el-step title="运行配置"></el-step>
                     <el-step title="配置确认"></el-step>
                 </el-steps>
             </div>
@@ -1057,81 +1201,118 @@
             
             <!-- 步骤2：字段映射 -->
             <div v-show="taskEditWizardStep === 1">
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-medium">字段映射配置</h4>
-                        <div class="space-x-2">
-                            <el-button size="small" @click="addEditMappingRow">添加映射</el-button>
-                            <el-button size="small" @click="autoMatchEditFields">智能匹配</el-button>
-                            <el-button size="small" type="warning" @click="clearAllEditMappings">清空映射</el-button>
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="font-medium">字段映射配置 ({{ validEditMappingsCount }} / {{ editTargetFields.length }})</h4>
+                    <div class="space-x-2">
+                        <el-button size="small" type="warning" @click="clearAllEditMappings">清空映射</el-button>
+                    </div>
+                </div>
+                <div class="border rounded-lg overflow-hidden">
+                    <el-table :data="editTargetFields" style="width: 100%">
+                        <el-table-column label="目标字段名称" prop="name" width="200">
+                            <template #default="{ row }">
+                                <div class="flex items-center">
+                                    <span class="font-mono text-sm">{{ row.name }}</span>
+                                    <el-tooltip v-if="row.description" :content="row.description" placement="top">
+                                        <i class="el-icon-info text-gray-400 ml-2 cursor-pointer"></i>
+                                    </el-tooltip>
+                                </div>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="类型" prop="type" width="100">
+                            <template #default="{ row }">
+                                <el-tag :type="getFieldTypeColor(row.type)" size="small">{{ row.type }}</el-tag>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="必填" width="60" align="center">
+                            <template #default="{ row }">
+                                <el-tag v-if="row.required" type="danger" size="small" effect="dark">是</el-tag>
+                                <span v-else class="text-gray-400">否</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="映射源字段">
+                            <template #default="{ row }">
+                                <el-select v-model="editFieldMappings[row.name]" placeholder="选择源字段" clearable style="width: 100%;">
+                                    <el-option v-for="sField in availableEditSourceFields(row.name)" :key="sField.name" :label="sField.name" :value="sField.name" :disabled="isEditSourceFieldUsed(sField.name, row.name)">
+                                        <div class="flex justify-between w-full">
+                                            <span class="font-mono text-sm">{{ sField.name }}</span>
+                                            <el-tag :type="getFieldTypeColor(sField.type)" size="small">{{ sField.type }}</el-tag>
+                                        </div>
+                                    </el-option>
+                                </el-select>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+            </div>
+            
+            <!-- 步骤3：运行模式配置 -->
+            <div v-show="taskEditWizardStep === 2">
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-medium mb-4">运行模式</h4>
+                        <el-radio-group v-model="taskDetailForm.runMode" class="mb-4">
+                            <el-radio label="once">单次执行</el-radio>
+                            <el-radio label="cycle">循环执行</el-radio>
+                        </el-radio-group>
+                    </div>
+                    
+                    <!-- 循环配置 -->
+                    <div v-if="taskDetailForm.runMode === 'cycle'" class="space-y-4">
+                        <div>
+                            <h5 class="font-medium mb-2">循环类型</h5>
+                            <el-radio-group v-model="taskDetailForm.cycleType">
+                                <el-radio label="monthly">每月</el-radio>
+                                <el-radio label="weekly">每周</el-radio>
+                                <el-radio label="daily">每日</el-radio>
+                            </el-radio-group>
                         </div>
-                    </div>
-                    
-                    <!-- 表头 -->
-                    <div class="grid grid-cols-12 gap-2 mb-2 p-3 bg-gray-50 rounded font-medium text-sm">
-                        <div class="col-span-5">源接口字段</div>
-                        <div class="col-span-1 text-center">→</div>
-                        <div class="col-span-5">目标接口字段</div>
-                        <div class="col-span-1 text-center">操作</div>
-                    </div>
-                    
-                    <!-- 映射行 -->
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
-                        <div v-for="(mapping, index) in editFieldMappings" :key="index" class="grid grid-cols-12 gap-2 p-3 bg-white border rounded hover:bg-gray-50">
-                            <!-- 源字段选择 -->
-                            <div class="col-span-5">
-                                <el-select v-model="mapping.sourceField" placeholder="选择源字段" size="small" class="w-full" @change="onEditMappingChange(index)">
-                                    <el-option v-for="field in editSourceFields" :key="field.name" :label="`${field.name} (${field.type})`" :value="field.name">
-                                        <div class="flex justify-between items-center">
-                                            <span>{{field.name}}</span>
-                                            <el-tag size="small" :type="getFieldTypeColor(field.type)">{{field.type}}</el-tag>
-                                        </div>
-                                    </el-option>
+                        
+                        <!-- 每月配置 -->
+                        <div v-if="taskDetailForm.cycleType === 'monthly'" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行日期</label>
+                                <el-select v-model="taskDetailForm.monthlyDay" placeholder="选择日期">
+                                    <el-option v-for="day in 31" :key="day" :label="`${day}日`" :value="day"></el-option>
                                 </el-select>
                             </div>
-                            
-                            <!-- 箭头 -->
-                            <div class="col-span-1 flex items-center justify-center">
-                                <el-icon class="text-blue-500"><Right /></el-icon>
-                            </div>
-                            
-                            <!-- 目标字段选择 -->
-                            <div class="col-span-5">
-                                <el-select v-model="mapping.targetField" placeholder="选择目标字段" size="small" class="w-full" @change="onEditMappingChange(index)">
-                                    <el-option v-for="field in editTargetFields" :key="field.name" :label="`${field.name} (${field.type})`" :value="field.name">
-                                        <div class="flex justify-between items-center">
-                                            <span>{{field.name}}</span>
-                                            <el-tag size="small" :type="getFieldTypeColor(field.type)">{{field.type}}</el-tag>
-                                        </div>
-                                    </el-option>
-                                </el-select>
-                            </div>
-                            
-                            <!-- 删除按钮 -->
-                            <div class="col-span-1 flex items-center justify-center">
-                                <el-button size="small" type="danger" :icon="Delete" circle @click="removeEditMappingRow(index)"></el-button>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                             </div>
                         </div>
                         
-                        <!-- 空状态 -->
-                        <div v-if="editFieldMappings.length === 0" class="text-center py-8 text-gray-500">
-                            <el-icon class="text-4xl mb-2"><Connection /></el-icon>
-                            <p>暂无字段映射，点击"添加映射"开始配置</p>
+                        <!-- 每周配置 -->
+                        <div v-if="taskDetailForm.cycleType === 'weekly'" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行星期</label>
+                                <el-select v-model="taskDetailForm.weeklyDay" placeholder="选择星期">
+                                    <el-option label="星期一" value="1"></el-option>
+                                    <el-option label="星期二" value="2"></el-option>
+                                    <el-option label="星期三" value="3"></el-option>
+                                    <el-option label="星期四" value="4"></el-option>
+                                    <el-option label="星期五" value="5"></el-option>
+                                    <el-option label="星期六" value="6"></el-option>
+                                    <el-option label="星期日" value="0"></el-option>
+                                </el-select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- 映射统计 -->
-                    <div class="mt-4 p-3 bg-blue-50 rounded">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-blue-700">映射统计：已配置 {{validEditMappingsCount}} 个有效映射</span>
-                            <span class="text-gray-600">源字段：{{editSourceFields.length}} 个 | 目标字段：{{editTargetFields.length}} 个</span>
+                        
+                        <!-- 每日配置 -->
+                        <div v-if="taskDetailForm.cycleType === 'daily'">
+                            <label class="block text-sm font-medium mb-1">执行时间</label>
+                            <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- 步骤3：配置确认 -->
-            <div v-show="taskEditWizardStep === 2">
+
+            <!-- 步骤4：配置确认 -->
+            <div v-show="taskEditWizardStep === 3">
                 <div class="space-y-4">
                     <div>
                         <h4 class="font-medium mb-2">基本信息</h4>
@@ -1146,9 +1327,9 @@
                     <div>
                         <h4 class="font-medium mb-2">字段映射概览</h4>
                         <div class="bg-gray-50 p-4 rounded">
-                            <p><strong>映射数量：</strong>{{editFieldMappings.length}} 个</p>
-                            <div v-for="mapping in editFieldMappings" :key="mapping.sourceField" class="text-sm">
-                                {{mapping.sourceField}} → {{mapping.targetField}}
+                            <p><strong>映射数量：</strong>{{ validEditMappingCount }} 个</p>
+                            <div v-for="(sourceField, targetField) in editFieldMappings" :key="targetField" class="text-sm">
+                                <p v-if="sourceField">{{ sourceField }} → {{ targetField }}</p>
                             </div>
                         </div>
                     </div>
@@ -1159,8 +1340,8 @@
                 <span class="dialog-footer">
                     <el-button @click="taskEditDialogVisible = false">取消</el-button>
                     <el-button v-if="taskEditWizardStep > 0" @click="taskEditWizardStep--">上一步</el-button>
-                    <el-button v-if="taskEditWizardStep < 2" type="primary" @click="taskEditWizardStep++">下一步</el-button>
-                    <el-button v-if="taskEditWizardStep === 2" type="success" @click="saveTaskEdit">保存修改</el-button>
+                    <el-button v-if="taskEditWizardStep < 3" type="primary" @click="taskEditWizardStep++">下一步</el-button>
+                    <el-button v-if="taskEditWizardStep === 3" type="success" @click="saveTaskEdit">保存修改</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -1322,8 +1503,12 @@
                                 platformName: '浙江创新院',
                                 interfaceName: '订单同步'
                             },
+                            runMode: 'cycle',
+                            cycleType: 'daily',
+                            executeTime: '09:00',
                             status: 'enabled',
-                            lastRunTime: '2024-01-20 14:30:00',
+                            lastRunTime: '2024-01-20 09:00:00',
+                            nextRunTime: '2024-01-21 09:00:00',
                             createTime: '2024-01-18 16:00:00'
                         },
                         {
@@ -1339,8 +1524,10 @@
                                 platformName: '浙江创新院',
                                 interfaceName: '订单同步'
                             },
+                            runMode: 'once',
                             status: 'disabled',
                             lastRunTime: '',
+                            nextRunTime: '',
                             createTime: '2024-01-19 10:15:00'
                         }
                     ],
@@ -1375,7 +1562,7 @@
                     ],
                     sourceFields: [],
                     targetFields: [],
-                    fieldMappings: [],
+                    fieldMappings: {},
                     taskDetailDialogVisible: false,
                     taskEditDialogVisible: false,
                     taskEditWizardStep: 0,
@@ -1386,7 +1573,7 @@
                     editTargetFields: [],
                     editFieldMappings: [],
                     
-                    // 同步日志
+                    // 同步记录
                     logs: [
                         {
                             id: 1,
@@ -1394,8 +1581,13 @@
                             taskName: '移动订购数据同步',
                             sourcePlatform: '贵州移动',
                             targetPlatform: '浙江创新院',
+                            sourceInterface: '订购接口',
+                            targetInterface: '订单同步',
                             status: 'success',
                             duration: 245,
+                            dataCount: 156,
+                            successCount: 156,
+                            failureCount: 0,
                             errorMessage: ''
                         },
                         {
@@ -1404,22 +1596,59 @@
                             taskName: '移动订购数据同步',
                             sourcePlatform: '贵州移动',
                             targetPlatform: '浙江创新院',
+                            sourceInterface: '订购接口',
+                            targetInterface: '订单同步',
                             status: 'failure',
                             duration: 1200,
+                            dataCount: 0,
+                            successCount: 0,
+                            failureCount: 0,
                             errorMessage: '目标平台连接超时'
+                        },
+                        {
+                            id: 3,
+                            callTime: '2024-01-20 13:30:45',
+                            taskName: '退订数据同步',
+                            sourcePlatform: '贵州移动',
+                            targetPlatform: '浙江创新院',
+                            sourceInterface: '退订接口',
+                            targetInterface: '订单同步',
+                            status: 'partial',
+                            duration: 890,
+                            dataCount: 89,
+                            successCount: 85,
+                            failureCount: 4,
+                            errorMessage: '部分数据格式错误'
+                        },
+                        {
+                            id: 4,
+                            callTime: '2024-01-20 12:00:12',
+                            taskName: '移动订购数据同步',
+                            sourcePlatform: '贵州移动',
+                            targetPlatform: '浙江创新院',
+                            sourceInterface: '订购接口',
+                            targetInterface: '订单同步',
+                            status: 'success',
+                            duration: 320,
+                            dataCount: 203,
+                            successCount: 203,
+                            failureCount: 0,
+                            errorMessage: ''
                         }
                     ],
                     logTaskFilter: '',
                     logDateRange: [],
                     logStatusFilter: '',
+                    logSourcePlatformFilter: '',
+                    logTargetPlatformFilter: '',
                     logKeywordSearch: '',
                     logCurrentPage: 1,
                     logDetailVisible: false,
                     logDetail: {
-                        originalRequest: '',
-                        transformedRequest: '',
-                        targetResponse: '',
-                        errorMessage: ''
+                        status: '', // success, failure
+                        errorMessage: '',
+                        data: [],
+                        basicInfo: {}
                     }
                 };
             },
@@ -1429,18 +1658,9 @@
                         platform: '业务平台管理',
                         interface: '接口管理',
                         task: '任务管理',
-                        log: '同步日志'
+                        log: '同步记录'
                     };
                     return titles[this.activeTab] || '业务采集';
-                },
-                currentPageDesc() {
-                    const descs = {
-                        platform: '统一管理外部平台连接信息，支持HTTP、数据库、消息队列等多种连接类型',
-                        interface: '定义和管理各平台的接口结构，为数据同步任务提供基础',
-                        task: '创建和管理数据同步任务，支持可视化字段映射配置',
-                        log: '查看同步任务执行日志，支持全链路调用详情追踪'
-                    };
-                    return descs[this.activeTab] || '可视化的接口对接功能模块';
                 },
                 filteredPlatforms() {
                     return this.platforms.filter(platform => {
@@ -1470,16 +1690,42 @@
                 },
                 filteredLogs() {
                     return this.logs.filter(log => {
+                        // 任务筛选
                         const matchTask = !this.logTaskFilter || log.taskName.includes(this.logTaskFilter);
+                        
+                        // 状态筛选
                         const matchStatus = !this.logStatusFilter || log.status === this.logStatusFilter;
+                        
+                        // 源平台筛选
+                        const matchSourcePlatform = !this.logSourcePlatformFilter || log.sourcePlatform === this.logSourcePlatformFilter;
+                        
+                        // 目标平台筛选
+                        const matchTargetPlatform = !this.logTargetPlatformFilter || log.targetPlatform === this.logTargetPlatformFilter;
+                        
+                        // 时间范围筛选
+                        let matchDateRange = true;
+                        if (this.logDateRange && this.logDateRange.length === 2) {
+                            const logTime = new Date(log.callTime);
+                            const startTime = new Date(this.logDateRange[0]);
+                            const endTime = new Date(this.logDateRange[1]);
+                            matchDateRange = logTime >= startTime && logTime <= endTime;
+                        }
+                        
+                        // 关键词搜索
                         const matchKeyword = !this.logKeywordSearch || 
                             log.taskName.toLowerCase().includes(this.logKeywordSearch.toLowerCase()) ||
+                            log.sourceInterface.toLowerCase().includes(this.logKeywordSearch.toLowerCase()) ||
+                            log.targetInterface.toLowerCase().includes(this.logKeywordSearch.toLowerCase()) ||
                             log.errorMessage.toLowerCase().includes(this.logKeywordSearch.toLowerCase());
-                        return matchTask && matchStatus && matchKeyword;
+                        
+                        return matchTask && matchStatus && matchSourcePlatform && matchTargetPlatform && matchDateRange && matchKeyword;
                     });
                 },
-                validMappingsCount() {
-                    return this.fieldMappings.filter(mapping => mapping.sourceField && mapping.targetField).length;
+                validMappingCount() {
+                    return Object.values(this.fieldMappings).filter(val => val).length;
+                },
+                validEditMappingCount() {
+                    return Object.values(this.editFieldMappings).filter(val => val).length;
                 },
                 validEditMappingsCount() {
                     return this.editFieldMappings.filter(mapping => mapping.sourceField && mapping.targetField).length;
@@ -1773,9 +2019,14 @@
                         sourcePlatformId: '',
                         sourceInterfaceId: '',
                         targetPlatformId: '',
-                        targetInterfaceId: ''
+                        targetInterfaceId: '',
+                        runMode: 'once',
+                        cycleType: 'daily',
+                        monthlyDay: 1,
+                        weeklyDay: '1',
+                        executeTime: null
                     };
-                    this.fieldMappings = [];
+                    this.fieldMappings = {};
                     this.taskWizardVisible = true;
                 },
                 editTaskDetail(task) {
@@ -1812,11 +2063,11 @@
                     ];
                     
                     // 模拟现有的字段映射
-                    this.editFieldMappings = [
-                        { sourceField: 'mainOrderNo', targetField: 'orderId', transform: '直接映射' },
-                        { sourceField: 'orderNo', targetField: 'orderNumber', transform: '直接映射' },
-                        { sourceField: 'department', targetField: 'deptCode', transform: '直接映射' }
-                    ];
+                    this.editFieldMappings = {
+                        'orderId': 'mainOrderNo',
+                        'orderNumber': 'orderNo',
+                        'deptCode': 'department'
+                    };
                     
                     this.taskEditDialogVisible = true;
                 },
@@ -1879,13 +2130,13 @@
                     this.editSourceInterfaces = this.interfaces.filter(i => i.platformId == this.taskDetailForm.sourceInfo.platformId);
                     this.taskDetailForm.sourceInfo.interfaceId = '';
                     this.editSourceFields = [];
-                    this.editFieldMappings = [];
+                    this.editFieldMappings = {};
                 },
                 onEditTargetPlatformChange() {
                     this.editTargetInterfaces = this.interfaces.filter(i => i.platformId == this.taskDetailForm.targetInfo.platformId);
                     this.taskDetailForm.targetInfo.interfaceId = '';
                     this.editTargetFields = [];
-                    this.editFieldMappings = [];
+                    this.editFieldMappings = {};
                 },
                 onEditSourceInterfaceChange() {
                     // 模拟获取源接口字段
@@ -1896,7 +2147,7 @@
                         { name: 'customerInfo', type: 'object', required: true },
                         { name: 'accessAddress', type: 'string', required: false }
                     ];
-                    this.editFieldMappings = [];
+                    this.editFieldMappings = {};
                 },
                 onEditTargetInterfaceChange() {
                     // 模拟获取目标接口字段
@@ -1907,79 +2158,27 @@
                         { name: 'customer', type: 'object', required: true },
                         { name: 'address', type: 'string', required: false }
                     ];
-                    this.editFieldMappings = [];
-                },
-                addEditMappingRow() {
-                    this.editFieldMappings.push({
-                        sourceField: '',
-                        targetField: '',
-                        transform: '直接映射'
-                    });
-                },
-                removeEditMappingRow(index) {
-                    this.editFieldMappings.splice(index, 1);
-                },
-                onEditMappingChange(index) {
-                    // 当映射发生变化时的处理逻辑
-                    const mapping = this.editFieldMappings[index];
-                    if (mapping.sourceField && mapping.targetField) {
-                        // 检查字段类型兼容性
-                        const sourceField = this.editSourceFields.find(f => f.name === mapping.sourceField);
-                        const targetField = this.editTargetFields.find(f => f.name === mapping.targetField);
-                        if (sourceField && targetField && sourceField.type !== targetField.type) {
-                            ElMessage.warning(`字段类型不匹配：${sourceField.type} → ${targetField.type}`);
-                        }
-                    }
-                },
-                autoMatchEditFields() {
-                    this.editFieldMappings = [];
-                    const matched = new Set();
-                    
-                    // 完全匹配
-                    this.editSourceFields.forEach(sourceField => {
-                        const exactMatch = this.editTargetFields.find(targetField => 
-                            targetField.name === sourceField.name && !matched.has(targetField.name)
-                        );
-                        if (exactMatch) {
-                            this.editFieldMappings.push({
-                                sourceField: sourceField.name,
-                                targetField: exactMatch.name,
-                                transform: '直接映射'
-                            });
-                            matched.add(exactMatch.name);
-                        }
-                    });
-                    
-                    // 相似匹配
-                    this.editSourceFields.forEach(sourceField => {
-                        if (!this.editFieldMappings.find(m => m.sourceField === sourceField.name)) {
-                            const similarMatch = this.editTargetFields.find(targetField => {
-                                if (matched.has(targetField.name)) return false;
-                                const sourceName = sourceField.name.toLowerCase();
-                                const targetName = targetField.name.toLowerCase();
-                                return sourceName.includes(targetName) || targetName.includes(sourceName) ||
-                                       this.calculateSimilarity(sourceName, targetName) > 0.6;
-                            });
-                            if (similarMatch) {
-                                this.editFieldMappings.push({
-                                    sourceField: sourceField.name,
-                                    targetField: similarMatch.name,
-                                    transform: '直接映射'
-                                });
-                                matched.add(similarMatch.name);
-                            }
-                        }
-                    });
-                    
-                    ElMessage.success(`智能匹配完成，共匹配 ${this.editFieldMappings.length} 个字段`);
+                    this.editFieldMappings = {};
                 },
                 clearAllEditMappings() {
                     ElMessageBox.confirm('确认清空所有映射关系吗？', '确认清空', {
                         type: 'warning'
                     }).then(() => {
-                        this.editFieldMappings = [];
+                        this.editFieldMappings = {};
                         ElMessage.success('已清空所有映射');
                     });
+                },
+                availableEditSourceFields(currentTargetFieldName) {
+                    const usedSourceFields = Object.values(this.editFieldMappings).filter(Boolean);
+                    const currentSourceField = this.editFieldMappings[currentTargetFieldName];
+                    return this.editSourceFields.filter(sf => !usedSourceFields.includes(sf.name) || sf.name === currentSourceField);
+                },
+                isEditSourceFieldUsed(sourceFieldName, currentTargetFieldName) {
+                    const currentSourceField = this.editFieldMappings[currentTargetFieldName];
+                    if (sourceFieldName === currentSourceField) {
+                        return false;
+                    }
+                    return Object.values(this.editFieldMappings).includes(sourceFieldName);
                 },
                 onSourcePlatformChange() {
                     this.sourceInterfaces = this.interfaces.filter(i => i.platformId == this.taskForm.sourcePlatformId);
@@ -2112,9 +2311,21 @@
                     ElMessageBox.confirm('确认清空所有映射关系吗？', '确认清空', {
                         type: 'warning'
                     }).then(() => {
-                        this.fieldMappings = [];
+                        this.fieldMappings = {};
                         ElMessage.success('已清空所有映射');
                     });
+                },
+                availableSourceFields(currentTargetFieldName) {
+                    const usedSourceFields = Object.values(this.fieldMappings).filter(Boolean);
+                    const currentSourceField = this.fieldMappings[currentTargetFieldName];
+                    return this.sourceFields.filter(sf => !usedSourceFields.includes(sf.name) || sf.name === currentSourceField);
+                },
+                isSourceFieldUsed(sourceFieldName, currentTargetFieldName) {
+                    const currentSourceField = this.fieldMappings[currentTargetFieldName];
+                    if (sourceFieldName === currentSourceField) {
+                        return false; // Don't disable the currently selected item for this dropdown
+                    }
+                    return Object.values(this.fieldMappings).includes(sourceFieldName);
                 },
                 saveTask() {
                     ElMessage.success('任务保存并激活成功');
@@ -2146,49 +2357,99 @@
                     const interface = this.interfaces.find(i => i.id == interfaceId);
                     return interface ? interface.name : '';
                 },
+                getCycleTypeText(cycleType) {
+                    const texts = {
+                        monthly: '每月',
+                        weekly: '每周',
+                        daily: '每日'
+                    };
+                    return texts[cycleType] || cycleType;
+                },
+                getWeekDayText(weekDay) {
+                    const texts = {
+                        '0': '星期日',
+                        '1': '星期一',
+                        '2': '星期二',
+                        '3': '星期三',
+                        '4': '星期四',
+                        '5': '星期五',
+                        '6': '星期六'
+                    };
+                    return texts[weekDay] || weekDay;
+                },
+                formatTime(time) {
+                    if (!time) return '-';
+                    if (typeof time === 'string') return time;
+                    const hours = time.getHours().toString().padStart(2, '0');
+                    const minutes = time.getMinutes().toString().padStart(2, '0');
+                    return `${hours}:${minutes}`;
+                },
                 
                 // 日志管理方法
                 searchLogs() {
-                    ElMessage.success('查询完成');
+                    // 查询逻辑已在filteredLogs计算属性中实现
+                    const count = this.filteredLogs.length;
+                    ElMessage.success(`查询完成，共找到 ${count} 条记录`);
+                },
+                resetLogFilters() {
+                    this.logTaskFilter = '';
+                    this.logDateRange = [];
+                    this.logStatusFilter = '';
+                    this.logSourcePlatformFilter = '';
+                    this.logTargetPlatformFilter = '';
+                    this.logKeywordSearch = '';
+                    ElMessage.success('筛选条件已重置');
                 },
                 viewLogDetail(log) {
-                    this.logDetail = {
-                        originalRequest: JSON.stringify({
-                            "mainOrderNo": "MO202401200001",
-                            "orderNo": "O202401200001",
-                            "department": 1001,
-                            "customerInfo": {
-                                "name": "张三",
-                                "phone": "13800138000"
-                            },
-                            "accessAddress": "贵州省贵阳市云岩区"
-                        }, null, 2),
-                        transformedRequest: JSON.stringify({
-                            "orderId": "O202401200001",
-                            "orderNumber": "MO202401200001",
-                            "deptCode": 1001,
-                            "customer": {
-                                "name": "张三",
-                                "phone": "13800138000"
-                            },
-                            "address": "贵州省贵阳市云岩区"
-                        }, null, 2),
-                        targetResponse: JSON.stringify({
-                            "code": 200,
-                            "message": "success",
-                            "data": {
-                                "syncId": "SYNC202401200001",
-                                "status": "completed"
-                            }
-                        }, null, 2),
-                        errorMessage: log.errorMessage
+                    this.logDetail.status = log.status;
+                    this.logDetail.basicInfo = {
+                        '调用时间': log.callTime,
+                        '任务名称': log.taskName,
+                        '执行耗时': `${log.duration} ms`,
+                        '调用状态': this.getLogStatusText(log.status)
                     };
+
+                    if (log.status === 'success' || log.status === 'partial') {
+                        this.logDetail.errorMessage = '';
+                        // 模拟成功的同步成果数据
+                        this.logDetail.data = Array.from({ length: log.successCount || 5 }).map((_, i) => ({
+                            orderNo: `ON2024012000${i + 1}`,
+                            customerName: `客户${i + 1}`,
+                            phone: `1380013800${i}`,
+                            businessType: '宽带新装',
+                            bandwidth: '200M',
+                            installAddress: `XX市XX区XX路${i+1}号`,
+                            orderTime: `2024-01-20 14:3${i}:00`,
+                            syncStatus: '成功'
+                        }));
+                    } else { // failure
+                        this.logDetail.data = [];
+                        this.logDetail.errorMessage = log.errorMessage || '未知的错误原因，请联系技术支持。';
+                    }
                     this.logDetailVisible = true;
                 },
                 copyToClipboard(text) {
                     navigator.clipboard.writeText(text).then(() => {
                         ElMessage.success('已复制到剪贴板');
                     });
+                },
+                
+                // 日志状态处理方法
+                getLogStatusText(status) {
+                    const texts = {
+                        success: '成功',
+                        failure: '失败',
+                        partial: '部分成功'
+                    };
+                    return texts[status] || '未知';
+                },
+                getLogStatusType(status) {
+                    const types = {
+                        success: 'success',
+                        failure: 'danger',
+                        partial: 'warning'
+                    };
+                    return types[status] || 'info';
                 },
                 
                 // 通用方法
