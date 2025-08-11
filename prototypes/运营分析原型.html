@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>运营分析 - 视联网适配中心</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
-    <script src="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
-    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css">
+    <title>运营分析 - 视联网适配中心 (MVP版)</title>
+    <!-- 强制 CDN 引入 (顺序需严格遵守规则) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         .chart-container {
             width: 100%;
@@ -48,6 +49,15 @@
         .content-header {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
+        .mvp-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -56,7 +66,7 @@
             <!-- 左侧导航栏 -->
             <div class="w-64 sidebar text-white flex-shrink-0">
                 <div class="p-6">
-                    <h1 class="text-xl font-bold mb-8">视联网适配中心</h1>
+                    <h1 class="text-xl font-bold mb-8">视联网适配中心<span class="mvp-badge">MVP</span></h1>
                     <nav>
                         <div class="mb-4">
                             <div class="text-sm text-gray-300 mb-2">运营门户</div>
@@ -113,15 +123,6 @@
                                  @click="activeMenu = 'logs'">
                                 <i class="el-icon-document mr-2"></i>日志管理
                             </div>
-                            <!-- 日志管理二级菜单 -->
-                            <div v-if="activeMenu === 'logs'" class="ml-4 mt-2">
-                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
-                                    <i class="el-icon-key mr-2"></i>登录日志
-                                </div>
-                                <div class="nav-item px-4 py-2 rounded cursor-pointer text-sm">
-                                    <i class="el-icon-edit mr-2"></i>操作日志
-                                </div>
-                            </div>
                         </div>
                         <div class="mb-4">
                             <div class="text-sm text-gray-300 mb-2">接口适配</div>
@@ -164,7 +165,8 @@
                 <div class="content-header p-4 border-b bg-white">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-800">{{ currentPageTitle }}</h2>
+                            <h2 class="text-2xl font-bold text-gray-800">{{ currentPageTitle }}<span class="mvp-badge">MVP版本</span></h2>
+                            <p class="text-sm text-gray-600 mt-1">第一阶段核心功能版本 - 专注于数据准确性和基础交互</p>
                         </div>
                         <div class="flex items-center space-x-4">
                             <!-- 用户信息 -->
@@ -194,37 +196,55 @@
                     </div>
                 </div>
 
-
-
                 <!-- 内容区域 -->
                 <div class="flex-1 overflow-auto p-6">
                     <!-- 客户分析 -->
                     <div v-if="activeTab === 'customer'">
-                        <!-- 筛选条件 -->
+                        <!-- 筛选条件 (增强版) -->
                         <div class="bg-white p-4 rounded-lg shadow mb-6">
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <!-- 快捷选项 -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600">快捷选项：</span>
+                                    <el-button-group size="small">
+                                        <el-button @click="setQuickDate('today')" :type="quickDateType === 'today' ? 'primary' : 'default'">今日</el-button>
+                                        <el-button @click="setQuickDate('thisWeek')" :type="quickDateType === 'thisWeek' ? 'primary' : 'default'">本周</el-button>
+                                        <el-button @click="setQuickDate('thisMonth')" :type="quickDateType === 'thisMonth' ? 'primary' : 'default'">本月</el-button>
+                                        <el-button @click="setQuickDate('thisQuarter')" :type="quickDateType === 'thisQuarter' ? 'primary' : 'default'">本季度</el-button>
+                                        <el-button @click="setQuickDate('thisYear')" :type="quickDateType === 'thisYear' ? 'primary' : 'default'">本年</el-button>
+                                        <el-button @click="setQuickDate('toDate')" :type="quickDateType === 'toDate' ? 'primary' : 'default'">至今</el-button>
+                                    </el-button-group>
+                                </div>
+                                
+                                <!-- 自定义日期范围 -->
                                 <el-date-picker
                                     v-model="customerFilters.dateRange"
                                     type="daterange"
                                     range-separator="至"
                                     start-placeholder="开始日期"
                                     end-placeholder="结束日期"
-                                    size="default">
+                                    size="default"
+                                    @change="onDateRangeChange">
                                 </el-date-picker>
+                                
                                 <el-button type="primary" @click="queryCustomerData" icon="el-icon-search">
-                                    <i class="fa-solid fa-magnifying-glass mr-1"></i>查询
+                                    查询
                                 </el-button>
+                                
+                                <div class="text-sm text-gray-500">
+                                    <i class="el-icon-info mr-1"></i>MVP版本：支持快捷选项和自定义日期范围
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 关键指标卡片 -->
+                        <!-- 关键指标卡片 (简化版) -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div class="metric-card p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">本月新增客户数</p>
-                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.monthlyNewCustomers }}</p>
-                                        <p class="text-sm mt-1 opacity-75">较上月 +{{ customerMetrics.monthlyGrowth }}%</p>
+                                        <p class="text-sm opacity-90">期间新增客户数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.periodNewCustomers }}</p>
+                                        <p class="text-sm mt-1 opacity-75">选定时间段内新增</p>
                                     </div>
                                     <i class="el-icon-user-solid text-4xl opacity-50"></i>
                                 </div>
@@ -232,21 +252,21 @@
                             <div class="metric-card-green p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">本年新增客户数</p>
-                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.yearlyNewCustomers }}</p>
-                                        <p class="text-sm mt-1 opacity-75">较去年同期 +{{ customerMetrics.yearlyGrowth }}%</p>
+                                        <p class="text-sm opacity-90">累计客户总数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.totalCustomers }}</p>
+                                        <p class="text-sm mt-1 opacity-75">截至选定时间点</p>
                                     </div>
-                                    <i class="el-icon-plus text-4xl opacity-50"></i>
+                                    <i class="el-icon-s-data text-4xl opacity-50"></i>
                                 </div>
                             </div>
                             <div class="metric-card-orange p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">累计客户数量</p>
-                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.totalCustomers }}</p>
-                                        <p class="text-sm mt-1 opacity-75">总计</p>
+                                        <p class="text-sm opacity-90">活跃客户数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ customerMetrics.activeCustomers }}</p>
+                                        <p class="text-sm mt-1 opacity-75">期间内有业务活动</p>
                                     </div>
-                                    <i class="el-icon-s-data text-4xl opacity-50"></i>
+                                    <i class="el-icon-star-on text-4xl opacity-50"></i>
                                 </div>
                             </div>
                         </div>
@@ -254,7 +274,7 @@
                         <!-- 图表区域 -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">客户行业分布</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增客户行业分布</h3>
                                 <div id="customerIndustryChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
@@ -262,11 +282,11 @@
                                 <div id="customerGrowthChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">客户级别分布</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增客户级别分布</h3>
                                 <div id="customerLevelChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">地域分布统计分析</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增客户地域分布</h3>
                                 <div id="customerRegionChart" class="chart-container"></div>
                             </div>
                         </div>
@@ -274,53 +294,73 @@
 
                     <!-- 设备分析 -->
                     <div v-if="activeTab === 'device'">
-                        <!-- 筛选条件 -->
+                        <!-- 筛选条件 (增强版) -->
                         <div class="bg-white p-4 rounded-lg shadow mb-6">
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <!-- 快捷选项 -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600">快捷选项：</span>
+                                    <el-button-group size="small">
+                                        <el-button @click="setQuickDate('today')" :type="quickDateType === 'today' ? 'primary' : 'default'">今日</el-button>
+                                        <el-button @click="setQuickDate('thisWeek')" :type="quickDateType === 'thisWeek' ? 'primary' : 'default'">本周</el-button>
+                                        <el-button @click="setQuickDate('thisMonth')" :type="quickDateType === 'thisMonth' ? 'primary' : 'default'">本月</el-button>
+                                        <el-button @click="setQuickDate('thisQuarter')" :type="quickDateType === 'thisQuarter' ? 'primary' : 'default'">本季度</el-button>
+                                        <el-button @click="setQuickDate('thisYear')" :type="quickDateType === 'thisYear' ? 'primary' : 'default'">本年</el-button>
+                                        <el-button @click="setQuickDate('toDate')" :type="quickDateType === 'toDate' ? 'primary' : 'default'">至今</el-button>
+                                    </el-button-group>
+                                </div>
+                                
+                                <!-- 自定义日期范围 -->
                                 <el-date-picker
                                     v-model="deviceFilters.dateRange"
                                     type="daterange"
                                     range-separator="至"
                                     start-placeholder="开始日期"
                                     end-placeholder="结束日期"
-                                    size="default">
+                                    size="default"
+                                    @change="onDateRangeChange">
                                 </el-date-picker>
+                                
                                 <el-button type="primary" @click="queryDeviceData" icon="el-icon-search">
-                                    <i class="fa-solid fa-magnifying-glass mr-1"></i>查询
+                                    查询
                                 </el-button>
+                                
+                                <div class="text-sm text-gray-500">
+                                    <i class="el-icon-info mr-1"></i>MVP版本：支持快捷选项和自定义日期范围
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 关键指标卡片 -->
+                        <!-- 关键指标卡片 (简化版) -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div class="metric-card p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">设备总数</p>
-                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.totalDevices }}</p>
-                                        <p class="text-sm mt-1 opacity-75">全部设备数量</p>
+                                        <p class="text-sm opacity-90">期间新增设备数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.periodNewDevices }}</p>
+                                        <p class="text-sm mt-1 opacity-75">选定时间段内新增</p>
                                     </div>
-                                    <i class="fa-solid fa-server text-4xl opacity-50"></i>
+                                    <i class="el-icon-monitor text-4xl opacity-50"></i>
                                 </div>
                             </div>
                             <div class="metric-card-green p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">在线设备数</p>
-                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.onlineDevices }}</p>
-                                        <p class="text-sm mt-1 opacity-75">占比 {{ deviceMetrics.onlineRate }}%</p>
+                                        <p class="text-sm opacity-90">累计设备总数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.totalDevices }}</p>
+                                        <p class="text-sm mt-1 opacity-75">截至选定时间点</p>
                                     </div>
-                                    <i class="fa-solid fa-circle-check text-4xl opacity-50"></i>
+                                    <i class="el-icon-s-data text-4xl opacity-50"></i>
                                 </div>
                             </div>
                             <div class="metric-card-orange p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">离线设备数</p>
-                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.offlineDevices }}</p>
-                                        <p class="text-sm mt-1 opacity-75">占比 {{ deviceMetrics.offlineRate }}%</p>
+                                        <p class="text-sm opacity-90">在线设备数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ deviceMetrics.onlineDevices }}</p>
+                                        <p class="text-sm mt-1 opacity-75">当前在线状态</p>
                                     </div>
-                                    <i class="fa-solid fa-circle-xmark text-4xl opacity-50"></i>
+                                    <i class="el-icon-success text-4xl opacity-50"></i>
                                 </div>
                             </div>
                         </div>
@@ -328,19 +368,19 @@
                         <!-- 图表区域 -->
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">物联网平台分布</h3>
-                                <div id="devicePlatformChart" class="chart-container"></div>
+                                <h3 class="text-lg font-semibold mb-4">期间新增设备类型分布</h3>
+                                <div id="deviceTypeChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">设备厂商分布</h3>
-                                <div id="deviceManufacturerChart" class="chart-container"></div>
+                                <h3 class="text-lg font-semibold mb-4">设备增长趋势</h3>
+                                <div id="deviceGrowthChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">设备趋势图</h3>
-                                <div id="deviceTrendChart" class="chart-container"></div>
+                                <h3 class="text-lg font-semibold mb-4">期间新增设备状态分布</h3>
+                                <div id="deviceStatusChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">设备地域分布</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增设备地域分布</h3>
                                 <div id="deviceRegionChart" class="chart-container"></div>
                             </div>
                         </div>
@@ -348,67 +388,73 @@
 
                     <!-- 业务分析 -->
                     <div v-if="activeTab === 'business'">
-                        <!-- 筛选条件 -->
+                        <!-- 筛选条件 (增强版) -->
                         <div class="bg-white p-4 rounded-lg shadow mb-6">
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <!-- 快捷选项 -->
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600">快捷选项：</span>
+                                    <el-button-group size="small">
+                                        <el-button @click="setQuickDate('today')" :type="quickDateType === 'today' ? 'primary' : 'default'">今日</el-button>
+                                        <el-button @click="setQuickDate('thisWeek')" :type="quickDateType === 'thisWeek' ? 'primary' : 'default'">本周</el-button>
+                                        <el-button @click="setQuickDate('thisMonth')" :type="quickDateType === 'thisMonth' ? 'primary' : 'default'">本月</el-button>
+                                        <el-button @click="setQuickDate('thisQuarter')" :type="quickDateType === 'thisQuarter' ? 'primary' : 'default'">本季度</el-button>
+                                        <el-button @click="setQuickDate('thisYear')" :type="quickDateType === 'thisYear' ? 'primary' : 'default'">本年</el-button>
+                                        <el-button @click="setQuickDate('toDate')" :type="quickDateType === 'toDate' ? 'primary' : 'default'">至今</el-button>
+                                    </el-button-group>
+                                </div>
+                                
+                                <!-- 自定义日期范围 -->
                                 <el-date-picker
                                     v-model="businessFilters.dateRange"
                                     type="daterange"
                                     range-separator="至"
                                     start-placeholder="开始日期"
                                     end-placeholder="结束日期"
-                                    size="default">
+                                    size="default"
+                                    @change="onDateRangeChange">
                                 </el-date-picker>
+                                
                                 <el-button type="primary" @click="queryBusinessData" icon="el-icon-search">
-                                    <i class="fa-solid fa-magnifying-glass mr-1"></i>查询
+                                    查询
                                 </el-button>
+                                
+                                <div class="text-sm text-gray-500">
+                                    <i class="el-icon-info mr-1"></i>MVP版本：支持快捷选项和自定义日期范围
+                                </div>
                             </div>
                         </div>
 
-                        <!-- 关键指标卡片 -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <!-- 关键指标卡片 (简化版) -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div class="metric-card p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">订购业务总量</p>
-                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.subscribeTotal }}</p>
-                                        <p class="text-sm mt-1 opacity-75">当月{{ businessMetrics.monthlySubscribe }} | 当年{{ businessMetrics.yearlySubscribe }}</p>
-                                        <p class="text-sm mt-1 opacity-75">同比增长 +{{ businessMetrics.subscribeGrowth }}%</p>
+                                        <p class="text-sm opacity-90">期间订购业务数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.periodSubscribe }}</p>
+                                        <p class="text-sm mt-1 opacity-75">选定时间段内发生</p>
                                     </div>
-                                    <i class="fa-solid fa-plus-circle text-4xl opacity-50"></i>
+                                    <i class="el-icon-plus text-4xl opacity-50"></i>
                                 </div>
                             </div>
                             <div class="metric-card-green p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">退订业务总量</p>
-                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.unsubscribeTotal }}</p>
-                                        <p class="text-sm mt-1 opacity-75">当月{{ businessMetrics.monthlyUnsubscribe }} | 当年{{ businessMetrics.yearlyUnsubscribe }}</p>
-                                        <p class="text-sm mt-1 opacity-75">流失率 {{ businessMetrics.churnRate }}%</p>
+                                        <p class="text-sm opacity-90">期间退订业务数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.periodUnsubscribe }}</p>
+                                        <p class="text-sm mt-1 opacity-75">选定时间段内发生</p>
                                     </div>
-                                    <i class="fa-solid fa-minus-circle text-4xl opacity-50"></i>
+                                    <i class="el-icon-minus text-4xl opacity-50"></i>
                                 </div>
                             </div>
                             <div class="metric-card-orange p-6 rounded-lg shadow">
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <p class="text-sm opacity-90">装维业务总量</p>
-                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.maintenanceTotal }}</p>
-                                        <p class="text-sm mt-1 opacity-75">当月{{ businessMetrics.monthlyMaintenance }} | 当年{{ businessMetrics.yearlyMaintenance }}</p>
-                                        <p class="text-sm mt-1 opacity-75">完成率 {{ businessMetrics.completionRate }}%</p>
+                                        <p class="text-sm opacity-90">期间装维业务数</p>
+                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.periodMaintenance }}</p>
+                                        <p class="text-sm mt-1 opacity-75">选定时间段内发生</p>
                                     </div>
-                                    <i class="fa-solid fa-tools text-4xl opacity-50"></i>
-                                </div>
-                            </div>
-                            <div class="metric-card-purple p-6 rounded-lg shadow">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm opacity-90">业务净增长</p>
-                                        <p class="text-3xl font-bold mt-2">{{ businessMetrics.netGrowth }}</p>
-                                        <p class="text-sm mt-1 opacity-75">当月净增{{ businessMetrics.monthlyNetGrowth }}</p>
-                                        <p class="text-sm mt-1 opacity-75">当年净增{{ businessMetrics.yearlyNetGrowth }}</p>
-                                    </div>
-                                    <i class="fa-solid fa-chart-line text-4xl opacity-50"></i>
+                                    <i class="el-icon-tools text-4xl opacity-50"></i>
                                 </div>
                             </div>
                         </div>
@@ -420,15 +466,15 @@
                                 <div id="businessTrendChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">业务类型分布</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增业务类型分布</h3>
                                 <div id="businessTypeChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">地域分布分析</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间新增业务地域分布</h3>
                                 <div id="regionDistributionChart" class="chart-container"></div>
                             </div>
                             <div class="bg-white p-6 rounded-lg shadow">
-                                <h3 class="text-lg font-semibold mb-4">地域业务对比</h3>
+                                <h3 class="text-lg font-semibold mb-4">期间业务地域对比</h3>
                                 <div id="regionBusinessChart" class="chart-container"></div>
                             </div>
                         </div>
@@ -455,6 +501,12 @@
                         avatar: ''
                     },
                     
+                    // 全局时间范围状态 (MVP版本：统一管理)
+                    globalDateRange: [],
+                    
+                    // 快捷选项状态
+                    quickDateType: 'thisMonth',
+                    
                     // 客户分析筛选条件
                     customerFilters: {
                         dateRange: []
@@ -470,48 +522,25 @@
                         dateRange: []
                     },
                     
-                    // 客户分析指标
+                    // 客户分析指标 (MVP版本：简化指标)
                     customerMetrics: {
-                        monthlyNewCustomers: 156,
-                        monthlyGrowth: 12.5,
-                        yearlyNewCustomers: 1248,
-                        yearlyGrowth: 18.7,
-                        totalCustomers: 8956
+                        periodNewCustomers: 156,      // 期间新增客户数
+                        totalCustomers: 8956,         // 累计客户总数
+                        activeCustomers: 7234          // 活跃客户数
                     },
                     
-                    // 设备分析指标
+                    // 设备分析指标 (MVP版本：简化指标)
                     deviceMetrics: {
-                        totalDevices: 15680,
-                        onlineDevices: 14776,
-                        onlineRate: 94.2,
-                        offlineDevices: 904,
-                        offlineRate: 5.8
+                        periodNewDevices: 245,         // 期间新增设备数
+                        totalDevices: 15680,           // 累计设备总数
+                        onlineDevices: 14776           // 在线设备数
                     },
                     
-                    // 业务分析指标
+                    // 业务分析指标 (MVP版本：简化指标)
                     businessMetrics: {
-                        // 订购业务总量
-                        subscribeTotal: 2890,
-                        monthlySubscribe: 245,
-                        yearlySubscribe: 2890,
-                        subscribeGrowth: 15.8,
-                        
-                        // 退订业务总量
-                        unsubscribeTotal: 156,
-                        monthlyUnsubscribe: 23,
-                        yearlyUnsubscribe: 156,
-                        churnRate: 5.4,
-                        
-                        // 装维业务总量
-                        maintenanceTotal: 410,
-                        monthlyMaintenance: 67,
-                        yearlyMaintenance: 410,
-                        completionRate: 92.5,
-                        
-                        // 业务净增长
-                        netGrowth: 2734,
-                        monthlyNetGrowth: 222,
-                        yearlyNetGrowth: 2734
+                        periodSubscribe: 245,          // 期间订购业务数
+                        periodUnsubscribe: 23,         // 期间退订业务数
+                        periodMaintenance: 67          // 期间装维业务数
                     }
                 };
             },
@@ -523,10 +552,17 @@
                         business: '业务分析'
                     };
                     return titles[this.activeTab] || '运营分析';
-                },
-
+                }
             },
             mounted() {
+                // 设置默认时间范围为本月
+                const now = new Date();
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                
+                this.globalDateRange = [firstDay, lastDay];
+                this.syncDateRangeToAllFilters();
+                
                 this.$nextTick(() => {
                     this.initCharts();
                 });
@@ -536,9 +572,101 @@
                     this.$nextTick(() => {
                         this.initCharts();
                     });
+                },
+                globalDateRange() {
+                    // 全局时间范围变化时，重新计算数据和重绘图表
+                    this.updateMetricsBasedOnDateRange();
+                    this.$nextTick(() => {
+                        this.initCharts();
+                    });
                 }
             },
             methods: {
+                // MVP版本：统一的时间范围同步机制
+                syncDateRangeToAllFilters() {
+                    this.customerFilters.dateRange = [...this.globalDateRange];
+                    this.deviceFilters.dateRange = [...this.globalDateRange];
+                    this.businessFilters.dateRange = [...this.globalDateRange];
+                },
+                
+                // 快捷日期选择
+                setQuickDate(type) {
+                    this.quickDateType = type;
+                    const now = new Date();
+                    let startDate, endDate;
+                    
+                    switch(type) {
+                        case 'today':
+                            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            break;
+                        case 'thisWeek':
+                            const dayOfWeek = now.getDay();
+                            const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // 周一开始
+                            startDate = new Date(now.setDate(diff));
+                            endDate = new Date(startDate);
+                            endDate.setDate(startDate.getDate() + 6);
+                            break;
+                        case 'thisMonth':
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                            break;
+                        case 'thisQuarter':
+                            const quarter = Math.floor(now.getMonth() / 3);
+                            startDate = new Date(now.getFullYear(), quarter * 3, 1);
+                            endDate = new Date(now.getFullYear(), quarter * 3 + 3, 0);
+                            break;
+                        case 'thisYear':
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                            endDate = new Date(now.getFullYear(), 11, 31);
+                            break;
+                        case 'toDate':
+                            // 至今：从今年年初到当前日期
+                            startDate = new Date(now.getFullYear(), 0, 1);
+                            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    this.globalDateRange = [startDate, endDate];
+                    this.syncDateRangeToAllFilters();
+                    
+                    // 自动触发数据更新
+                    this.updateMetricsBasedOnDateRange();
+                    this.$nextTick(() => {
+                        this.initCharts();
+                    });
+                },
+                
+                // 时间范围变化处理
+                onDateRangeChange(dateRange) {
+                    this.globalDateRange = dateRange || [];
+                    this.syncDateRangeToAllFilters();
+                    // 清除快捷选项状态（用户手动选择日期时）
+                    this.quickDateType = '';
+                },
+                
+                // 根据时间范围更新指标数据 (MVP版本：模拟数据)
+                updateMetricsBasedOnDateRange() {
+                    if (!this.globalDateRange || this.globalDateRange.length !== 2) {
+                        return;
+                    }
+                    
+                    // 这里应该是实际的数据计算逻辑
+                    // MVP版本：使用模拟数据演示
+                    const daysDiff = Math.ceil((this.globalDateRange[1] - this.globalDateRange[0]) / (1000 * 60 * 60 * 24));
+                    
+                    // 根据时间跨度调整数据 (模拟)
+                    const factor = Math.max(1, daysDiff / 30); // 以30天为基准
+                    
+                    this.customerMetrics.periodNewCustomers = Math.floor(156 * factor);
+                    this.deviceMetrics.periodNewDevices = Math.floor(245 * factor);
+                    this.businessMetrics.periodSubscribe = Math.floor(245 * factor);
+                    this.businessMetrics.periodUnsubscribe = Math.floor(23 * factor);
+                    this.businessMetrics.periodMaintenance = Math.floor(67 * factor);
+                },
+                
                 initCharts() {
                     if (this.activeTab === 'customer') {
                         this.initCustomerCharts();
@@ -549,8 +677,90 @@
                     }
                 },
                 
+                // 生成基于日期范围的X轴数据 (MVP版本：固定按日显示)
+                // 动态生成X轴数据，根据时间跨度调整粒度
+                generateDynamicXAxisData() {
+                    if (!this.globalDateRange || this.globalDateRange.length !== 2) {
+                        return ['日期1', '日期2', '日期3', '日期4', '日期5'];
+                    }
+                    
+                    const startDate = new Date(this.globalDateRange[0]);
+                    const endDate = new Date(this.globalDateRange[1]);
+                    const diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+                    const dates = [];
+                    
+                    if (diffMonths <= 1) {
+                        // 时间跨度 ≤ 1个月：按日显示
+                        const currentDate = new Date(startDate);
+                        while (currentDate <= endDate) {
+                            dates.push(currentDate.toISOString().split('T')[0]); // YYYY-MM-DD格式
+                            currentDate.setDate(currentDate.getDate() + 1);
+                            if (dates.length >= 31) break; // 最多31天
+                        }
+                    } else if (diffMonths <= 3) {
+                        // 1个月 < 时间跨度 ≤ 3个月：按周显示
+                        const currentDate = new Date(startDate);
+                        // 调整到周一
+                        const dayOfWeek = currentDate.getDay();
+                        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                        currentDate.setDate(currentDate.getDate() - daysToMonday);
+                        
+                        while (currentDate <= endDate) {
+                            dates.push(currentDate.toISOString().split('T')[0]); // 周一的日期
+                            currentDate.setDate(currentDate.getDate() + 7); // 下一周
+                            if (dates.length >= 15) break; // 最多15周
+                        }
+                    } else {
+                        // 时间跨度 > 3个月：按月显示
+                        const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+                        while (currentDate <= endDate) {
+                            dates.push(currentDate.toISOString().split('T')[0]); // 月初日期
+                            currentDate.setMonth(currentDate.getMonth() + 1);
+                            if (dates.length >= 24) break; // 最多24个月
+                        }
+                    }
+                    
+                    return dates.length > 0 ? dates : ['日期1', '日期2', '日期3', '日期4', '日期5'];
+                },
+                
+                // 获取X轴标签格式化器
+                getXAxisFormatter() {
+                    if (!this.globalDateRange || this.globalDateRange.length !== 2) {
+                        return function(value) { return value; };
+                    }
+                    
+                    const startDate = new Date(this.globalDateRange[0]);
+                    const endDate = new Date(this.globalDateRange[1]);
+                    const diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+                    
+                    if (diffMonths <= 1) {
+                        // 时间跨度 ≤ 1个月：按日显示 MM-DD
+                        return function(value) {
+                            const date = new Date(value);
+                            return (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0');
+                        };
+                    } else if (diffMonths <= 3) {
+                        // 1个月 < 时间跨度 ≤ 3个月：按周显示 MM-DD(周)
+                        return function(value) {
+                            const date = new Date(value);
+                            return (date.getMonth() + 1).toString().padStart(2, '0') + '-' + date.getDate().toString().padStart(2, '0') + '(周)';
+                        };
+                    } else {
+                        // 时间跨度 > 3个月：按月显示 YYYY-MM
+                        return function(value) {
+                            const date = new Date(value);
+                            return date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, '0');
+                        };
+                    }
+                },
+                
+                // 兼容旧方法名
+                generateDailyXAxisData() {
+                    return this.generateDynamicXAxisData();
+                },
+                
                 initCustomerCharts() {
-                    // 客户行业分布
+                    // 期间新增客户行业分布 (MVP版本：只显示期间新增分布)
                     const industryChart = echarts.init(document.getElementById('customerIndustryChart'));
                     industryChart.setOption({
                         tooltip: {
@@ -562,15 +772,15 @@
                             left: 'left'
                         },
                         series: [{
-                            name: '客户行业分布',
+                            name: '期间新增客户行业分布',
                             type: 'pie',
                             radius: '50%',
                             data: [
-                                {value: 335, name: '政府机关'},
-                                {value: 310, name: '教育'},
-                                {value: 234, name: '医疗'},
-                                {value: 135, name: '金融'},
-                                {value: 234, name: '制造业'}
+                                {value: 45, name: '政府机关', itemStyle: { color: '#5470c6' }},
+                                {value: 38, name: '教育', itemStyle: { color: '#91cc75' }},
+                                {value: 32, name: '医疗', itemStyle: { color: '#fac858' }},
+                                {value: 25, name: '金融', itemStyle: { color: '#ee6666' }},
+                                {value: 16, name: '制造业', itemStyle: { color: '#73c0de' }}
                             ],
                             emphasis: {
                                 itemStyle: {
@@ -582,84 +792,75 @@
                         }]
                     });
                     
-                    // 客户增长趋势
+                    // 客户增长趋势 (动态X轴刻度)
                     const growthChart = echarts.init(document.getElementById('customerGrowthChart'));
+                    const xAxisData = this.generateDynamicXAxisData();
+                    const newCustomerData = xAxisData.map(() => Math.floor(Math.random() * 10) + 5);
+                    
                     growthChart.setOption({
                         tooltip: {
                             trigger: 'axis'
                         },
                         legend: {
-                            data: ['新增客户', '累计客户']
+                            data: ['新增客户']
                         },
                         xAxis: {
                             type: 'category',
-                            data: ['1月', '2月', '3月', '4月', '5月', '6月']
-                        },
-                        yAxis: [
-                            {
-                                type: 'value',
-                                name: '新增客户',
-                                position: 'left'
-                            },
-                            {
-                                type: 'value',
-                                name: '累计客户',
-                                position: 'right'
+                            data: xAxisData,
+                            axisLabel: {
+                                formatter: this.getXAxisFormatter()
                             }
-                        ],
-                        series: [
-                            {
-                                name: '新增客户',
-                                data: [120, 132, 101, 134, 90, 230],
-                                type: 'bar',
-                                itemStyle: {
-                                    color: '#409EFF'
-                                }
-                            },
-                            {
-                                name: '累计客户',
-                                data: [1248, 1380, 1481, 1615, 1705, 1935],
-                                type: 'line',
-                                smooth: true,
-                                yAxisIndex: 1,
-                                itemStyle: {
-                                    color: '#67C23A'
-                                }
-                            }
-                        ]
-                    });
-                    
-                    // 客户级别分布
-                    const levelChart = echarts.init(document.getElementById('customerLevelChart'));
-                    levelChart.setOption({
-                        tooltip: {
-                            trigger: 'axis',
-                            axisPointer: {
-                                type: 'shadow'
-                            }
-                        },
-                        xAxis: {
-                            type: 'category',
-                            data: ['战略客户', '重要客户', '普通客户']
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            name: '客户数'
                         },
                         series: [{
-                            name: '客户数量',
-                            data: [156, 423, 669],
-                            type: 'bar',
-                            itemStyle: {
+                            name: '新增客户',
+                            data: newCustomerData,
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#5470c6' },
+                            areaStyle: {
                                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                    {offset: 0, color: '#83bff6'},
-                                    {offset: 0.5, color: '#188df0'},
-                                    {offset: 1, color: '#188df0'}
+                                    {offset: 0, color: 'rgba(84, 112, 198, 0.3)'},
+                                    {offset: 1, color: 'rgba(84, 112, 198, 0.1)'}
                                 ])
                             }
                         }]
                     });
                     
-                    // 地域分布统计分析
+                    // 期间新增客户级别分布
+                    const levelChart = echarts.init(document.getElementById('customerLevelChart'));
+                    levelChart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [{
+                            name: '期间新增客户级别分布',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            data: [
+                                {value: 78, name: 'VIP客户', itemStyle: { color: '#ff6b6b' }},
+                                {value: 52, name: '普通客户', itemStyle: { color: '#4ecdc4' }},
+                                {value: 26, name: '潜在客户', itemStyle: { color: '#45b7d1' }}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                    
+                    // 期间新增客户地域分布
                     const regionChart = echarts.init(document.getElementById('customerRegionChart'));
                     regionChart.setOption({
                         tooltip: {
@@ -673,16 +874,17 @@
                             data: ['地市1', '地市2', '地市3', '地市4', '地市5', '地市6']
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            name: '新增客户数'
                         },
                         series: [{
-                            name: '客户数量',
-                            data: [1856, 2134, 1678, 1245, 987, 623],
+                            name: '期间新增客户数',
+                            data: [28, 23, 19, 15, 12, 8],
                             type: 'bar',
                             itemStyle: {
                                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                    {offset: 0, color: '#409EFF'},
-                                    {offset: 1, color: '#1890ff'}
+                                    {offset: 0, color: '#667eea'},
+                                    {offset: 1, color: '#764ba2'}
                                 ])
                             }
                         }]
@@ -690,9 +892,9 @@
                 },
                 
                 initDeviceCharts() {
-                    // 物联网平台分布
-                    const platformChart = echarts.init(document.getElementById('devicePlatformChart'));
-                    platformChart.setOption({
+                    // 期间新增设备类型分布
+                    const typeChart = echarts.init(document.getElementById('deviceTypeChart'));
+                    typeChart.setOption({
                         tooltip: {
                             trigger: 'item',
                             formatter: '{a} <br/>{b}: {c} ({d}%)'
@@ -702,15 +904,14 @@
                             left: 'left'
                         },
                         series: [{
-                            name: '物联网平台分布',
+                            name: '期间新增设备类型分布',
                             type: 'pie',
                             radius: '50%',
                             data: [
-                                {value: 5624, name: '千里眼'},
-                                {value: 4312, name: '移动看家'},
-                                {value: 3456, name: '国标平台'},
-                                {value: 1568, name: '华为云IoT'},
-                                {value: 720, name: '其他平台'}
+                                {value: 98, name: '摄像头', itemStyle: { color: '#5470c6' }},
+                                {value: 67, name: '编码器', itemStyle: { color: '#91cc75' }},
+                                {value: 45, name: '存储设备', itemStyle: { color: '#fac858' }},
+                                {value: 35, name: '网络设备', itemStyle: { color: '#ee6666' }}
                             ],
                             emphasis: {
                                 itemStyle: {
@@ -722,86 +923,74 @@
                         }]
                     });
                     
-                    // 设备厂商分布
-                    const manufacturerChart = echarts.init(document.getElementById('deviceManufacturerChart'));
-                    manufacturerChart.setOption({
-                        tooltip: {
-                            trigger: 'item',
-                            formatter: '{a} <br/>{b}: {c} ({d}%)'
-                        },
-                        legend: {
-                            orient: 'vertical',
-                            left: 'left'
-                        },
-                        series: [{
-                            name: '设备厂商分布',
-                            type: 'pie',
-                            radius: '50%',
-                            data: [
-                                {value: 6272, name: '海康威视'},
-                                {value: 4704, name: '大华'},
-                                {value: 2352, name: '宇视'},
-                                {value: 1568, name: '华为'},
-                                {value: 784, name: '其他'}
-                            ],
-                            emphasis: {
-                                itemStyle: {
-                                    shadowBlur: 10,
-                                    shadowOffsetX: 0,
-                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
-                                }
-                            }
-                        }]
-                    });
+                    // 设备增长趋势 (动态X轴刻度)
+                    const growthChart = echarts.init(document.getElementById('deviceGrowthChart'));
+                    const xAxisData = this.generateDynamicXAxisData();
+                    const newDeviceData = xAxisData.map(() => Math.floor(Math.random() * 15) + 8);
                     
-                    // 设备趋势图
-                    const trendChart = echarts.init(document.getElementById('deviceTrendChart'));
-                    trendChart.setOption({
+                    growthChart.setOption({
                         tooltip: {
                             trigger: 'axis'
                         },
                         legend: {
-                            data: ['新增设备', '累计设备']
+                            data: ['新增设备']
                         },
                         xAxis: {
                             type: 'category',
-                            data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                            data: xAxisData,
+                            axisLabel: {
+                                formatter: this.getXAxisFormatter()
+                            }
                         },
-                        yAxis: [
-                            {
-                                type: 'value',
-                                name: '新增设备',
-                                position: 'left'
-                            },
-                            {
-                                type: 'value',
-                                name: '累计设备',
-                                position: 'right'
+                        yAxis: {
+                            type: 'value',
+                            name: '设备数'
+                        },
+                        series: [{
+                            name: '新增设备',
+                            data: newDeviceData,
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#91cc75' },
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    {offset: 0, color: 'rgba(145, 204, 117, 0.3)'},
+                                    {offset: 1, color: 'rgba(145, 204, 117, 0.1)'}
+                                ])
                             }
-                        ],
-                        series: [
-                            {
-                                name: '新增设备',
-                                data: [856, 1024, 1156, 1234, 1345, 1256],
-                                type: 'bar',
-                                itemStyle: {
-                                    color: '#409EFF'
-                                }
-                            },
-                            {
-                                name: '累计设备',
-                                data: [12456, 13480, 14636, 15870, 17215, 18471],
-                                type: 'line',
-                                smooth: true,
-                                yAxisIndex: 1,
-                                itemStyle: {
-                                    color: '#67C23A'
-                                }
-                            }
-                        ]
+                        }]
                     });
                     
-                    // 设备地域分布
+                    // 期间新增设备状态分布
+                    const statusChart = echarts.init(document.getElementById('deviceStatusChart'));
+                    statusChart.setOption({
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{a} <br/>{b}: {c} ({d}%)'
+                        },
+                        legend: {
+                            orient: 'vertical',
+                            left: 'left'
+                        },
+                        series: [{
+                            name: '期间新增设备状态分布',
+                            type: 'pie',
+                            radius: ['40%', '70%'],
+                            data: [
+                                {value: 231, name: '在线', itemStyle: { color: '#67c23a' }},
+                                {value: 14, name: '离线', itemStyle: { color: '#f56c6c' }}
+                            ],
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }]
+                    });
+                    
+                    // 期间新增设备地域分布
                     const regionChart = echarts.init(document.getElementById('deviceRegionChart'));
                     regionChart.setOption({
                         tooltip: {
@@ -815,16 +1004,17 @@
                             data: ['地市1', '地市2', '地市3', '地市4', '地市5', '地市6']
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            name: '新增设备数'
                         },
                         series: [{
-                            name: '设备数量',
-                            data: [3245, 4156, 2987, 2234, 1567, 1123],
+                            name: '期间新增设备数',
+                            data: [45, 38, 32, 28, 21, 15],
                             type: 'bar',
                             itemStyle: {
                                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                    {offset: 0, color: '#E6A23C'},
-                                    {offset: 1, color: '#F56C6C'}
+                                    {offset: 0, color: '#4facfe'},
+                                    {offset: 1, color: '#00f2fe'}
                                 ])
                             }
                         }]
@@ -832,8 +1022,13 @@
                 },
                 
                 initBusinessCharts() {
-                    // 业务趋势图
+                    // 业务趋势图 (动态X轴刻度)
                     const trendChart = echarts.init(document.getElementById('businessTrendChart'));
+                    const xAxisData = this.generateDynamicXAxisData();
+                    const subscribeData = xAxisData.map(() => Math.floor(Math.random() * 12) + 8);
+                    const unsubscribeData = xAxisData.map(() => Math.floor(Math.random() * 3) + 1);
+                    const maintenanceData = xAxisData.map(() => Math.floor(Math.random() * 5) + 2);
+                    
                     trendChart.setOption({
                         tooltip: {
                             trigger: 'axis'
@@ -843,29 +1038,33 @@
                         },
                         xAxis: {
                             type: 'category',
-                            data: ['1月', '2月', '3月', '4月', '5月', '6月']
+                            data: xAxisData,
+                            axisLabel: {
+                                formatter: this.getXAxisFormatter()
+                            }
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            name: '业务数量'
                         },
                         series: [
                             {
                                 name: '订购业务',
-                                data: [2650, 2700, 2750, 2800, 2850, 2890],
+                                data: subscribeData,
                                 type: 'line',
                                 smooth: true,
                                 itemStyle: { color: '#67C23A' }
                             },
                             {
                                 name: '退订业务',
-                                data: [120, 125, 130, 140, 150, 156],
+                                data: unsubscribeData,
                                 type: 'line',
                                 smooth: true,
                                 itemStyle: { color: '#E6A23C' }
                             },
                             {
                                 name: '装维业务',
-                                data: [380, 385, 390, 400, 405, 410],
+                                data: maintenanceData,
                                 type: 'line',
                                 smooth: true,
                                 itemStyle: { color: '#F56C6C' }
@@ -873,7 +1072,7 @@
                         ]
                     });
                     
-                    // 业务类型分布
+                    // 期间新增业务类型分布
                     const typeChart = echarts.init(document.getElementById('businessTypeChart'));
                     typeChart.setOption({
                         tooltip: {
@@ -885,13 +1084,13 @@
                             left: 'left'
                         },
                         series: [{
-                            name: '业务类型分布',
+                            name: '期间新增业务类型分布',
                             type: 'pie',
                             radius: '50%',
                             data: [
-                                {value: 2890, name: '订购业务', itemStyle: { color: '#67C23A' }},
-                                {value: 156, name: '退订业务', itemStyle: { color: '#E6A23C' }},
-                                {value: 410, name: '装维业务', itemStyle: { color: '#F56C6C' }}
+                                {value: 245, name: '订购业务', itemStyle: { color: '#67C23A' }},
+                                {value: 23, name: '退订业务', itemStyle: { color: '#E6A23C' }},
+                                {value: 67, name: '装维业务', itemStyle: { color: '#F56C6C' }}
                             ],
                             emphasis: {
                                 itemStyle: {
@@ -903,7 +1102,7 @@
                         }]
                     });
                     
-                    // 地域分布分析
+                    // 期间新增业务地域分布
                     const regionChart = echarts.init(document.getElementById('regionDistributionChart'));
                     regionChart.setOption({
                         tooltip: {
@@ -915,17 +1114,17 @@
                             left: 'left'
                         },
                         series: [{
-                            name: '地域分布',
+                            name: '期间新增业务地域分布',
                             type: 'pie',
                             radius: ['40%', '70%'],
                             center: ['60%', '50%'],
                             data: [
-                                {value: 1245, name: '地市1', itemStyle: { color: '#5470c6' }},
-                                {value: 986, name: '地市2', itemStyle: { color: '#91cc75' }},
-                                {value: 756, name: '地市3', itemStyle: { color: '#fac858' }},
-                                {value: 469, name: '地市4', itemStyle: { color: '#ee6666' }},
-                                {value: 325, name: '地市5', itemStyle: { color: '#73c0de' }},
-                                {value: 221, name: '地市6', itemStyle: { color: '#3ba272' }}
+                                {value: 89, name: '地市1', itemStyle: { color: '#5470c6' }},
+                                {value: 76, name: '地市2', itemStyle: { color: '#91cc75' }},
+                                {value: 63, name: '地市3', itemStyle: { color: '#fac858' }},
+                                {value: 42, name: '地市4', itemStyle: { color: '#ee6666' }},
+                                {value: 28, name: '地市5', itemStyle: { color: '#73c0de' }},
+                                {value: 17, name: '地市6', itemStyle: { color: '#3ba272' }}
                             ],
                             emphasis: {
                                 itemStyle: {
@@ -937,7 +1136,7 @@
                         }]
                     });
                     
-                    // 地域业务对比
+                    // 期间业务地域对比
                     const regionBusinessChart = echarts.init(document.getElementById('regionBusinessChart'));
                     regionBusinessChart.setOption({
                         tooltip: {
@@ -954,24 +1153,25 @@
                             data: ['地市1', '地市2', '地市3', '地市4', '地市5', '地市6']
                         },
                         yAxis: {
-                            type: 'value'
+                            type: 'value',
+                            name: '业务数量'
                         },
                         series: [
                             {
                                 name: '订购业务',
-                                data: [890, 756, 623, 421, 298, 187],
+                                data: [67, 58, 48, 32, 21, 13],
                                 type: 'bar',
                                 itemStyle: { color: '#67C23A' }
                             },
                             {
                                 name: '退订业务',
-                                data: [45, 38, 32, 28, 21, 15],
+                                data: [5, 4, 3, 3, 2, 1],
                                 type: 'bar',
                                 itemStyle: { color: '#E6A23C' }
                             },
                             {
                                 name: '装维业务',
-                                data: [156, 132, 98, 76, 54, 32],
+                                data: [17, 14, 12, 7, 5, 3],
                                 type: 'bar',
                                 itemStyle: { color: '#F56C6C' }
                             }
@@ -979,23 +1179,22 @@
                     });
                 },
                 
-
-                // 查询方法
+                // 查询方法 (MVP版本：简化处理)
                 queryCustomerData() {
                     ElMessage.success('客户数据查询成功！');
-                    // 这里可以添加实际的查询逻辑
+                    this.updateMetricsBasedOnDateRange();
                     this.initCustomerCharts();
                 },
                 
                 queryDeviceData() {
                     ElMessage.success('设备数据查询成功！');
-                    // 这里可以添加实际的查询逻辑
+                    this.updateMetricsBasedOnDateRange();
                     this.initDeviceCharts();
                 },
                 
                 queryBusinessData() {
                     ElMessage.success('业务数据查询成功！');
-                    // 这里可以添加实际的查询逻辑
+                    this.updateMetricsBasedOnDateRange();
                     this.initBusinessCharts();
                 },
                 
@@ -1015,7 +1214,7 @@
                         type: 'warning'
                     }).then(() => {
                         ElMessage.success('退出登录成功！');
-                        // 这里可以添加实际的退出登录逻辑
+                        // 这里可以新增实际的退出登录逻辑
                     }).catch(() => {
                         // 用户取消退出
                     });
