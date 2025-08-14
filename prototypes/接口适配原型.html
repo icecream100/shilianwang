@@ -317,7 +317,7 @@
                                     </el-button>
                                     <el-button type="primary" @click="showAddDeviceDialog">
                                         <el-icon><Plus /></el-icon>
-                                        添加设备
+                                        新增设备
                                     </el-button>
                                 </div>
 
@@ -333,7 +333,7 @@
                                     <el-table-column prop="source" label="数据来源" width="100">
                                         <template #default="scope">
                                             <el-tag :type="scope.row.source === 'sync' ? 'primary' : 'success'">
-                                                {{scope.row.source === 'sync' ? '同步' : '手动添加'}}
+                                                {{scope.row.source === 'sync' ? '同步' : '手动新增'}}
                                             </el-tag>
                                         </template>
                                     </el-table-column>
@@ -349,17 +349,7 @@
                                                 <el-button size="small" @click="viewDevice(scope.row)">详情</el-button>
                                                 <el-button size="small" type="primary" @click="editDeviceInfo(scope.row)">编辑信息</el-button>
                                                 <el-button size="small" type="warning" @click="viewChannels(scope.row)">查看通道</el-button>
-                                                <el-dropdown trigger="click">
-                                                    <el-button size="small" type="info">
-                                                        远程控制<el-icon class="el-icon--right"><arrow-down /></el-icon>
-                                                    </el-button>
-                                                    <template #dropdown>
-                                                        <el-dropdown-menu>
-                                                            <el-dropdown-item @click="restartDevice(scope.row)">重启设备</el-dropdown-item>
-                                                            <el-dropdown-item @click="refreshDeviceInfo(scope.row)">刷新信息</el-dropdown-item>
-                                                        </el-dropdown-menu>
-                                                    </template>
-                                                </el-dropdown>
+
                                                 <el-button v-if="scope.row.source === 'manual'" size="small" type="danger" @click="deleteDevice(scope.row)">删除</el-button>
                                             </div>
                                         </template>
@@ -416,7 +406,7 @@
                                     </el-button>
                                     <el-button type="primary" @click="showAddChannelDialog">
                                         <el-icon><Plus /></el-icon>
-                                        手动添加通道
+                                        手动新增通道
                                     </el-button>
                                 </div>
 
@@ -433,7 +423,7 @@
                                     <el-table-column prop="source" label="数据来源" width="100">
                                         <template #default="scope">
                                             <el-tag :type="scope.row.source === 'sync' ? 'primary' : 'success'">
-                                                {{scope.row.source === 'sync' ? '同步' : '手动添加'}}
+                                                {{scope.row.source === 'sync' ? '同步' : '手动新增'}}
                                             </el-tag>
                                         </template>
                                     </el-table-column>
@@ -545,7 +535,7 @@
                     </el-descriptions-item>
                     <el-descriptions-item label="最近在线时间">{{selectedDevice.lastOnlineTime}}</el-descriptions-item>
                     <el-descriptions-item label="注册来源">
-                        <el-tag :type="selectedDevice.source === 'sync' ? 'success' : 'warning'">{{selectedDevice.source === 'sync' ? '平台同步' : '手动添加'}}</el-tag>
+                        <el-tag :type="selectedDevice.source === 'sync' ? 'success' : 'warning'">{{selectedDevice.source === 'sync' ? '平台同步' : '手动新增'}}</el-tag>
                     </el-descriptions-item>
                     <el-descriptions-item label="自定义标签" span="2">
                         <el-tag v-for="tag in selectedDevice.tags" :key="tag" class="mr-2">{{tag}}</el-tag>
@@ -620,8 +610,8 @@
             </template>
         </el-dialog>
 
-        <!-- 手动添加设备对话框 -->
-        <el-dialog v-model="addDeviceDialogVisible" title="手动添加设备" width="600px">
+        <!-- 手动新增设备对话框 -->
+        <el-dialog v-model="addDeviceDialogVisible" title="手动新增设备" width="600px">
             <el-form :model="addDeviceForm" :rules="addDeviceRules" ref="addDeviceFormRef" label-width="120px">
                 <el-form-item label="设备ID" prop="deviceId">
                     <el-input v-model="addDeviceForm.deviceId" placeholder="请输入设备ID"></el-input>
@@ -699,8 +689,8 @@
             </el-descriptions>
         </el-dialog>
 
-        <!-- 手动添加通道对话框 -->
-        <el-dialog v-model="addChannelDialogVisible" title="手动添加通道" width="500px">
+        <!-- 手动新增通道对话框 -->
+        <el-dialog v-model="addChannelDialogVisible" title="手动新增通道" width="500px">
             <el-form :model="addChannelForm" :rules="addChannelRules" ref="addChannelFormRef" label-width="120px">
                 <el-form-item label="通道ID" prop="channelId">
                     <el-input v-model="addChannelForm.channelId" placeholder="请输入通道ID"></el-input>
@@ -853,7 +843,7 @@
                             gps: '116.4074, 39.9042',
                             status: 'online',
                             lastOnlineTime: '2024-01-20 15:30:00',
-                            source: 'sync', // 数据来源：sync-同步，manual-手动添加
+                            source: 'sync', // 数据来源：sync-同步，manual-手动新增
                             tags: ['重要', '大厅'],
                             remarks: '主要监控大厅入口'
                         },
@@ -877,7 +867,7 @@
                         {
                             id: 3,
                             deviceId: 'GZ003001',
-                            name: '广州手动添加设备',
+                            name: '广州手动新增设备',
                             platformName: '广州GB28181平台',
                             manufacturer: '宇视',
                             model: 'IPC-B122-PF28',
@@ -887,9 +877,9 @@
                             gps: '113.2644, 23.1291',
                             status: 'online',
                             lastOnlineTime: '2024-01-20 16:20:00',
-                            source: 'manual', // 手动添加的设备
+                            source: 'manual', // 手动新增的设备
                             tags: ['测试'],
-                            remarks: '手动添加的测试设备'
+                            remarks: '手动新增的测试设备'
                         }
                     ],
                     deviceSearch: '',
@@ -925,7 +915,7 @@
                             streamType: '主码流',
                             ptzSupport: true,
                             enabled: true,
-                            source: 'sync', // 数据来源：sync-同步，manual-手动添加
+                            source: 'sync', // 数据来源：sync-同步，manual-手动新增
                             remarks: '主要监控通道'
                         },
                         {
@@ -967,8 +957,8 @@
                         {
                             id: 4,
                             channelId: 'GZ003001_01',
-                            name: '手动添加通道',
-                            deviceName: '广州手动添加设备',
+                            name: '手动新增通道',
+                            deviceName: '广州手动新增设备',
                             deviceId: 3,
                             type: 'video',
                             status: 'active',
@@ -979,7 +969,7 @@
                             streamType: '主码流',
                             ptzSupport: true,
                             enabled: true,
-                            source: 'manual', // 手动添加的通道
+                            source: 'manual', // 手动新增的通道
                             remarks: '手动配置的高清通道'
                         }
                     ],
@@ -995,7 +985,7 @@
                         remarks: ''
                     },
                     
-                    // 手动添加设备
+                    // 手动新增设备
                     addDeviceDialogVisible: false,
                     addDeviceForm: {
                         deviceId: '',
@@ -1020,7 +1010,7 @@
                         ip: [{ required: true, message: '请输入IP地址', trigger: 'blur' }]
                     },
                     
-                    // 手动添加通道
+                    // 手动新增通道
                     addChannelDialogVisible: false,
                     addChannelForm: {
                         channelId: '',
@@ -1261,25 +1251,7 @@
                     ElMessage.info(`切换到通道管理，显示设备 ${device.name} 的通道`);
                 },
                 
-                restartDevice(device) {
-                    ElMessageBox.confirm(
-                        `确定要对设备 ${device.name} 执行重启操作吗？此操作可能导致设备短暂离线。`,
-                        '确认重启',
-                        {
-                            confirmButtonText: '确定重启',
-                            cancelButtonText: '取消',
-                            type: 'warning',
-                        }
-                    ).then(() => {
-                        ElMessage.success('重启指令已发送，请稍后关注设备状态');
-                    }).catch(() => {
-                        ElMessage.info('已取消重启');
-                    });
-                },
-                
-                refreshDeviceInfo(device) {
-                    ElMessage.success(`设备 ${device.name} 信息刷新指令已发送`);
-                },
+
                 
                 // 通道管理方法
                 searchChannels() {
@@ -1329,7 +1301,7 @@
                     }
                     
                     ElMessageBox.confirm(
-                        `确定要删除手动添加的设备 "${device.name}" 吗？删除后将无法恢复。`,
+                        `确定要删除手动新增的设备 "${device.name}" 吗？删除后将无法恢复。`,
                         '确认删除设备',
                         {
                             confirmButtonText: '确定删除',
@@ -1351,7 +1323,7 @@
                 // 删除通道功能
                 deleteChannel(channel) {
                     ElMessageBox.confirm(
-                        `确定要删除手动添加的通道 "${channel.name}" 吗？删除后将无法恢复。`,
+                        `确定要删除手动新增的通道 "${channel.name}" 吗？删除后将无法恢复。`,
                         '确认删除通道',
                         {
                             confirmButtonText: '确定删除',
@@ -1476,7 +1448,7 @@
                     return textMap[status] || status;
                 },
                 
-                // 手动添加设备相关方法
+                // 手动新增设备相关方法
                 showAddDeviceDialog() {
                     this.addDeviceDialogVisible = true;
                 },
@@ -1505,15 +1477,15 @@
                                 gps: this.addDeviceForm.gps,
                                 status: 'offline',
                                 lastOnlineTime: '未上线',
-                                source: 'manual', // 标记为手动添加
+                                source: 'manual', // 标记为手动新增
                                 tags: [],
                                 remarks: this.addDeviceForm.remarks
                             };
                             
-                            // 添加到设备列表
+                            // 新增到设备列表
                             this.devices.push(newDevice);
                             
-                            ElMessage.success('设备添加成功');
+                            ElMessage.success('设备新增成功');
                             this.addDeviceDialogVisible = false;
                             this.resetAddDeviceForm();
                         }
@@ -1539,7 +1511,7 @@
                     };
                 },
                 
-                // 手动添加通道相关方法
+                // 手动新增通道相关方法
                 showAddChannelDialog() {
                     this.addChannelDialogVisible = true;
                 },
@@ -1570,14 +1542,14 @@
                                 streamType: this.addChannelForm.type === 'video' ? '主码流' : '-',
                                 ptzSupport: this.addChannelForm.ptzSupport,
                                 enabled: true,
-                                source: 'manual', // 标记为手动添加
+                                source: 'manual', // 标记为手动新增
                                 remarks: this.addChannelForm.remarks
                             };
                             
-                            // 添加到通道列表
+                            // 新增到通道列表
                             this.channels.push(newChannel);
                             
-                            ElMessage.success('通道添加成功');
+                            ElMessage.success('通道新增成功');
                             this.addChannelDialogVisible = false;
                             this.resetAddChannelForm();
                         }

@@ -217,8 +217,6 @@
                                             <el-select v-model="platformTypeFilter" placeholder="请选择" clearable style="width: 150px">
                                                 <el-option label="全部" value=""></el-option>
                                                 <el-option label="HTTP" value="http"></el-option>
-                                                <el-option label="数据库" value="database"></el-option>
-                                                <el-option label="消息队列" value="mq"></el-option>
                                             </el-select>
                                         </div>
                                     </div>
@@ -496,7 +494,6 @@
                                                 <el-option label="全部" value=""></el-option>
                                                 <el-option label="成功" value="success"></el-option>
                                                 <el-option label="失败" value="failure"></el-option>
-                                                <el-option label="部分成功" value="partial"></el-option>
                                             </el-select>
                                         </div>
                                     </div>
@@ -541,7 +538,6 @@
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="duration" label="耗时(ms)" width="90"></el-table-column>
-                                <el-table-column prop="errorMessage" label="错误信息" width="150" show-overflow-tooltip></el-table-column>
                                 <el-table-column label="操作" width="100">
                                     <template #default="scope">
                                         <el-button size="small" type="primary" @click="viewLogDetail(scope.row)">详情</el-button>
@@ -576,8 +572,6 @@
                 <el-form-item label="连接类型" required>
                     <el-select v-model="platformForm.type" placeholder="请选择连接类型" @change="onConnectionTypeChange">
                         <el-option label="HTTP" value="http"></el-option>
-                        <el-option label="数据库" value="database"></el-option>
-                        <el-option label="消息队列" value="mq"></el-option>
                     </el-select>
                 </el-form-item>
                 <div v-if="platformForm.type === 'http'">
@@ -590,49 +584,6 @@
                             <el-option label="API Key" value="apikey"></el-option>
                             <el-option label="Bearer Token" value="bearer"></el-option>
                         </el-select>
-                    </el-form-item>
-                </div>
-                <div v-if="platformForm.type === 'database'">
-                    <el-form-item label="数据库类型" required>
-                        <el-select v-model="platformForm.dbType" placeholder="请选择数据库类型">
-                            <el-option label="MySQL" value="mysql"></el-option>
-                            <el-option label="PostgreSQL" value="postgresql"></el-option>
-                            <el-option label="Oracle" value="oracle"></el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="连接地址" required>
-                        <el-input v-model="platformForm.host" placeholder="localhost:3306"></el-input>
-                    </el-form-item>
-                    <el-form-item label="数据库名" required>
-                        <el-input v-model="platformForm.database" placeholder="database_name"></el-input>
-                    </el-form-item>
-                    <el-form-item label="用户名" required>
-                        <el-input v-model="platformForm.dbUsername" placeholder="请输入数据库用户名"></el-input>
-                    </el-form-item>
-                    <el-form-item label="密码" required>
-                        <el-input v-model="platformForm.dbPassword" type="password" placeholder="请输入数据库密码" show-password></el-input>
-                    </el-form-item>
-                </div>
-                <div v-if="platformForm.type === 'mq'">
-                    <el-form-item label="消息队列类型" required>
-                        <el-select v-model="platformForm.mqType" placeholder="请选择消息队列类型">
-                            <el-option label="RabbitMQ" value="rabbitmq"></el-option>
-                            <el-option label="Apache Kafka" value="kafka"></el-option>
-                            <el-option label="Apache RocketMQ" value="rocketmq"></el-option>
-                            <el-option label="Redis" value="redis"></el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item label="连接地址" required>
-                        <el-input v-model="platformForm.mqHost" placeholder="localhost:5672"></el-input>
-                    </el-form-item>
-                    <el-form-item label="虚拟主机/命名空间">
-                        <el-input v-model="platformForm.virtualHost" placeholder="/"></el-input>
-                    </el-form-item>
-                    <el-form-item label="用户名">
-                        <el-input v-model="platformForm.mqUsername" placeholder="guest"></el-input>
-                    </el-form-item>
-                    <el-form-item label="密码">
-                        <el-input v-model="platformForm.mqPassword" type="password" placeholder="请输入密码" show-password></el-input>
                     </el-form-item>
                 </div>
             </el-form>
@@ -656,18 +607,6 @@
                 <template v-if="platformDetail.type === 'http'">
                     <el-descriptions-item label="连接地址">{{platformDetail.baseUrl}}</el-descriptions-item>
                     <el-descriptions-item label="认证方式">{{getAuthTypeName(platformDetail.authType)}}</el-descriptions-item>
-                </template>
-                <template v-if="platformDetail.type === 'database'">
-                    <el-descriptions-item label="数据库类型">{{platformDetail.dbType}}</el-descriptions-item>
-                    <el-descriptions-item label="连接地址">{{platformDetail.host}}</el-descriptions-item>
-                    <el-descriptions-item label="数据库名">{{platformDetail.database}}</el-descriptions-item>
-                    <el-descriptions-item label="用户名">{{platformDetail.dbUsername}}</el-descriptions-item>
-                </template>
-                <template v-if="platformDetail.type === 'mq'">
-                    <el-descriptions-item label="消息队列类型">{{platformDetail.mqType}}</el-descriptions-item>
-                    <el-descriptions-item label="连接地址">{{platformDetail.mqHost}}</el-descriptions-item>
-                    <el-descriptions-item label="虚拟主机/命名空间">{{platformDetail.virtualHost || '/'}}</el-descriptions-item>
-                    <el-descriptions-item label="用户名">{{platformDetail.mqUsername || 'guest'}}</el-descriptions-item>
                 </template>
                 <el-descriptions-item label="连接状态">
                     <span :class="getConnectionStatusClass(platformDetail.status)">
@@ -799,48 +738,242 @@
                         </div>
                     </div>
                     
-                    <!-- 表头 -->
-                    <div class="grid grid-cols-12 gap-2 mb-2 p-3 bg-gray-50 rounded font-medium text-sm">
-                        <div class="col-span-5">源接口字段</div>
-                        <div class="col-span-1 text-center">→</div>
-                        <div class="col-span-5">目标接口字段</div>
-                        <div class="col-span-1 text-center">操作</div>
-                    </div>
-                    
-                    <!-- 映射行 -->
-                    <div class="space-y-2 max-h-96 overflow-y-auto">
-                        <div v-for="(targetField, index) in targetFields" :key="index" class="grid grid-cols-12 gap-2 p-3 bg-white border rounded hover:bg-gray-50">
-                            <!-- 源字段选择 -->
-                            <div class="col-span-5">
-                                <el-select v-model="fieldMappings[targetField.name]" placeholder="选择源字段" size="small" class="w-full" clearable>
-                                    <el-option v-for="sourceField in availableSourceFields(targetField.name)" :key="sourceField.name" :label="`${sourceField.name} (${sourceField.type})`" :value="sourceField.name" :disabled="isSourceFieldUsed(sourceField.name, targetField.name)">
-                                        <div class="flex justify-between items-center">
-                                            <span>{{sourceField.name}}</span>
-                                            <el-tag size="small" :type="getFieldTypeColor(sourceField.type)">{{sourceField.type}}</el-tag>
+                    <!-- Tab标签页 -->
+                    <el-tabs v-model="activeFieldMappingTab" class="mb-4">
+                        <el-tab-pane label="Body" name="body">
+                            <!-- Body字段映射内容 -->
+                            <div class="space-y-4">
+                                <!-- 映射行 -->
+                                <div class="space-y-3 max-h-96 overflow-y-auto">
+                                    <div v-for="(sourceField, index) in sourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                        <!-- 源字段展示 -->
+                                        <div class="flex-1">
+                                            <el-input v-model="sourceField.name" readonly size="small" class="mb-1">
+                                                <template #prepend>源字段</template>
+                                            </el-input>
                                         </div>
-                                    </el-option>
-                                </el-select>
+                                        
+                                        <!-- 箭头 -->
+                                        <div class="flex items-center">
+                                            <el-icon class="text-blue-500 text-lg"><Right /></el-icon>
+                                        </div>
+                                        
+                                        <!-- 目标字段选择 -->
+                                        <div class="flex-1">
+                                            <el-select v-model="fieldMappings[sourceField.name]" placeholder="选择目标字段" size="small" class="w-full" clearable>
+                                                <template #prefix>目标字段</template>
+                                                <el-option v-for="targetField in availableTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isTargetFieldUsed(targetField.name, sourceField.name)">
+                                                    <div class="flex justify-between items-center">
+                                                        <span>{{targetField.name}}</span>
+                                                        <div class="flex items-center space-x-1">
+                                                            <el-tag size="small" :type="getFieldTypeColor(targetField.type)">{{targetField.type}}</el-tag>
+                                                            <el-tag v-if="targetField.required" size="small" type="danger">必填</el-tag>
+                                                        </div>
+                                                    </div>
+                                                </el-option>
+                                            </el-select>
+                                        </div>
+                                        
+                                        <!-- 操作按钮 -->
+                                        <div class="flex items-center">
+                                            <el-button v-if="fieldMappings[sourceField.name]" size="small" type="danger" text @click="clearMapping(sourceField.name)">
+                                                <el-icon><Delete /></el-icon>
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 空状态 -->
+                                    <div v-if="sourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                        <el-icon class="text-4xl mb-2"><MessageBox /></el-icon>
+                                        <p>请先在上方选择源接口</p>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <!-- 箭头 -->
-                            <div class="col-span-1 flex items-center justify-center">
-                                <el-icon class="text-blue-500"><Right /></el-icon>
-                            </div>
-                            
-                            <!-- 目标字段展示 -->
-                            <div class="col-span-6 flex items-center">
-                                <span class="font-mono text-sm">{{ targetField.name }}</span>
-                                <el-tag size="small" :type="getFieldTypeColor(targetField.type)" class="mx-2">{{ targetField.type }}</el-tag>
-                                <el-tag v-if="targetField.required" size="small" type="danger">必填</el-tag>
-                            </div>
-                        </div>
+                        </el-tab-pane>
                         
-                        <!-- 空状态 -->
-                        <div v-if="targetFields.length === 0" class="text-center py-8 text-gray-500">
-                            <el-icon class="text-4xl mb-2"><MessageBox /></el-icon>
-                            <p>请先在上方选择目标接口</p>
-                        </div>
-                    </div>
+                        <el-tab-pane label="Query" name="query">
+                            <!-- Query参数映射内容 -->
+                            <div class="space-y-4">
+                                <!-- 操作按钮 -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2">
+                                        <el-button size="small" @click="loadQuerySourceFields">加载源Query参数</el-button>
+                                        <el-button size="small" @click="loadQueryTargetFields">加载目标Query参数</el-button>
+                                        <el-button size="small" type="primary" @click="autoMatchQueryFields">智能匹配</el-button>
+                                    </div>
+                                    <el-button size="small" type="danger" @click="clearAllQueryMappings">清空映射</el-button>
+                                </div>
+                                
+                                <!-- 字段映射列表 -->
+                                <div class="space-y-3">
+                                    <div v-for="(sourceField, index) in querySourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                        <!-- 源字段 -->
+                                        <div class="flex-1">
+                                            <el-input v-model="sourceField.name" readonly size="small">
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">源参数</span>
+                                                </template>
+                                            </el-input>
+                                            <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                        </div>
+                                        
+                                        <!-- 箭头 -->
+                                        <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                        
+                                        <!-- 目标字段选择 -->
+                                        <div class="flex-1">
+                                            <el-select v-model="queryFieldMappings[sourceField.name]" placeholder="选择目标参数" size="small" class="w-full" clearable>
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">目标参数</span>
+                                                </template>
+                                                <el-option v-for="targetField in availableQueryTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isQueryTargetFieldUsed(targetField.name, sourceField.name)">
+                                                    <div class="flex justify-between items-center">
+                                                        <span>{{targetField.name}}</span>
+                                                        <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                    </div>
+                                                </el-option>
+                                            </el-select>
+                                        </div>
+                                        
+                                        <!-- 操作按钮 -->
+                                        <div class="flex gap-1">
+                                            <el-button v-if="queryFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearQueryMapping(sourceField.name)">
+                                                <el-icon><Delete /></el-icon>
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div v-if="querySourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                        <el-icon class="text-4xl mb-2"><Search /></el-icon>
+                                        <p>暂无Query参数</p>
+                                        <p class="text-sm">请先加载源Query参数</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                        
+                        <el-tab-pane label="Headers" name="headers">
+                            <!-- Headers映射内容 -->
+                            <div class="space-y-4">
+                                <!-- 操作按钮 -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2">
+                                        <el-button size="small" @click="loadHeadersSourceFields">加载源Headers</el-button>
+                                        <el-button size="small" @click="loadHeadersTargetFields">加载目标Headers</el-button>
+                                        <el-button size="small" type="primary" @click="autoMatchHeadersFields">智能匹配</el-button>
+                                    </div>
+                                    <el-button size="small" type="danger" @click="clearAllHeadersMappings">清空映射</el-button>
+                                </div>
+                                
+                                <!-- 字段映射列表 -->
+                                <div class="space-y-3">
+                                    <div v-for="(sourceField, index) in headersSourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                        <!-- 源字段 -->
+                                        <div class="flex-1">
+                                            <el-input v-model="sourceField.name" readonly size="small">
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">源Header</span>
+                                                </template>
+                                            </el-input>
+                                            <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                        </div>
+                                        
+                                        <!-- 箭头 -->
+                                        <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                        
+                                        <!-- 目标字段选择 -->
+                                        <div class="flex-1">
+                                            <el-select v-model="headersFieldMappings[sourceField.name]" placeholder="选择目标Header" size="small" class="w-full" clearable>
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">目标Header</span>
+                                                </template>
+                                                <el-option v-for="targetField in availableHeadersTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isHeadersTargetFieldUsed(targetField.name, sourceField.name)">
+                                                    <div class="flex justify-between items-center">
+                                                        <span>{{targetField.name}}</span>
+                                                        <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                    </div>
+                                                </el-option>
+                                            </el-select>
+                                        </div>
+                                        
+                                        <!-- 操作按钮 -->
+                                        <div class="flex gap-1">
+                                            <el-button v-if="headersFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearHeadersMapping(sourceField.name)">
+                                                <el-icon><Delete /></el-icon>
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div v-if="headersSourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                        <el-icon class="text-4xl mb-2"><Document /></el-icon>
+                                        <p>暂无Headers</p>
+                                        <p class="text-sm">请先加载源Headers</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                        
+                        <el-tab-pane label="Path" name="path">
+                            <!-- Path参数映射内容 -->
+                            <div class="space-y-4">
+                                <!-- 操作按钮 -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2">
+                                        <el-button size="small" @click="loadPathSourceFields">加载源Path参数</el-button>
+                                        <el-button size="small" @click="loadPathTargetFields">加载目标Path参数</el-button>
+                                        <el-button size="small" type="primary" @click="autoMatchPathFields">智能匹配</el-button>
+                                    </div>
+                                    <el-button size="small" type="danger" @click="clearAllPathMappings">清空映射</el-button>
+                                </div>
+                                
+                                <!-- 字段映射列表 -->
+                                <div class="space-y-3">
+                                    <div v-for="(sourceField, index) in pathSourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                        <!-- 源字段 -->
+                                        <div class="flex-1">
+                                            <el-input v-model="sourceField.name" readonly size="small">
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">源路径参数</span>
+                                                </template>
+                                            </el-input>
+                                            <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                        </div>
+                                        
+                                        <!-- 箭头 -->
+                                        <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                        
+                                        <!-- 目标字段选择 -->
+                                        <div class="flex-1">
+                                            <el-select v-model="pathFieldMappings[sourceField.name]" placeholder="选择目标路径参数" size="small" class="w-full" clearable>
+                                                <template #prefix>
+                                                    <span class="text-xs text-gray-500">目标路径参数</span>
+                                                </template>
+                                                <el-option v-for="targetField in availablePathTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isPathTargetFieldUsed(targetField.name, sourceField.name)">
+                                                    <div class="flex justify-between items-center">
+                                                        <span>{{targetField.name}}</span>
+                                                        <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                    </div>
+                                                </el-option>
+                                            </el-select>
+                                        </div>
+                                        
+                                        <!-- 操作按钮 -->
+                                        <div class="flex gap-1">
+                                            <el-button v-if="pathFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearPathMapping(sourceField.name)">
+                                                <el-icon><Delete /></el-icon>
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div v-if="pathSourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                        <el-icon class="text-4xl mb-2"><Link /></el-icon>
+                                        <p>暂无Path参数</p>
+                                        <p class="text-sm">请先加载源Path参数</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                     
                     <!-- 映射统计 -->
                     <div class="mt-4 p-3 bg-blue-50 rounded">
@@ -1041,18 +1174,9 @@
                 </div>
             </div>
 
-            <!-- 失败状态：显示失败原因 -->
+            <!-- 失败状态：不显示内容 -->
             <div v-else-if="logDetail.status === 'failure'">
-                 <div class="bg-red-50 border-l-4 border-red-400 rounded-r-lg p-6 my-4">
-                    <div class="flex items-center">
-                        <el-icon class="text-red-500 mr-3" size="24"><CircleCloseFilled /></el-icon>
-                        <h4 class="font-bold text-lg text-red-800">同步失败</h4>
-                    </div>
-                    <div class="mt-4 pl-10">
-                        <p class="text-md font-semibold text-red-700">失败原因:</p>
-                        <p class="mt-2 text-gray-700 bg-red-100 p-3 rounded">{{ logDetail.errorMessage }}</p>
-                    </div>
-                </div>
+                <!-- 失败状态下不显示任何内容 -->
             </div>
 
             <!-- 报文内容区域 -->
@@ -1137,9 +1261,7 @@
         <el-dialog v-model="taskDetailDialogVisible" title="任务详情" width="800px">
             <el-descriptions :column="2" border>
                 <el-descriptions-item label="任务名称">{{ taskDetailForm.name }}</el-descriptions-item>
-                <el-descriptions-item label="任务状态">
-                    <el-tag :type="getTaskStatusTagType(taskDetailForm.status)">{{ getTaskStatusText(taskDetailForm.status) }}</el-tag>
-                </el-descriptions-item>
+
                 <el-descriptions-item label="任务描述" :span="2">{{ taskDetailForm.description || '暂无描述' }}</el-descriptions-item>
                 <el-descriptions-item label="源平台">{{ taskDetailForm.sourcePlatformName }}</el-descriptions-item>
                 <el-descriptions-item label="源接口">{{ taskDetailForm.sourceInterfaceName }}</el-descriptions-item>
@@ -1170,12 +1292,7 @@
                     <el-form-item label="任务描述">
                         <el-input v-model="taskDetailForm.description" type="textarea" placeholder="请输入任务描述"></el-input>
                     </el-form-item>
-                    <el-form-item label="任务状态">
-                        <el-select v-model="taskDetailForm.status" placeholder="请选择状态">
-                            <el-option label="启用" value="enabled"></el-option>
-                            <el-option label="停用" value="disabled"></el-option>
-                        </el-select>
-                    </el-form-item>
+
                     <el-form-item label="源平台" required>
                         <el-select v-model="taskDetailForm.sourcePlatformId" placeholder="请选择源平台" @change="onEditSourcePlatformChange">
                             <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.id"></el-option>
@@ -1202,48 +1319,256 @@
             <!-- 步骤2：字段映射 -->
             <div v-show="taskEditWizardStep === 1">
                 <div class="flex justify-between items-center mb-4">
-                    <h4 class="font-medium">字段映射配置 ({{ validEditMappingsCount }} / {{ editTargetFields.length }})</h4>
+                    <h4 class="font-medium">字段映射配置</h4>
                     <div class="space-x-2">
                         <el-button size="small" type="warning" @click="clearAllEditMappings">清空映射</el-button>
                     </div>
                 </div>
-                <div class="border rounded-lg overflow-hidden">
-                    <el-table :data="editTargetFields" style="width: 100%">
-                        <el-table-column label="目标字段名称" prop="name" width="200">
-                            <template #default="{ row }">
-                                <div class="flex items-center">
-                                    <span class="font-mono text-sm">{{ row.name }}</span>
-                                    <el-tooltip v-if="row.description" :content="row.description" placement="top">
-                                        <i class="el-icon-info text-gray-400 ml-2 cursor-pointer"></i>
-                                    </el-tooltip>
+                
+                <!-- 字段映射Tab标签页 -->
+                <el-tabs v-model="activeEditFieldMappingTab" class="mb-4">
+                    <el-tab-pane label="Body" name="body">
+                        <!-- Body字段映射内容 -->
+                        <div class="space-y-4">
+                            <!-- 映射行 -->
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                <div v-for="(sourceField, index) in editSourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                    <!-- 源字段展示 -->
+                                    <div class="flex-1">
+                                        <el-input v-model="sourceField.name" readonly size="small" class="mb-1">
+                                            <template #prepend>源字段</template>
+                                        </el-input>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <div class="flex items-center">
+                                        <el-icon class="text-blue-500 text-lg"><Right /></el-icon>
+                                    </div>
+                                    
+                                    <!-- 目标字段选择 -->
+                                    <div class="flex-1">
+                                        <el-select v-model="editFieldMappings[sourceField.name]" placeholder="选择目标字段" size="small" class="w-full" clearable>
+                                            <template #prefix>目标字段</template>
+                                            <el-option v-for="targetField in availableEditTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isEditTargetFieldUsed(targetField.name, sourceField.name)">
+                                                <div class="flex justify-between items-center">
+                                                    <span>{{targetField.name}}</span>
+                                                    <div class="flex items-center space-x-1">
+                                                        <el-tag size="small" :type="getFieldTypeColor(targetField.type)">{{targetField.type}}</el-tag>
+                                                        <el-tag v-if="targetField.required" size="small" type="danger">必填</el-tag>
+                                                    </div>
+                                                </div>
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                    
+                                    <!-- 操作按钮 -->
+                                    <div class="flex items-center">
+                                        <el-button v-if="editFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearEditMapping(sourceField.name)">
+                                            <el-icon><Delete /></el-icon>
+                                        </el-button>
+                                    </div>
                                 </div>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="类型" prop="type" width="100">
-                            <template #default="{ row }">
-                                <el-tag :type="getFieldTypeColor(row.type)" size="small">{{ row.type }}</el-tag>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="必填" width="60" align="center">
-                            <template #default="{ row }">
-                                <el-tag v-if="row.required" type="danger" size="small" effect="dark">是</el-tag>
-                                <span v-else class="text-gray-400">否</span>
-                            </template>
-                        </el-table-column>
-                        <el-table-column label="映射源字段">
-                            <template #default="{ row }">
-                                <el-select v-model="editFieldMappings[row.name]" placeholder="选择源字段" clearable style="width: 100%;">
-                                    <el-option v-for="sField in availableEditSourceFields(row.name)" :key="sField.name" :label="sField.name" :value="sField.name" :disabled="isEditSourceFieldUsed(sField.name, row.name)">
-                                        <div class="flex justify-between w-full">
-                                            <span class="font-mono text-sm">{{ sField.name }}</span>
-                                            <el-tag :type="getFieldTypeColor(sField.type)" size="small">{{ sField.type }}</el-tag>
-                                        </div>
-                                    </el-option>
-                                </el-select>
-                            </template>
-                        </el-table-column>
-                    </el-table>
-                </div>
+                                
+                                <!-- 空状态 -->
+                                <div v-if="editSourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                    <el-icon class="text-4xl mb-2"><MessageBox /></el-icon>
+                                    <p>请先在上方选择源接口</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 映射统计 -->
+                        <div class="mt-4 p-3 bg-blue-50 rounded">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-blue-700">映射统计：已配置 {{validEditMappingsCount}} 个有效映射</span>
+                                <span class="text-gray-600">源字段：{{editSourceFields.length}} 个 | 目标字段：{{editTargetFields.length}} 个</span>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    
+                    <el-tab-pane label="Query" name="query">
+                        <!-- Query参数映射内容 -->
+                        <div class="space-y-4">
+                            <!-- 操作按钮 -->
+                            <div class="flex justify-between items-center">
+                                <div class="flex gap-2">
+                                    <el-button size="small" @click="loadEditQuerySourceFields">加载源Query参数</el-button>
+                                    <el-button size="small" @click="loadEditQueryTargetFields">加载目标Query参数</el-button>
+                                    <el-button size="small" type="primary" @click="autoMatchEditQueryFields">智能匹配</el-button>
+                                </div>
+                                <el-button size="small" type="danger" @click="clearAllEditQueryMappings">清空映射</el-button>
+                            </div>
+                            
+                            <!-- 字段映射列表 -->
+                            <div class="space-y-3">
+                                <div v-for="(sourceField, index) in editQuerySourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                    <!-- 源字段 -->
+                                    <div class="flex-1">
+                                        <el-input v-model="sourceField.name" readonly size="small">
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">源参数</span>
+                                            </template>
+                                        </el-input>
+                                        <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                    
+                                    <!-- 目标字段选择 -->
+                                    <div class="flex-1">
+                                        <el-select v-model="editQueryFieldMappings[sourceField.name]" placeholder="选择目标参数" size="small" class="w-full" clearable>
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">目标参数</span>
+                                            </template>
+                                            <el-option v-for="targetField in availableEditQueryTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isEditQueryTargetFieldUsed(targetField.name, sourceField.name)">
+                                                <div class="flex justify-between items-center">
+                                                    <span>{{targetField.name}}</span>
+                                                    <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                </div>
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                    
+                                    <!-- 操作按钮 -->
+                                    <div class="flex gap-1">
+                                        <el-button v-if="editQueryFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearEditQueryMapping(sourceField.name)">
+                                            <el-icon><Delete /></el-icon>
+                                        </el-button>
+                                    </div>
+                                </div>
+                                
+                                <div v-if="editQuerySourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                    <el-icon class="text-4xl mb-2"><Search /></el-icon>
+                                    <p>暂无Query参数</p>
+                                    <p class="text-sm">请先加载源Query参数</p>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    
+                    <el-tab-pane label="Headers" name="headers">
+                        <!-- Headers映射内容 -->
+                        <div class="space-y-4">
+                            <!-- 操作按钮 -->
+                            <div class="flex justify-between items-center">
+                                <div class="flex gap-2">
+                                    <el-button size="small" @click="loadEditHeadersSourceFields">加载源Headers</el-button>
+                                    <el-button size="small" @click="loadEditHeadersTargetFields">加载目标Headers</el-button>
+                                    <el-button size="small" type="primary" @click="autoMatchEditHeadersFields">智能匹配</el-button>
+                                </div>
+                                <el-button size="small" type="danger" @click="clearAllEditHeadersMappings">清空映射</el-button>
+                            </div>
+                            
+                            <!-- 字段映射列表 -->
+                            <div class="space-y-3">
+                                <div v-for="(sourceField, index) in editHeadersSourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                    <!-- 源字段 -->
+                                    <div class="flex-1">
+                                        <el-input v-model="sourceField.name" readonly size="small">
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">源Header</span>
+                                            </template>
+                                        </el-input>
+                                        <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                    
+                                    <!-- 目标字段选择 -->
+                                    <div class="flex-1">
+                                        <el-select v-model="editHeadersFieldMappings[sourceField.name]" placeholder="选择目标Header" size="small" class="w-full" clearable>
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">目标Header</span>
+                                            </template>
+                                            <el-option v-for="targetField in availableEditHeadersTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isEditHeadersTargetFieldUsed(targetField.name, sourceField.name)">
+                                                <div class="flex justify-between items-center">
+                                                    <span>{{targetField.name}}</span>
+                                                    <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                </div>
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                    
+                                    <!-- 操作按钮 -->
+                                    <div class="flex gap-1">
+                                        <el-button v-if="editHeadersFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearEditHeadersMapping(sourceField.name)">
+                                            <el-icon><Delete /></el-icon>
+                                        </el-button>
+                                    </div>
+                                </div>
+                                
+                                <div v-if="editHeadersSourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                    <el-icon class="text-4xl mb-2"><Document /></el-icon>
+                                    <p>暂无Headers</p>
+                                    <p class="text-sm">请先加载源Headers</p>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    
+                    <el-tab-pane label="Path" name="path">
+                        <!-- Path参数映射内容 -->
+                        <div class="space-y-4">
+                            <!-- 操作按钮 -->
+                            <div class="flex justify-between items-center">
+                                <div class="flex gap-2">
+                                    <el-button size="small" @click="loadEditPathSourceFields">加载源Path参数</el-button>
+                                    <el-button size="small" @click="loadEditPathTargetFields">加载目标Path参数</el-button>
+                                    <el-button size="small" type="primary" @click="autoMatchEditPathFields">智能匹配</el-button>
+                                </div>
+                                <el-button size="small" type="danger" @click="clearAllEditPathMappings">清空映射</el-button>
+                            </div>
+                            
+                            <!-- 字段映射列表 -->
+                            <div class="space-y-3">
+                                <div v-for="(sourceField, index) in editPathSourceFields" :key="index" class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                                    <!-- 源字段 -->
+                                    <div class="flex-1">
+                                        <el-input v-model="sourceField.name" readonly size="small">
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">源路径参数</span>
+                                            </template>
+                                        </el-input>
+                                        <div class="text-xs text-gray-500 mt-1">{{sourceField.type}} {{sourceField.required ? '(必填)' : '(可选)'}}</div>
+                                    </div>
+                                    
+                                    <!-- 箭头 -->
+                                    <el-icon class="text-gray-400 text-lg"><Right /></el-icon>
+                                    
+                                    <!-- 目标字段选择 -->
+                                    <div class="flex-1">
+                                        <el-select v-model="editPathFieldMappings[sourceField.name]" placeholder="选择目标路径参数" size="small" class="w-full" clearable>
+                                            <template #prefix>
+                                                <span class="text-xs text-gray-500">目标路径参数</span>
+                                            </template>
+                                            <el-option v-for="targetField in availableEditPathTargetFields(sourceField.name)" :key="targetField.name" :label="targetField.name" :value="targetField.name" :disabled="isEditPathTargetFieldUsed(targetField.name, sourceField.name)">
+                                                <div class="flex justify-between items-center">
+                                                    <span>{{targetField.name}}</span>
+                                                    <span class="text-xs text-gray-400">{{targetField.type}}</span>
+                                                </div>
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                    
+                                    <!-- 操作按钮 -->
+                                    <div class="flex gap-1">
+                                        <el-button v-if="editPathFieldMappings[sourceField.name]" size="small" type="danger" text @click="clearEditPathMapping(sourceField.name)">
+                                            <el-icon><Delete /></el-icon>
+                                        </el-button>
+                                    </div>
+                                </div>
+                                
+                                <div v-if="editPathSourceFields.length === 0" class="text-center py-8 text-gray-500">
+                                    <el-icon class="text-4xl mb-2"><Link /></el-icon>
+                                    <p>暂无Path参数</p>
+                                    <p class="text-sm">请先加载源Path参数</p>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
             </div>
             
             <!-- 步骤3：运行模式配置 -->
@@ -1319,7 +1644,7 @@
                         <div class="bg-gray-50 p-4 rounded">
                             <p><strong>任务名称：</strong>{{taskDetailForm.name}}</p>
                             <p><strong>任务描述：</strong>{{taskDetailForm.description}}</p>
-                            <p><strong>任务状态：</strong>{{getTaskStatusText(taskDetailForm.status)}}</p>
+
                             <p><strong>源平台/接口：</strong>{{getSelectedPlatformName(taskDetailForm.sourcePlatformId)}} / {{getSelectedInterfaceName(taskDetailForm.sourceInterfaceId)}}</p>
                             <p><strong>目标平台/接口：</strong>{{getSelectedPlatformName(taskDetailForm.targetPlatformId)}} / {{getSelectedInterfaceName(taskDetailForm.targetInterfaceId)}}</p>
                         </div>
@@ -1380,15 +1705,6 @@
                             description: '浙江创新院接口平台',
                             status: 'connected',
                             createTime: '2024-01-16 14:20:00'
-                        },
-                        {
-                            id: 3,
-                            name: '数据中心',
-                            type: 'database',
-                            baseUrl: 'mysql://db.datacenter.com:3306',
-                            description: '核心数据库',
-                            status: 'error',
-                            createTime: '2024-01-17 09:15:00'
                         }
                     ],
                     platformSearch: '',
@@ -1401,17 +1717,7 @@
                         description: '',
                         type: '',
                         baseUrl: '',
-                        authType: 'none',
-                        dbType: '',
-                        host: '',
-                        database: '',
-                        dbUsername: '',
-                        dbPassword: '',
-                        mqType: '',
-                        mqHost: '',
-                        virtualHost: '',
-                        mqUsername: '',
-                        mqPassword: ''
+                        authType: 'none'
                     },
                     platformDetailVisible: false,
                     platformDetail: {},
@@ -1510,25 +1816,6 @@
                             lastRunTime: '2024-01-20 09:00:00',
                             nextRunTime: '2024-01-21 09:00:00',
                             createTime: '2024-01-18 16:00:00'
-                        },
-                        {
-                            id: 2,
-                            name: '退订数据同步',
-                            sourceInfo: {
-                                platformId: 1,
-                                platformName: '贵州移动',
-                                interfaceName: '退订接口'
-                            },
-                            targetInfo: {
-                                platformId: 2,
-                                platformName: '浙江创新院',
-                                interfaceName: '订单同步'
-                            },
-                            runMode: 'once',
-                            status: 'disabled',
-                            lastRunTime: '',
-                            nextRunTime: '',
-                            createTime: '2024-01-19 10:15:00'
                         }
                     ],
                     taskSearch: '',
@@ -1536,6 +1823,7 @@
                     taskCurrentPage: 1,
                     taskWizardVisible: false,
                     taskWizardStep: 0,
+                    activeFieldMappingTab: 'body', // 字段映射tab切换状态
                     taskForm: {
                         name: '',
                         description: '',
@@ -1563,15 +1851,46 @@
                     sourceFields: [],
                     targetFields: [],
                     fieldMappings: {},
+                    
+                    // Query参数映射
+                    querySourceFields: [],
+                    queryTargetFields: [],
+                    queryFieldMappings: {},
+                    
+                    // Headers映射
+                    headersSourceFields: [],
+                    headersTargetFields: [],
+                    headersFieldMappings: {},
+                    
+                    // Path参数映射
+                    pathSourceFields: [],
+                    pathTargetFields: [],
+                    pathFieldMappings: {},
                     taskDetailDialogVisible: false,
                     taskEditDialogVisible: false,
                     taskEditWizardStep: 0,
+                    activeEditFieldMappingTab: 'body', // 编辑任务字段映射tab切换状态
                     taskDetailForm: {},
                     editSourceInterfaces: [],
                     editTargetInterfaces: [],
                     editSourceFields: [],
                     editTargetFields: [],
                     editFieldMappings: [],
+                    
+                    // 编辑任务 - Query参数映射
+                    editQuerySourceFields: [],
+                    editQueryTargetFields: [],
+                    editQueryFieldMappings: {},
+                    
+                    // 编辑任务 - Headers映射
+                    editHeadersSourceFields: [],
+                    editHeadersTargetFields: [],
+                    editHeadersFieldMappings: {},
+                    
+                    // 编辑任务 - Path参数映射
+                    editPathSourceFields: [],
+                    editPathTargetFields: [],
+                    editPathFieldMappings: {},
                     
                     // 同步记录
                     logs: [
@@ -1604,21 +1923,6 @@
                             successCount: 0,
                             failureCount: 0,
                             errorMessage: '目标平台连接超时'
-                        },
-                        {
-                            id: 3,
-                            callTime: '2024-01-20 13:30:45',
-                            taskName: '退订数据同步',
-                            sourcePlatform: '贵州移动',
-                            targetPlatform: '浙江创新院',
-                            sourceInterface: '退订接口',
-                            targetInterface: '订单同步',
-                            status: 'partial',
-                            duration: 890,
-                            dataCount: 89,
-                            successCount: 85,
-                            failureCount: 4,
-                            errorMessage: '部分数据格式错误'
                         },
                         {
                             id: 4,
@@ -1721,14 +2025,11 @@
                         return matchTask && matchStatus && matchSourcePlatform && matchTargetPlatform && matchDateRange && matchKeyword;
                     });
                 },
-                validMappingCount() {
+                validMappingsCount() {
                     return Object.values(this.fieldMappings).filter(val => val).length;
                 },
-                validEditMappingCount() {
-                    return Object.values(this.editFieldMappings).filter(val => val).length;
-                },
                 validEditMappingsCount() {
-                    return this.editFieldMappings.filter(mapping => mapping.sourceField && mapping.targetField).length;
+                    return Object.values(this.editFieldMappings).filter(val => val).length;
                 }
             },
             methods: {
@@ -1747,17 +2048,7 @@
                         description: '',
                         type: '',
                         baseUrl: '',
-                        authType: 'none',
-                        dbType: '',
-                        host: '',
-                        database: '',
-                        dbUsername: '',
-                        dbPassword: '',
-                        mqType: '',
-                        mqHost: '',
-                        virtualHost: '',
-                        mqUsername: '',
-                        mqPassword: ''
+                        authType: 'none'
                     };
                     this.platformDialogVisible = true;
                 },
@@ -1822,17 +2113,13 @@
                 },
                 getPlatformTypeTagType(type) {
                     const types = {
-                        http: 'primary',
-                        database: 'success',
-                        mq: 'warning'
+                        http: 'primary'
                     };
                     return types[type] || 'info';
                 },
                 getPlatformTypeName(type) {
                     const names = {
-                        http: 'HTTP',
-                        database: '数据库',
-                        mq: '消息队列'
+                        http: 'HTTP'
                     };
                     return names[type] || type;
                 },
@@ -2180,6 +2467,22 @@
                     }
                     return Object.values(this.editFieldMappings).includes(sourceFieldName);
                 },
+                availableEditTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.editFieldMappings).filter(Boolean);
+                    const currentTargetField = this.editFieldMappings[currentSourceFieldName];
+                    return this.editTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isEditTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.editFieldMappings[currentSourceFieldName];
+                    if (targetFieldName === currentTargetField) {
+                        return false;
+                    }
+                    return Object.values(this.editFieldMappings).includes(targetFieldName);
+                },
+                clearEditMapping(sourceFieldName) {
+                    this.editFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('映射已清除');
+                },
                 onSourcePlatformChange() {
                     this.sourceInterfaces = this.interfaces.filter(i => i.platformId == this.taskForm.sourcePlatformId);
                     this.taskForm.sourceInterfaceId = '';
@@ -2327,6 +2630,349 @@
                     }
                     return Object.values(this.fieldMappings).includes(sourceFieldName);
                 },
+                availableTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.fieldMappings).filter(Boolean);
+                    const currentTargetField = this.fieldMappings[currentSourceFieldName];
+                    return this.targetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.fieldMappings[currentSourceFieldName];
+                    if (targetFieldName === currentTargetField) {
+                        return false; // Don't disable the currently selected item for this dropdown
+                    }
+                    return Object.values(this.fieldMappings).includes(targetFieldName);
+                },
+                clearMapping(sourceFieldName) {
+                    this.fieldMappings[sourceFieldName] = '';
+                    ElMessage.success('映射已清除');
+                },
+                
+                // Query参数映射相关方法
+                loadQuerySourceFields() {
+                    this.querySourceFields = [
+                        { name: 'page', type: 'number', required: false },
+                        { name: 'size', type: 'number', required: false },
+                        { name: 'keyword', type: 'string', required: false },
+                        { name: 'status', type: 'string', required: false },
+                        { name: 'startDate', type: 'string', required: false }
+                    ];
+                    this.queryFieldMappings = {};
+                    ElMessage.success('Query参数加载完成');
+                },
+                loadQueryTargetFields() {
+                    this.queryTargetFields = [
+                        { name: 'pageNum', type: 'number', required: false },
+                        { name: 'pageSize', type: 'number', required: false },
+                        { name: 'searchKey', type: 'string', required: false },
+                        { name: 'state', type: 'string', required: false },
+                        { name: 'beginDate', type: 'string', required: false }
+                    ];
+                    ElMessage.success('目标Query参数加载完成');
+                },
+                availableQueryTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.queryFieldMappings).filter(Boolean);
+                    const currentTargetField = this.queryFieldMappings[currentSourceFieldName];
+                    return this.queryTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isQueryTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.queryFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.queryFieldMappings).includes(targetFieldName);
+                },
+                clearQueryMapping(sourceFieldName) {
+                    this.queryFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('Query映射已清除');
+                },
+                clearAllQueryMappings() {
+                    this.queryFieldMappings = {};
+                    ElMessage.success('所有Query映射已清除');
+                },
+                autoMatchQueryFields() {
+                    let matchCount = 0;
+                    this.querySourceFields.forEach(sourceField => {
+                        const exactMatch = this.queryTargetFields.find(targetField =>
+                            targetField.name.toLowerCase() === sourceField.name.toLowerCase()
+                        );
+                        if (exactMatch && !Object.values(this.queryFieldMappings).includes(exactMatch.name)) {
+                            this.queryFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`Query智能匹配完成，共匹配 ${matchCount} 个参数`);
+                },
+                
+                // Headers映射相关方法
+                loadHeadersSourceFields() {
+                    this.headersSourceFields = [
+                        { name: 'Content-Type', type: 'string', required: true },
+                        { name: 'Authorization', type: 'string', required: true },
+                        { name: 'User-Agent', type: 'string', required: false },
+                        { name: 'Accept', type: 'string', required: false },
+                        { name: 'X-Request-ID', type: 'string', required: false }
+                    ];
+                    this.headersFieldMappings = {};
+                    ElMessage.success('Headers加载完成');
+                },
+                loadHeadersTargetFields() {
+                    this.headersTargetFields = [
+                        { name: 'content-type', type: 'string', required: true },
+                        { name: 'auth-token', type: 'string', required: true },
+                        { name: 'user-agent', type: 'string', required: false },
+                        { name: 'accept-type', type: 'string', required: false },
+                        { name: 'request-id', type: 'string', required: false }
+                    ];
+                    ElMessage.success('目标Headers加载完成');
+                },
+                availableHeadersTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.headersFieldMappings).filter(Boolean);
+                    const currentTargetField = this.headersFieldMappings[currentSourceFieldName];
+                    return this.headersTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isHeadersTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.headersFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.headersFieldMappings).includes(targetFieldName);
+                },
+                clearHeadersMapping(sourceFieldName) {
+                    this.headersFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('Headers映射已清除');
+                },
+                clearAllHeadersMappings() {
+                    this.headersFieldMappings = {};
+                    ElMessage.success('所有Headers映射已清除');
+                },
+                autoMatchHeadersFields() {
+                    let matchCount = 0;
+                    this.headersSourceFields.forEach(sourceField => {
+                        const exactMatch = this.headersTargetFields.find(targetField =>
+                            targetField.name.toLowerCase().replace('-', '') === sourceField.name.toLowerCase().replace('-', '')
+                        );
+                        if (exactMatch && !Object.values(this.headersFieldMappings).includes(exactMatch.name)) {
+                            this.headersFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`Headers智能匹配完成，共匹配 ${matchCount} 个字段`);
+                },
+                
+                // Path参数映射相关方法
+                loadPathSourceFields() {
+                    this.pathSourceFields = [
+                        { name: 'userId', type: 'string', required: true },
+                        { name: 'orderId', type: 'string', required: true },
+                        { name: 'version', type: 'string', required: false },
+                        { name: 'category', type: 'string', required: false }
+                    ];
+                    this.pathFieldMappings = {};
+                    ElMessage.success('Path参数加载完成');
+                },
+                loadPathTargetFields() {
+                    this.pathTargetFields = [
+                        { name: 'uid', type: 'string', required: true },
+                        { name: 'id', type: 'string', required: true },
+                        { name: 'ver', type: 'string', required: false },
+                        { name: 'type', type: 'string', required: false }
+                    ];
+                    ElMessage.success('目标Path参数加载完成');
+                },
+                availablePathTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.pathFieldMappings).filter(Boolean);
+                    const currentTargetField = this.pathFieldMappings[currentSourceFieldName];
+                    return this.pathTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isPathTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.pathFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.pathFieldMappings).includes(targetFieldName);
+                },
+                clearPathMapping(sourceFieldName) {
+                    this.pathFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('Path映射已清除');
+                },
+                clearAllPathMappings() {
+                    this.pathFieldMappings = {};
+                    ElMessage.success('所有Path映射已清除');
+                },
+                autoMatchPathFields() {
+                    let matchCount = 0;
+                    this.pathSourceFields.forEach(sourceField => {
+                        const exactMatch = this.pathTargetFields.find(targetField =>
+                            targetField.name.toLowerCase() === sourceField.name.toLowerCase() ||
+                            (sourceField.name.toLowerCase().includes('id') && targetField.name.toLowerCase().includes('id'))
+                        );
+                        if (exactMatch && !Object.values(this.pathFieldMappings).includes(exactMatch.name)) {
+                            this.pathFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`Path智能匹配完成，共匹配 ${matchCount} 个参数`);
+                },
+                
+                // 编辑任务 - Query参数映射相关方法
+                loadEditQuerySourceFields() {
+                    this.editQuerySourceFields = [
+                        { name: 'page', type: 'number', required: false },
+                        { name: 'size', type: 'number', required: false },
+                        { name: 'keyword', type: 'string', required: false },
+                        { name: 'status', type: 'string', required: false },
+                        { name: 'startDate', type: 'string', required: false }
+                    ];
+                    this.editQueryFieldMappings = {};
+                    ElMessage.success('编辑任务Query参数加载完成');
+                },
+                loadEditQueryTargetFields() {
+                    this.editQueryTargetFields = [
+                        { name: 'pageNum', type: 'number', required: false },
+                        { name: 'pageSize', type: 'number', required: false },
+                        { name: 'searchKey', type: 'string', required: false },
+                        { name: 'state', type: 'string', required: false },
+                        { name: 'beginDate', type: 'string', required: false }
+                    ];
+                    ElMessage.success('编辑任务目标Query参数加载完成');
+                },
+                availableEditQueryTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.editQueryFieldMappings).filter(Boolean);
+                    const currentTargetField = this.editQueryFieldMappings[currentSourceFieldName];
+                    return this.editQueryTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isEditQueryTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.editQueryFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.editQueryFieldMappings).includes(targetFieldName);
+                },
+                clearEditQueryMapping(sourceFieldName) {
+                    this.editQueryFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('编辑任务Query映射已清除');
+                },
+                clearAllEditQueryMappings() {
+                    this.editQueryFieldMappings = {};
+                    ElMessage.success('编辑任务所有Query映射已清除');
+                },
+                autoMatchEditQueryFields() {
+                    let matchCount = 0;
+                    this.editQuerySourceFields.forEach(sourceField => {
+                        const exactMatch = this.editQueryTargetFields.find(targetField =>
+                            targetField.name.toLowerCase() === sourceField.name.toLowerCase() ||
+                            (sourceField.name.toLowerCase().includes('page') && targetField.name.toLowerCase().includes('page')) ||
+                            (sourceField.name.toLowerCase().includes('size') && targetField.name.toLowerCase().includes('size'))
+                        );
+                        if (exactMatch && !Object.values(this.editQueryFieldMappings).includes(exactMatch.name)) {
+                            this.editQueryFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`编辑任务Query智能匹配完成，共匹配 ${matchCount} 个参数`);
+                },
+                
+                // 编辑任务 - Headers映射相关方法
+                loadEditHeadersSourceFields() {
+                    this.editHeadersSourceFields = [
+                        { name: 'Authorization', type: 'string', required: true },
+                        { name: 'Content-Type', type: 'string', required: true },
+                        { name: 'User-Agent', type: 'string', required: false },
+                        { name: 'Accept', type: 'string', required: false },
+                        { name: 'X-Request-ID', type: 'string', required: false }
+                    ];
+                    this.editHeadersFieldMappings = {};
+                    ElMessage.success('编辑任务Headers加载完成');
+                },
+                loadEditHeadersTargetFields() {
+                    this.editHeadersTargetFields = [
+                        { name: 'Auth-Token', type: 'string', required: true },
+                        { name: 'Content-Type', type: 'string', required: true },
+                        { name: 'Client-Info', type: 'string', required: false },
+                        { name: 'Accept-Type', type: 'string', required: false },
+                        { name: 'Trace-ID', type: 'string', required: false }
+                    ];
+                    ElMessage.success('编辑任务目标Headers加载完成');
+                },
+                availableEditHeadersTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.editHeadersFieldMappings).filter(Boolean);
+                    const currentTargetField = this.editHeadersFieldMappings[currentSourceFieldName];
+                    return this.editHeadersTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isEditHeadersTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.editHeadersFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.editHeadersFieldMappings).includes(targetFieldName);
+                },
+                clearEditHeadersMapping(sourceFieldName) {
+                    this.editHeadersFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('编辑任务Headers映射已清除');
+                },
+                clearAllEditHeadersMappings() {
+                    this.editHeadersFieldMappings = {};
+                    ElMessage.success('编辑任务所有Headers映射已清除');
+                },
+                autoMatchEditHeadersFields() {
+                    let matchCount = 0;
+                    this.editHeadersSourceFields.forEach(sourceField => {
+                        const exactMatch = this.editHeadersTargetFields.find(targetField =>
+                            targetField.name.toLowerCase() === sourceField.name.toLowerCase() ||
+                            (sourceField.name.toLowerCase().includes('content-type') && targetField.name.toLowerCase().includes('content-type')) ||
+                            (sourceField.name.toLowerCase().includes('auth') && targetField.name.toLowerCase().includes('auth'))
+                        );
+                        if (exactMatch && !Object.values(this.editHeadersFieldMappings).includes(exactMatch.name)) {
+                            this.editHeadersFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`编辑任务Headers智能匹配完成，共匹配 ${matchCount} 个参数`);
+                },
+                
+                // 编辑任务 - Path参数映射相关方法
+                loadEditPathSourceFields() {
+                    this.editPathSourceFields = [
+                        { name: 'userId', type: 'string', required: true },
+                        { name: 'orderId', type: 'string', required: true },
+                        { name: 'version', type: 'string', required: false },
+                        { name: 'format', type: 'string', required: false }
+                    ];
+                    this.editPathFieldMappings = {};
+                    ElMessage.success('编辑任务Path参数加载完成');
+                },
+                loadEditPathTargetFields() {
+                    this.editPathTargetFields = [
+                        { name: 'user_id', type: 'string', required: true },
+                        { name: 'order_id', type: 'string', required: true },
+                        { name: 'api_version', type: 'string', required: false },
+                        { name: 'response_format', type: 'string', required: false }
+                    ];
+                    ElMessage.success('编辑任务目标Path参数加载完成');
+                },
+                availableEditPathTargetFields(currentSourceFieldName) {
+                    const usedTargetFields = Object.values(this.editPathFieldMappings).filter(Boolean);
+                    const currentTargetField = this.editPathFieldMappings[currentSourceFieldName];
+                    return this.editPathTargetFields.filter(tf => !usedTargetFields.includes(tf.name) || tf.name === currentTargetField);
+                },
+                isEditPathTargetFieldUsed(targetFieldName, currentSourceFieldName) {
+                    const currentTargetField = this.editPathFieldMappings[currentSourceFieldName];
+                    if (currentTargetField === targetFieldName) return false;
+                    return Object.values(this.editPathFieldMappings).includes(targetFieldName);
+                },
+                clearEditPathMapping(sourceFieldName) {
+                    this.editPathFieldMappings[sourceFieldName] = '';
+                    ElMessage.success('编辑任务Path映射已清除');
+                },
+                clearAllEditPathMappings() {
+                    this.editPathFieldMappings = {};
+                    ElMessage.success('编辑任务所有Path映射已清除');
+                },
+                autoMatchEditPathFields() {
+                    let matchCount = 0;
+                    this.editPathSourceFields.forEach(sourceField => {
+                        const exactMatch = this.editPathTargetFields.find(targetField =>
+                            targetField.name.toLowerCase() === sourceField.name.toLowerCase() ||
+                            (sourceField.name.toLowerCase().includes('id') && targetField.name.toLowerCase().includes('id')) ||
+                            (sourceField.name.toLowerCase().includes('version') && targetField.name.toLowerCase().includes('version'))
+                        );
+                        if (exactMatch && !Object.values(this.editPathFieldMappings).includes(exactMatch.name)) {
+                            this.editPathFieldMappings[sourceField.name] = exactMatch.name;
+                            matchCount++;
+                        }
+                    });
+                    ElMessage.success(`编辑任务Path智能匹配完成，共匹配 ${matchCount} 个参数`);
+                },
                 saveTask() {
                     ElMessage.success('任务保存并激活成功');
                     this.taskWizardVisible = false;
@@ -2438,16 +3084,14 @@
                 getLogStatusText(status) {
                     const texts = {
                         success: '成功',
-                        failure: '失败',
-                        partial: '部分成功'
+                        failure: '失败'
                     };
                     return texts[status] || '未知';
                 },
                 getLogStatusType(status) {
                     const types = {
                         success: 'success',
-                        failure: 'danger',
-                        partial: 'warning'
+                        failure: 'danger'
                     };
                     return types[status] || 'info';
                 },
