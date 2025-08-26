@@ -361,11 +361,22 @@
                                             </el-input>
                                         </div>
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">任务状态:</span>
-                                            <el-select v-model="taskStatusFilter" placeholder="请选择" clearable style="width: 150px">
+                                            <span class="text-sm font-medium text-gray-700 w-20">日期范围:</span>
+                                            <el-date-picker
+                                                v-model="taskDateRange"
+                                                type="daterange"
+                                                range-separator="至"
+                                                start-placeholder="开始日期"
+                                                end-placeholder="结束日期"
+                                                style="width: 240px">
+                                            </el-date-picker>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm font-medium text-gray-700 w-16">同步状态:</span>
+                                            <el-select v-model="taskSyncStatusFilter" placeholder="请选择" clearable style="width: 150px">
                                                 <el-option label="全部" value=""></el-option>
-                                                <el-option label="启用" value="enabled"></el-option>
-                                                <el-option label="停用" value="disabled"></el-option>
+                                                <el-option label="同步成功" value="success"></el-option>
+                                                <el-option label="同步失败" value="fail"></el-option>
                                             </el-select>
                                         </div>
                                     </div>
@@ -475,33 +486,12 @@
                                     <!-- 第二行 -->
                                     <div class="flex flex-wrap gap-4 items-center">
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">源平台:</span>
-                                            <el-select v-model="logSourcePlatformFilter" placeholder="请选择" clearable style="width: 120px">
-                                                <el-option label="全部" value=""></el-option>
-                                                <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.name"></el-option>
-                                            </el-select>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">目标平台:</span>
-                                            <el-select v-model="logTargetPlatformFilter" placeholder="请选择" clearable style="width: 120px">
-                                                <el-option label="全部" value=""></el-option>
-                                                <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.name"></el-option>
-                                            </el-select>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">调用状态:</span>
+                                            <span class="text-sm font-medium text-gray-700 w-16">状态:</span>
                                             <el-select v-model="logStatusFilter" placeholder="请选择" clearable style="width: 120px">
                                                 <el-option label="全部" value=""></el-option>
                                                 <el-option label="成功" value="success"></el-option>
                                                 <el-option label="失败" value="failure"></el-option>
                                             </el-select>
-                                        </div>
-                                    </div>
-                                    <!-- 第三行 -->
-                                    <div class="flex flex-wrap gap-4 items-center">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-16">关键词:</span>
-                                            <el-input v-model="logKeywordSearch" placeholder="搜索任务名称、接口名称、错误信息" clearable style="width: 300px"></el-input>
                                         </div>
                                         <el-button type="primary" @click="searchLogs">
                                             <el-icon><Search /></el-icon>
