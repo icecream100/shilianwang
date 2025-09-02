@@ -108,6 +108,7 @@
                         </template>
                         <el-menu-item index="platform">视联网平台管理</el-menu-item>
                         <el-menu-item index="device">设备管理</el-menu-item>
+                        <el-menu-item index="channel">通道管理</el-menu-item>
                     </el-sub-menu>
                     
                     <el-sub-menu index="3">
@@ -179,7 +180,17 @@
                                                     </template>
                                                 </el-input>
                                             </div>
-
+                                            <div class="flex items-center space-x-3">
+                                                <label class="text-sm font-medium text-gray-700 whitespace-nowrap">平台类型:</label>
+                                                <el-select v-model="platformTypeFilter" placeholder="请选择平台类型" clearable style="flex: 1">
+                                                    <el-option label="全部" value=""></el-option>
+                                                    <el-option label="千里眼" value="qianliyan"></el-option>
+                                                    <el-option label="移动看家" value="kanjia"></el-option>
+                                                    <el-option label="GB/T 28181" value="gb28181"></el-option>
+                                                    <el-option label="海康SDK" value="hikvision"></el-option>
+                                                    <el-option label="大华SDK" value="dahua"></el-option>
+                                                </el-select>
+                                            </div>
                                         </div>
                                         <div class="flex items-center space-x-3 ml-4">
                                             <el-button type="primary" @click="searchPlatforms">
@@ -190,6 +201,10 @@
                                                 <el-icon><Refresh /></el-icon>
                                                 重置
                                             </el-button>
+                                            <el-button type="primary" @click="showAddPlatformDialog">
+                                                <el-icon><Plus /></el-icon>
+                                                新增平台
+                                            </el-button>
                                         </div>
                                     </div>
                                 </div>
@@ -197,7 +212,11 @@
                                 <!-- 平台列表 -->
                                 <el-table :data="filteredPlatforms" stripe>
                                     <el-table-column prop="name" label="平台名称" width="150"></el-table-column>
-
+                                    <el-table-column prop="type" label="平台类型" width="120">
+                                        <template #default="scope">
+                                            <el-tag :type="getPlatformTypeTagType(scope.row.type)">{{getPlatformTypeName(scope.row.type)}}</el-tag>
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column prop="host" label="IP地址/域名" width="150"></el-table-column>
                                     <el-table-column prop="port" label="端口" width="80"></el-table-column>
                                     <el-table-column prop="protocol" label="协议版本" width="120"></el-table-column>
@@ -214,11 +233,14 @@
                                             </span>
                                         </template>
                                     </el-table-column>
-                                    <el-table-column prop="createTime" label="注册时间" width="180"></el-table-column>
-                                    <el-table-column label="操作" width="200">
+                                    <el-table-column prop="createTime" label="新增时间" width="180"></el-table-column>
+                                    <el-table-column label="操作" width="320">
                                         <template #default="scope">
                                             <div class="flex flex-wrap gap-1">
-                                                <el-button size="small" @click="viewPlatform(scope.row)">详情</el-button>
+                                                <el-button size="small" @click="viewPlatform(scope.row)">查看</el-button>
+                                                <el-button size="small" type="primary" @click="editPlatform(scope.row)">编辑</el-button>
+                                                <el-button size="small" type="warning" @click="testConnection(scope.row)">测试连接</el-button>
+                                                <el-button size="small" type="danger" @click="deletePlatform(scope.row)">删除</el-button>
                                             </div>
                                         </template>
                                     </el-table-column>
@@ -293,6 +315,10 @@
                                         <el-icon><Refresh /></el-icon>
                                         同步设备
                                     </el-button>
+                                    <el-button type="primary" @click="showAddDeviceDialog">
+                                        <el-icon><Plus /></el-icon>
+                                        新增设备
+                                    </el-button>
                                 </div>
 
                                 <!-- 设备列表 -->
@@ -304,17 +330,27 @@
                                     <el-table-column prop="model" label="型号" width="120"></el-table-column>
                                     <el-table-column prop="ip" label="IP地址" width="120"></el-table-column>
                                     <el-table-column prop="region" label="行政区域" width="120"></el-table-column>
-
+                                    <el-table-column prop="source" label="数据来源" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="scope.row.source === 'sync' ? 'primary' : 'success'">
+                                                {{scope.row.source === 'sync' ? '同步' : '手动新增'}}
+                                            </el-tag>
+                                        </template>
+                                    </el-table-column>
                                     <el-table-column prop="status" label="状态" width="100">
                                         <template #default="scope">
                                             <el-tag :type="getDeviceStatusTagType(scope.row.status)">{{getDeviceStatusText(scope.row.status)}}</el-tag>
                                         </template>
                                     </el-table-column>
                                     <el-table-column prop="lastOnlineTime" label="最近在线" width="150"></el-table-column>
-                                    <el-table-column label="操作" width="300">
+                                    <el-table-column label="操作" width="400">
                                         <template #default="scope">
                                             <div class="flex flex-wrap gap-1">
                                                 <el-button size="small" @click="viewDevice(scope.row)">详情</el-button>
+                                                <el-button size="small" type="primary" @click="editDeviceInfo(scope.row)">编辑信息</el-button>
+                                                <el-button size="small" type="warning" @click="viewChannels(scope.row)">查看通道</el-button>
+
+                                                <el-button v-if="scope.row.source === 'manual'" size="small" type="danger" @click="deleteDevice(scope.row)">删除</el-button>
                                             </div>
                                         </template>
                                     </el-table-column>
@@ -331,9 +367,155 @@
                                 </div>
                             </div>
                     </div>
+
+                    <!-- 通道管理 -->
+                    <div v-show="activeTab === 'channel'">
+                            <div class="content-card p-6">
+                                <!-- 筛选查询区域 -->
+                                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="flex items-center space-x-3">
+                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">通道名称:</label>
+                                            <el-input v-model="channelSearch" placeholder="请输入通道名称" clearable style="flex: 1"></el-input>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">所属设备:</label>
+                                            <el-select v-model="channelDeviceFilter" placeholder="请选择所属设备" clearable style="flex: 1">
+                                                <el-option label="全部" value=""></el-option>
+                                                <el-option v-for="device in devices" :key="device.id" :label="device.name" :value="device.id"></el-option>
+                                            </el-select>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end space-x-3 mt-4">
+                                        <el-button type="primary" @click="searchChannels">
+                                            <el-icon><Search /></el-icon>
+                                            查询
+                                        </el-button>
+                                        <el-button @click="resetChannelFilters">
+                                            <el-icon><Refresh /></el-icon>
+                                            重置
+                                        </el-button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 操作按钮区域 -->
+                                <div class="flex justify-end space-x-3 mb-4">
+                                    <el-button type="success" @click="syncChannels">
+                                        <el-icon><Refresh /></el-icon>
+                                        同步通道
+                                    </el-button>
+                                    <el-button type="primary" @click="showAddChannelDialog">
+                                        <el-icon><Plus /></el-icon>
+                                        手动新增通道
+                                    </el-button>
+                                </div>
+
+                                <!-- 通道列表 -->
+                                <el-table :data="filteredChannels" stripe>
+                                    <el-table-column prop="channelId" label="通道ID" width="120"></el-table-column>
+                                    <el-table-column prop="name" label="通道名称" width="150"></el-table-column>
+                                    <el-table-column prop="deviceName" label="所属设备" width="150"></el-table-column>
+                                    <el-table-column prop="type" label="通道类型" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="getChannelTypeTagType(scope.row.type)">{{getChannelTypeText(scope.row.type)}}</el-tag>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="source" label="数据来源" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="scope.row.source === 'sync' ? 'primary' : 'success'">
+                                                {{scope.row.source === 'sync' ? '同步' : '手动新增'}}
+                                            </el-tag>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="status" label="状态" width="100">
+                                        <template #default="scope">
+                                            <el-tag :type="getChannelStatusTagType(scope.row.status)">{{getChannelStatusText(scope.row.status)}}</el-tag>
+                                        </template>
+                                    </el-table-column>
+                                    <el-table-column prop="encoding" label="编码格式" width="100"></el-table-column>
+                                    <el-table-column prop="resolution" label="分辨率" width="120"></el-table-column>
+                                    <el-table-column prop="frameRate" label="帧率" width="80"></el-table-column>
+
+                                    <el-table-column label="操作" width="350">
+                                        <template #default="scope">
+                                            <div class="flex flex-wrap gap-1 items-center">
+                                                <el-button size="small" @click="viewChannel(scope.row)">详情</el-button>
+                                                <el-button size="small" type="primary" @click="editChannelRemark(scope.row)">编辑备注</el-button>
+                                                <el-switch 
+                                                    v-model="scope.row.enabled" 
+                                                    @change="toggleChannelStatus(scope.row)"
+                                                    active-text="启用"
+                                                    inactive-text="停用"
+                                                    size="small">
+                                                </el-switch>
+                                                <el-button v-if="scope.row.source === 'manual'" size="small" type="danger" @click="deleteChannel(scope.row)">删除</el-button>
+                                            </div>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
+
+                                <!-- 分页 -->
+                                <div class="flex justify-center mt-6">
+                                    <el-pagination
+                                        v-model:current-page="channelCurrentPage"
+                                        :page-size="10"
+                                        :total="channels.length"
+                                        layout="total, prev, pager, next">
+                                    </el-pagination>
+                                </div>
+                            </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- 新增/编辑平台对话框 -->
+        <el-dialog v-model="platformDialogVisible" :title="platformDialogTitle" width="600px">
+            <el-form :model="platformForm" :rules="platformRules" ref="platformFormRef" label-width="120px">
+                <el-form-item label="平台名称" prop="name">
+                    <el-input v-model="platformForm.name" placeholder="请输入平台名称"></el-input>
+                </el-form-item>
+                <el-form-item label="平台类型" prop="type">
+                    <el-select v-model="platformForm.type" placeholder="请选择平台类型" style="width: 100%">
+                        <el-option label="国标28181协议" value="gb28181"></el-option>
+                        <el-option label="海康" value="hikvision"></el-option>
+                        <el-option label="大华" value="dahua"></el-option>
+                        <el-option label="其他" value="other"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="厂商信息">
+                    <el-input v-model="platformForm.manufacturer" placeholder="请输入厂商信息"></el-input>
+                </el-form-item>
+                <el-form-item label="协议版本">
+                    <el-input v-model="platformForm.protocol" placeholder="请输入协议版本"></el-input>
+                </el-form-item>
+                <el-form-item label="IP地址/域名" prop="host">
+                    <el-input v-model="platformForm.host" placeholder="请输入IP地址或域名"></el-input>
+                </el-form-item>
+                <el-form-item label="端口号" prop="port">
+                    <el-input-number v-model="platformForm.port" :min="1" :max="65535" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="用户名" v-if="needAuth">
+                    <el-input v-model="platformForm.username" placeholder="请输入用户名"></el-input>
+                </el-form-item>
+                <el-form-item label="密码" v-if="needAuth">
+                    <el-input v-model="platformForm.password" type="password" placeholder="请输入密码" show-password></el-input>
+                </el-form-item>
+                <el-form-item label="API Token" v-if="needToken">
+                    <el-input v-model="platformForm.token" placeholder="请输入API Token"></el-input>
+                </el-form-item>
+                <el-form-item label="启用状态">
+                    <el-switch v-model="platformForm.enabled"></el-switch>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="platformDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="savePlatform">保存</el-button>
+                    <el-button type="success" @click="savePlatformAndTest">保存并测试连接</el-button>
+                </span>
+            </template>
+        </el-dialog>
 
         <!-- 设备详情对话框 -->
         <el-dialog v-model="deviceDetailVisible" title="设备详情" width="800px">
@@ -355,11 +537,137 @@
                     <el-descriptions-item label="注册来源">
                         <el-tag :type="selectedDevice.source === 'sync' ? 'success' : 'warning'">{{selectedDevice.source === 'sync' ? '平台同步' : '手动新增'}}</el-tag>
                     </el-descriptions-item>
+                    <el-descriptions-item label="自定义标签" span="2">
+                        <el-tag v-for="tag in selectedDevice.tags" :key="tag" class="mr-2">{{tag}}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="备注" span="2">{{selectedDevice.remarks || '无'}}</el-descriptions-item>
                 </el-descriptions>
             </div>
         </el-dialog>
 
+        <!-- 编辑设备补充信息对话框 -->
+        <el-dialog v-model="deviceEditVisible" title="编辑设备补充信息" width="500px">
+            <el-form :model="deviceEditForm" label-width="120px">
+                <el-form-item label="自定义标签">
+                    <el-input v-model="deviceEditForm.tagsInput" placeholder="输入标签，用逗号分隔"></el-input>
+                </el-form-item>
+                <el-form-item label="备注信息">
+                    <el-input v-model="deviceEditForm.remarks" type="textarea" :rows="4" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+                <el-form-item label="安装位置">
+                    <el-input v-model="deviceEditForm.location" placeholder="请输入安装位置描述"></el-input>
+                </el-form-item>
+                <el-form-item label="维护责任人">
+                    <el-input v-model="deviceEditForm.maintainer" placeholder="请输入维护责任人"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="deviceEditVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveDeviceInfo">保存</el-button>
+                </span>
+            </template>
+        </el-dialog>
 
+        <!-- 通道详情对话框 -->
+        <el-dialog v-model="channelDetailVisible" title="通道详情" width="600px">
+            <div v-if="selectedChannel">
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="通道ID">{{selectedChannel.channelId}}</el-descriptions-item>
+                    <el-descriptions-item label="通道名称">{{selectedChannel.name}}</el-descriptions-item>
+                    <el-descriptions-item label="所属设备">{{selectedChannel.deviceName}}</el-descriptions-item>
+                    <el-descriptions-item label="通道类型">
+                        <el-tag :type="getChannelTypeTagType(selectedChannel.type)">{{getChannelTypeText(selectedChannel.type)}}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="当前状态">
+                        <el-tag :type="getChannelStatusTagType(selectedChannel.status)">{{getChannelStatusText(selectedChannel.status)}}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="编码格式">{{selectedChannel.encoding}}</el-descriptions-item>
+                    <el-descriptions-item label="分辨率">{{selectedChannel.resolution}}</el-descriptions-item>
+                    <el-descriptions-item label="帧率">{{selectedChannel.frameRate}} fps</el-descriptions-item>
+                    <el-descriptions-item label="码率">{{selectedChannel.bitRate}} Kbps</el-descriptions-item>
+                    <el-descriptions-item label="码流类型">{{selectedChannel.streamType}}</el-descriptions-item>
+                    <el-descriptions-item label="PTZ支持">
+                        <el-tag :type="selectedChannel.ptzSupport ? 'success' : 'info'">{{selectedChannel.ptzSupport ? '支持' : '不支持'}}</el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="备注" span="2">{{selectedChannel.remarks || '无'}}</el-descriptions-item>
+                </el-descriptions>
+            </div>
+        </el-dialog>
+
+        <!-- 编辑通道备注对话框 -->
+        <el-dialog v-model="channelEditVisible" title="编辑通道备注" width="400px">
+            <el-form :model="channelEditForm" label-width="80px">
+                <el-form-item label="备注信息">
+                    <el-input v-model="channelEditForm.remarks" type="textarea" :rows="4" placeholder="请输入通道备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="channelEditVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveChannelRemark">保存</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 手动新增设备对话框 -->
+        <el-dialog v-model="addDeviceDialogVisible" title="手动新增设备" width="600px">
+            <el-form :model="addDeviceForm" :rules="addDeviceRules" ref="addDeviceFormRef" label-width="120px">
+                <el-form-item label="设备ID" prop="deviceId">
+                    <el-input v-model="addDeviceForm.deviceId" placeholder="请输入设备ID"></el-input>
+                </el-form-item>
+                <el-form-item label="设备名称" prop="name">
+                    <el-input v-model="addDeviceForm.name" placeholder="请输入设备名称"></el-input>
+                </el-form-item>
+                <el-form-item label="所属平台" prop="platformId">
+                    <el-select v-model="addDeviceForm.platformId" placeholder="请选择所属平台" style="width: 100%">
+                        <el-option v-for="platform in platforms" :key="platform.id" :label="platform.name" :value="platform.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="厂商" prop="manufacturer">
+                    <el-select v-model="addDeviceForm.manufacturer" placeholder="请选择厂商" style="width: 100%">
+                        <el-option label="海康威视" value="hikvision"></el-option>
+                        <el-option label="大华" value="dahua"></el-option>
+                        <el-option label="宇视" value="uniview"></el-option>
+                        <el-option label="华为" value="huawei"></el-option>
+                        <el-option label="其他" value="other"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="设备型号">
+                    <el-input v-model="addDeviceForm.model" placeholder="请输入设备型号"></el-input>
+                </el-form-item>
+                <el-form-item label="序列号">
+                    <el-input v-model="addDeviceForm.serialNumber" placeholder="请输入设备序列号"></el-input>
+                </el-form-item>
+                <el-form-item label="IP地址" prop="ip">
+                    <el-input v-model="addDeviceForm.ip" placeholder="请输入设备IP地址"></el-input>
+                </el-form-item>
+                <el-form-item label="端口号">
+                    <el-input-number v-model="addDeviceForm.port" :min="1" :max="65535" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="行政区域">
+                    <el-input v-model="addDeviceForm.region" placeholder="请输入行政区域"></el-input>
+                </el-form-item>
+                <el-form-item label="GPS坐标">
+                    <el-input v-model="addDeviceForm.gps" placeholder="请输入GPS坐标（经度,纬度）"></el-input>
+                </el-form-item>
+                <el-form-item label="安装位置">
+                    <el-input v-model="addDeviceForm.location" placeholder="请输入安装位置描述"></el-input>
+                </el-form-item>
+                <el-form-item label="维护责任人">
+                    <el-input v-model="addDeviceForm.maintainer" placeholder="请输入维护责任人"></el-input>
+                </el-form-item>
+                <el-form-item label="备注信息">
+                    <el-input v-model="addDeviceForm.remarks" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="addDeviceDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveAddDevice">保存</el-button>
+                </span>
+            </template>
+        </el-dialog>
 
         <!-- 平台详情对话框 -->
         <el-dialog v-model="platformDetailVisible" title="平台详情" width="700px">
@@ -377,8 +685,66 @@
                 <el-descriptions-item label="连接状态">
                     <span :class="getConnectionStatusClass(selectedPlatform.connectionStatus)">{{ getConnectionStatusText(selectedPlatform.connectionStatus) }}</span>
                 </el-descriptions-item>
-                <el-descriptions-item label="注册时间">{{ selectedPlatform.createTime }}</el-descriptions-item>
+                <el-descriptions-item label="新增时间">{{ selectedPlatform.createTime }}</el-descriptions-item>
             </el-descriptions>
+        </el-dialog>
+
+        <!-- 手动新增通道对话框 -->
+        <el-dialog v-model="addChannelDialogVisible" title="手动新增通道" width="500px">
+            <el-form :model="addChannelForm" :rules="addChannelRules" ref="addChannelFormRef" label-width="120px">
+                <el-form-item label="通道ID" prop="channelId">
+                    <el-input v-model="addChannelForm.channelId" placeholder="请输入通道ID"></el-input>
+                </el-form-item>
+                <el-form-item label="通道名称" prop="name">
+                    <el-input v-model="addChannelForm.name" placeholder="请输入通道名称"></el-input>
+                </el-form-item>
+                <el-form-item label="所属设备" prop="deviceId">
+                    <el-select v-model="addChannelForm.deviceId" placeholder="请选择所属设备" style="width: 100%">
+                        <el-option v-for="device in devices" :key="device.id" :label="device.name" :value="device.id"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="通道类型" prop="type">
+                    <el-select v-model="addChannelForm.type" placeholder="请选择通道类型" style="width: 100%">
+                        <el-option label="视频输入" value="video"></el-option>
+                        <el-option label="音频输入" value="audio"></el-option>
+                        <el-option label="报警输入" value="alarm_in"></el-option>
+                        <el-option label="报警输出" value="alarm_out"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="编码格式">
+                    <el-select v-model="addChannelForm.encoding" placeholder="请选择编码格式" style="width: 100%">
+                        <el-option label="H.264" value="H264"></el-option>
+                        <el-option label="H.265" value="H265"></el-option>
+                        <el-option label="MJPEG" value="MJPEG"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="分辨率">
+                    <el-select v-model="addChannelForm.resolution" placeholder="请选择分辨率" style="width: 100%">
+                        <el-option label="1920x1080" value="1920x1080"></el-option>
+                        <el-option label="1280x720" value="1280x720"></el-option>
+                        <el-option label="704x576" value="704x576"></el-option>
+                        <el-option label="352x288" value="352x288"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="帧率">
+                    <el-input-number v-model="addChannelForm.frameRate" :min="1" :max="60" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="码率(Kbps)">
+                    <el-input-number v-model="addChannelForm.bitRate" :min="64" :max="8192" style="width: 100%"></el-input-number>
+                </el-form-item>
+                <el-form-item label="PTZ支持">
+                    <el-switch v-model="addChannelForm.ptzSupport"></el-switch>
+                </el-form-item>
+                <el-form-item label="备注信息">
+                    <el-input v-model="addChannelForm.remarks" type="textarea" :rows="3" placeholder="请输入备注信息"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="addChannelDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="saveAddChannel">保存</el-button>
+                </span>
+            </template>
         </el-dialog>
     </div>
 
@@ -432,207 +798,556 @@
                             port: 5060,
                             protocol: 'GB/T 28181-2016',
                             enabled: false,
-                            connectionStatus: 'disconnected',
+                            connectionStatus: 'untested',
                             createTime: '2024-01-17 09:15:00'
                         }
                     ],
                     platformSearch: '',
-
+                    platformTypeFilter: '',
                     platformCurrentPage: 1,
+                    platformDialogVisible: false,
+                    platformDialogTitle: '新增平台',
                     platformDetailVisible: false,
-                    selectedPlatform: null,
+                    selectedPlatform: {},
+                    platformForm: {
+                        name: '',
+                        type: '',
+                        manufacturer: '',
+                        protocol: '',
+                        host: '',
+                        port: null,
+                        username: '',
+                        password: '',
+                        token: '',
+                        enabled: true
+                    },
+                    platformRules: {
+                        name: [{ required: true, message: '请输入平台名称', trigger: 'blur' }],
+                        type: [{ required: true, message: '请选择平台类型', trigger: 'change' }],
+                        host: [{ required: true, message: '请输入IP地址或域名', trigger: 'blur' }],
+                        port: [{ required: true, message: '请输入端口号', trigger: 'blur' }]
+                    },
                     
                     // 设备管理
                     devices: [
                         {
                             id: 1,
-                            deviceId: 'DEV001',
-                            name: '北京路口摄像头01',
-                            platformId: 1,
+                            deviceId: 'BJ001001',
+                            name: '北京大厦1号摄像头',
                             platformName: '北京千里眼平台',
-                            manufacturer: 'hikvision',
-                            model: 'DS-2CD2T47G1-L',
-                            serialNumber: 'HK20240001',
-                            ip: '192.168.1.201',
-                            port: 8000,
+                            manufacturer: '海康威视',
+                            model: 'DS-2CD2T47G2-L',
+                            serialNumber: 'DS2CD2T47G2L20220101001',
+                            ip: '192.168.2.100',
                             region: '北京市朝阳区',
-                            gps: '116.4074,39.9042',
-                            location: '北京路与朝阳路交叉口',
-                            maintainer: '李四',
+                            gps: '116.4074, 39.9042',
                             status: 'online',
                             lastOnlineTime: '2024-01-20 15:30:00',
-                            source: 'sync',
-                            tags: ['重点监控', '交通要道'],
-                            remarks: '主要监控路口交通情况'
+                            source: 'sync', // 数据来源：sync-同步，manual-手动新增
+                            tags: ['重要', '大厅'],
+                            remarks: '主要监控大厅入口'
                         },
                         {
                             id: 2,
-                            deviceId: 'DEV002',
-                            name: '上海商场摄像头01',
-                            platformId: 2,
+                            deviceId: 'SH002001',
+                            name: '上海办公楼2号摄像头',
                             platformName: '上海移动看家',
-                            manufacturer: 'dahua',
-                            model: 'DH-IPC-HFW4431R-Z',
-                            serialNumber: 'DH20240002',
-                            ip: '192.168.1.202',
-                            port: 37777,
+                            manufacturer: '大华',
+                            model: 'DH-IPC-HFW4433M-I2',
+                            serialNumber: 'DH4433M20220102001',
+                            ip: '192.168.3.100',
                             region: '上海市浦东新区',
-                            gps: '121.4737,31.2304',
-                            location: '上海商场一楼大厅',
-                            maintainer: '王五',
+                            gps: '121.4737, 31.2304',
                             status: 'offline',
-                            lastOnlineTime: '2024-01-19 10:20:00',
+                            lastOnlineTime: '2024-01-19 18:45:00',
                             source: 'sync',
-                            tags: ['商场监控'],
-                            remarks: '监控商场入口区域'
+                            tags: ['普通'],
+                            remarks: '监控办公区域'
                         },
                         {
                             id: 3,
-                            deviceId: 'DEV003',
-                            name: '手动添加设备01',
-                            platformId: 1,
-                            platformName: '北京千里眼平台',
-                            manufacturer: 'uniview',
-                            model: 'IPC322LR3-VSPF28-D',
-                            serialNumber: 'UV20240003',
-                            ip: '192.168.1.203',
-                            port: 80,
-                            region: '北京市海淀区',
-                            gps: '116.2317,39.9911',
-                            location: '海淀区科技园',
-                            maintainer: '赵六',
+                            deviceId: 'GZ003001',
+                            name: '广州手动新增设备',
+                            platformName: '广州GB28181平台',
+                            manufacturer: '宇视',
+                            model: 'IPC-B122-PF28',
+                            serialNumber: 'UV122PF2820220103001',
+                            ip: '192.168.4.100',
+                            region: '广东省广州市',
+                            gps: '113.2644, 23.1291',
                             status: 'online',
-                            lastOnlineTime: '2024-01-20 16:45:00',
-                            source: 'manual',
-                            tags: ['园区监控'],
-                            remarks: '手动添加的测试设备'
+                            lastOnlineTime: '2024-01-20 16:20:00',
+                            source: 'manual', // 手动新增的设备
+                            tags: ['测试'],
+                            remarks: '手动新增的测试设备'
                         }
                     ],
                     deviceSearch: '',
                     devicePlatformFilter: '',
                     deviceVendorFilter: '',
                     deviceStatusFilter: '',
+                    deviceRegionFilter: '',
                     deviceCurrentPage: 1,
                     deviceDetailVisible: false,
-                    selectedDevice: null
+                    deviceEditVisible: false,
+                    selectedDevice: null,
+                    deviceEditForm: {
+                        tagsInput: '',
+                        remarks: '',
+                        location: '',
+                        maintainer: ''
+                    },
+                    
+                    // 通道管理
+                    channels: [
+                        {
+                            id: 1,
+                            channelId: 'BJ001001_01',
+                            name: '主码流',
+                            deviceName: '北京大厦1号摄像头',
+                            deviceId: 1,
+                            type: 'video',
+                            status: 'active',
+                            encoding: 'H.264',
+                            resolution: '1920x1080',
+                            frameRate: 25,
+                            bitRate: 2048,
+                            streamType: '主码流',
+                            ptzSupport: true,
+                            enabled: true,
+                            source: 'sync', // 数据来源：sync-同步，manual-手动新增
+                            remarks: '主要监控通道'
+                        },
+                        {
+                            id: 2,
+                            channelId: 'BJ001001_02',
+                            name: '子码流',
+                            deviceName: '北京大厦1号摄像头',
+                            deviceId: 1,
+                            type: 'video',
+                            status: 'active',
+                            encoding: 'H.264',
+                            resolution: '704x576',
+                            frameRate: 15,
+                            bitRate: 512,
+                            streamType: '子码流',
+                            ptzSupport: false,
+                            enabled: true,
+                            source: 'sync',
+                            remarks: '预览用低码流'
+                        },
+                        {
+                            id: 3,
+                            channelId: 'SH002001_01',
+                            name: '音频输入',
+                            deviceName: '上海办公楼2号摄像头',
+                            deviceId: 2,
+                            type: 'audio',
+                            status: 'inactive',
+                            encoding: 'G.711',
+                            resolution: '-',
+                            frameRate: '-',
+                            bitRate: 64,
+                            streamType: '-',
+                            ptzSupport: false,
+                            enabled: false,
+                            source: 'sync',
+                            remarks: '音频监听通道'
+                        },
+                        {
+                            id: 4,
+                            channelId: 'GZ003001_01',
+                            name: '手动新增通道',
+                            deviceName: '广州手动新增设备',
+                            deviceId: 3,
+                            type: 'video',
+                            status: 'active',
+                            encoding: 'H.265',
+                            resolution: '2560x1440',
+                            frameRate: 30,
+                            bitRate: 4096,
+                            streamType: '主码流',
+                            ptzSupport: true,
+                            enabled: true,
+                            source: 'manual', // 手动新增的通道
+                            remarks: '手动配置的高清通道'
+                        }
+                    ],
+                    channelSearch: '',
+                    channelDeviceFilter: '',
+                    channelTypeFilter: '',
+                    channelStatusFilter: '',
+                    channelCurrentPage: 1,
+                    channelDetailVisible: false,
+                    channelEditVisible: false,
+                    selectedChannel: null,
+                    channelEditForm: {
+                        remarks: ''
+                    },
+                    
+                    // 手动新增设备
+                    addDeviceDialogVisible: false,
+                    addDeviceForm: {
+                        deviceId: '',
+                        name: '',
+                        platformId: '',
+                        manufacturer: '',
+                        model: '',
+                        serialNumber: '',
+                        ip: '',
+                        port: 8000,
+                        region: '',
+                        gps: '',
+                        location: '',
+                        maintainer: '',
+                        remarks: ''
+                    },
+                    addDeviceRules: {
+                        deviceId: [{ required: true, message: '请输入设备ID', trigger: 'blur' }],
+                        name: [{ required: true, message: '请输入设备名称', trigger: 'blur' }],
+                        platformId: [{ required: true, message: '请选择所属平台', trigger: 'change' }],
+                        manufacturer: [{ required: true, message: '请选择厂商', trigger: 'change' }],
+                        ip: [{ required: true, message: '请输入IP地址', trigger: 'blur' }]
+                    },
+                    
+                    // 手动新增通道
+                    addChannelDialogVisible: false,
+                    addChannelForm: {
+                        channelId: '',
+                        name: '',
+                        deviceId: '',
+                        type: '',
+                        encoding: 'H264',
+                        resolution: '1920x1080',
+                        frameRate: 25,
+                        bitRate: 2048,
+                        ptzSupport: false,
+                        remarks: ''
+                    },
+                    addChannelRules: {
+                        channelId: [{ required: true, message: '请输入通道ID', trigger: 'blur' }],
+                        name: [{ required: true, message: '请输入通道名称', trigger: 'blur' }],
+                        deviceId: [{ required: true, message: '请选择所属设备', trigger: 'change' }],
+                        type: [{ required: true, message: '请选择通道类型', trigger: 'change' }]
+                    }
                 }
             },
+            
             computed: {
                 filteredPlatforms() {
-                    let filtered = this.platforms;
-                    
-                    if (this.platformSearch) {
-                        filtered = filtered.filter(platform => 
-                            platform.name.toLowerCase().includes(this.platformSearch.toLowerCase())
-                        );
-                    }
-                    
-                    return filtered;
-                },
-                filteredDevices() {
-                    let filtered = this.devices;
-                    
-                    if (this.deviceSearch) {
-                        filtered = filtered.filter(device => 
-                            device.name.toLowerCase().includes(this.deviceSearch.toLowerCase()) ||
-                            device.deviceId.toLowerCase().includes(this.deviceSearch.toLowerCase())
-                        );
-                    }
-                    
-                    if (this.devicePlatformFilter) {
-                        filtered = filtered.filter(device => device.platformId == this.devicePlatformFilter);
-                    }
-                    
-                    if (this.deviceVendorFilter) {
-                        filtered = filtered.filter(device => device.manufacturer === this.deviceVendorFilter);
-                    }
-                    
-                    if (this.deviceStatusFilter) {
-                        filtered = filtered.filter(device => device.status === this.deviceStatusFilter);
-                    }
-                    
-                    return filtered;
-                }
-            },
-            methods: {
-                handleMenuSelect(key) {
-                    this.activeMenu = key;
-                    if (key === 'platform') {
-                        this.activeTab = 'platform';
-                    } else if (key === 'device') {
-                        this.activeTab = 'device';
-                    }
+                    return this.platforms.filter(platform => {
+                        const matchSearch = !this.platformSearch || 
+                            platform.name.toLowerCase().includes(this.platformSearch.toLowerCase()) ||
+                            platform.host.includes(this.platformSearch);
+                        const matchType = !this.platformTypeFilter || platform.type === this.platformTypeFilter;
+                        return matchSearch && matchType;
+                    });
                 },
                 
+                filteredDevices() {
+                    return this.devices.filter(device => {
+                        const matchSearch = !this.deviceSearch || 
+                            device.name.toLowerCase().includes(this.deviceSearch.toLowerCase()) ||
+                            device.deviceId.toLowerCase().includes(this.deviceSearch.toLowerCase());
+                        const matchPlatform = !this.devicePlatformFilter || device.platformId === this.devicePlatformFilter;
+                        const matchVendor = !this.deviceVendorFilter || device.manufacturer.includes(this.deviceVendorFilter);
+                        const matchStatus = !this.deviceStatusFilter || device.status === this.deviceStatusFilter;
+                        const matchRegion = !this.deviceRegionFilter || device.region.includes(this.deviceRegionFilter);
+                        return matchSearch && matchPlatform && matchVendor && matchStatus && matchRegion;
+                    });
+                },
+                
+                filteredChannels() {
+                    return this.channels.filter(channel => {
+                        const matchSearch = !this.channelSearch || 
+                            channel.name.toLowerCase().includes(this.channelSearch.toLowerCase()) ||
+                            channel.channelId.toLowerCase().includes(this.channelSearch.toLowerCase());
+                        const matchDevice = !this.channelDeviceFilter || channel.deviceId === this.channelDeviceFilter;
+                        const matchType = !this.channelTypeFilter || channel.type === this.channelTypeFilter;
+                        const matchStatus = !this.channelStatusFilter || channel.status === this.channelStatusFilter;
+                        return matchSearch && matchDevice && matchType && matchStatus;
+                    });
+                },
+                
+                needAuth() {
+                    return ['qianliyan', 'kanjia', 'gb28181', 'hikvision', 'dahua'].includes(this.platformForm.type);
+                },
+                
+                needToken() {
+                    return ['other'].includes(this.platformForm.type);
+                }
+            },
+            
+            methods: {
+                handleMenuSelect(key) {
+                    this.activeTab = key;
+                    this.activeMenu = key;
+                },
+                
+                // 用户相关方法
+                navigateToProfile() {
+                    ElMessage.info('跳转到个人中心');
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                navigateToPassword() {
+                    ElMessage.info('跳转到修改密码');
+                    window.open('./个人中心原型.html', '_blank');
+                },
+                logout() {
+                    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElMessage.success('已退出登录');
+                        window.location.href = './登录页面原型.html';
+                    }).catch(() => {
+                        // 取消退出
+                    });
+                },
+                
+
                 // 平台管理方法
-                searchPlatforms() {
-                    // 搜索平台逻辑
-                    console.log('搜索平台');
+                showAddPlatformDialog() {
+                    this.platformDialogTitle = '新增平台';
+                    this.platformForm = {
+                        name: '',
+                        type: '',
+                        manufacturer: '',
+                        protocol: '',
+                        host: '',
+                        port: null,
+                        username: '',
+                        password: '',
+                        token: '',
+                        enabled: true
+                    };
+                    this.platformDialogVisible = true;
                 },
-                resetPlatformFilters() {
-                    this.platformSearch = '';
+                
+                editPlatform(platform) {
+                    this.platformDialogTitle = '编辑平台';
+                    this.platformForm = { ...platform };
+                    this.platformDialogVisible = true;
                 },
+                
+                savePlatform() {
+                    this.$refs.platformFormRef.validate((valid) => {
+                        if (valid) {
+                            ElMessage.success('平台保存成功');
+                            this.platformDialogVisible = false;
+                        }
+                    });
+                },
+                
+                savePlatformAndTest() {
+                    this.$refs.platformFormRef.validate((valid) => {
+                        if (valid) {
+                            ElMessage.success('平台保存成功，正在测试连接...');
+                            setTimeout(() => {
+                                ElMessage.success('连接测试成功');
+                            }, 2000);
+                            this.platformDialogVisible = false;
+                        }
+                    });
+                },
+                
+                testConnection(platform) {
+                    ElMessage.info('正在测试连接...');
+                    setTimeout(() => {
+                        const success = Math.random() > 0.3;
+                        if (success) {
+                            ElMessage.success('连接测试成功');
+                            platform.connectionStatus = 'connected';
+                        } else {
+                            ElMessage.error('连接测试失败：无法访问目标主机');
+                            platform.connectionStatus = 'disconnected';
+                        }
+                    }, 2000);
+                },
+                
+                togglePlatformStatus(platform) {
+                    const action = platform.enabled ? '启用' : '停用';
+                    ElMessage.success(`平台 ${platform.name} 已${action}`);
+                },
+                
+                deletePlatform(platform) {
+                    ElMessageBox.confirm(
+                        `确定删除视联网平台 ${platform.name} 吗？删除后，该平台下的所有设备和通道信息也将被移除。`,
+                        '确认删除',
+                        {
+                            confirmButtonText: '确定删除',
+                            cancelButtonText: '取消',
+                            type: 'warning',
+                        }
+                    ).then(() => {
+                        ElMessage.success('删除成功');
+                    }).catch(() => {
+                        ElMessage.info('已取消删除');
+                    });
+                },
+                
                 viewPlatform(platform) {
                     this.selectedPlatform = platform;
                     this.platformDetailVisible = true;
                 },
-
-                togglePlatformStatus(platform) {
-                    ElMessage.success(`${platform.name} 已${platform.enabled ? '启用' : '停用'}`);
+                
+                // 平台管理方法
+                searchPlatforms() {
+                    ElMessage.success('平台查询完成');
+                },
+                
+                resetPlatformFilters() {
+                    this.platformSearch = '';
+                    this.platformTypeFilter = '';
+                    ElMessage.success('筛选条件已重置');
                 },
                 
                 // 设备管理方法
                 searchDevices() {
-                    console.log('搜索设备');
+                    ElMessage.success('设备查询完成');
                 },
+                
                 resetDeviceFilters() {
                     this.deviceSearch = '';
                     this.devicePlatformFilter = '';
                     this.deviceVendorFilter = '';
                     this.deviceStatusFilter = '';
+                    this.deviceRegionFilter = '';
+                    ElMessage.success('筛选条件已重置');
                 },
-                syncDevices() {
-                    ElMessage.info('正在同步设备数据...');
-                    setTimeout(() => {
-                        ElMessage.success('设备同步完成');
-                    }, 2000);
-                },
+                
                 viewDevice(device) {
                     this.selectedDevice = device;
                     this.deviceDetailVisible = true;
                 },
+                
+                editDeviceInfo(device) {
+                    this.selectedDevice = device;
+                    this.deviceEditForm = {
+                        tagsInput: device.tags ? device.tags.join(', ') : '',
+                        remarks: device.remarks || '',
+                        location: device.location || '',
+                        maintainer: device.maintainer || ''
+                    };
+                    this.deviceEditVisible = true;
+                },
+                
+                saveDeviceInfo() {
+                    if (this.selectedDevice) {
+                        this.selectedDevice.tags = this.deviceEditForm.tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+                        this.selectedDevice.remarks = this.deviceEditForm.remarks;
+                        this.selectedDevice.location = this.deviceEditForm.location;
+                        this.selectedDevice.maintainer = this.deviceEditForm.maintainer;
+                    }
+                    ElMessage.success('设备补充信息保存成功');
+                    this.deviceEditVisible = false;
+                },
+                
+                viewChannels(device) {
+                    this.activeTab = 'channel';
+                    this.activeMenu = 'channel';
+                    this.channelDeviceFilter = device.id;
+                    ElMessage.info(`切换到通道管理，显示设备 ${device.name} 的通道`);
+                },
+                
 
+                
+                // 通道管理方法
+                searchChannels() {
+                    ElMessage.success('通道查询完成');
+                },
+                
+                resetChannelFilters() {
+                    this.channelSearch = '';
+                    this.channelDeviceFilter = '';
+                    this.channelTypeFilter = '';
+                    this.channelStatusFilter = '';
+                    ElMessage.success('筛选条件已重置');
+                },
+                
+                viewChannel(channel) {
+                    this.selectedChannel = channel;
+                    this.channelDetailVisible = true;
+                },
+                
+                editChannelRemark(channel) {
+                    this.selectedChannel = channel;
+                    this.channelEditForm.remarks = channel.remarks || '';
+                    this.channelEditVisible = true;
+                },
+                
+                saveChannelRemark() {
+                    if (this.selectedChannel) {
+                        this.selectedChannel.remarks = this.channelEditForm.remarks;
+                    }
+                    ElMessage.success('通道备注保存成功');
+                    this.channelEditVisible = false;
+                },
+                
+                toggleChannelStatus(channel) {
+                    const action = channel.enabled ? '启用' : '停用';
+                    ElMessage.success(`通道 ${channel.name} 已${action}`);
+                },
+                
+                // 删除设备功能
                 deleteDevice(device) {
+                    // 检查设备下是否有通道
+                    const hasChannels = this.hasChannelsInDevice(device.id);
+                    
+                    if (hasChannels) {
+                        ElMessage.error(`无法删除设备 ${device.name}，该设备下还存在通道，请先删除相关通道后再删除设备`);
+                        return;
+                    }
+                    
                     ElMessageBox.confirm(
-                        `确定要删除设备 "${device.name}" 吗？`,
-                        '确认删除',
+                        `确定要删除手动新增的设备 "${device.name}" 吗？删除后将无法恢复。`,
+                        '确认删除设备',
                         {
-                            confirmButtonText: '确定',
+                            confirmButtonText: '确定删除',
                             cancelButtonText: '取消',
                             type: 'warning',
                         }
                     ).then(() => {
+                        // 执行删除操作
                         const index = this.devices.findIndex(d => d.id === device.id);
                         if (index > -1) {
                             this.devices.splice(index, 1);
-                            ElMessage.success('删除成功');
+                            ElMessage.success(`设备 ${device.name} 删除成功`);
                         }
                     }).catch(() => {
                         ElMessage.info('已取消删除');
                     });
                 },
                 
-                // 工具方法
-                getPlatformTypeName(type) {
-                    const typeMap = {
-                        'qianliyan': '千里眼',
-                        'kanjia': '移动看家',
-                        'gb28181': 'GB/T 28181',
-                        'hikvision': '海康SDK',
-                        'dahua': '大华SDK'
-                    };
-                    return typeMap[type] || type;
+                // 删除通道功能
+                deleteChannel(channel) {
+                    ElMessageBox.confirm(
+                        `确定要删除手动新增的通道 "${channel.name}" 吗？删除后将无法恢复。`,
+                        '确认删除通道',
+                        {
+                            confirmButtonText: '确定删除',
+                            cancelButtonText: '取消',
+                            type: 'warning',
+                        }
+                    ).then(() => {
+                        // 执行删除操作
+                        const index = this.channels.findIndex(c => c.id === channel.id);
+                        if (index > -1) {
+                            this.channels.splice(index, 1);
+                            ElMessage.success(`通道 ${channel.name} 删除成功`);
+                        }
+                    }).catch(() => {
+                        ElMessage.info('已取消删除');
+                    });
                 },
+                
+                // 检查设备下是否有通道的辅助函数
+                hasChannelsInDevice(deviceId) {
+                    return this.channels.some(channel => channel.deviceId === deviceId);
+                },
+                
+                // 状态和类型显示方法
                 getPlatformTypeTagType(type) {
                     const typeMap = {
                         'qianliyan': 'primary',
@@ -641,59 +1356,245 @@
                         'hikvision': 'info',
                         'dahua': 'danger'
                     };
-                    return typeMap[type] || '';
+                    return typeMap[type] || 'default';
                 },
+                
+                getPlatformTypeName(type) {
+                    const nameMap = {
+                        'qianliyan': '千里眼',
+                        'kanjia': '移动看家',
+                        'gb28181': 'GB/T 28181',
+                        'hikvision': '海康SDK',
+                        'dahua': '大华SDK'
+                    };
+                    return nameMap[type] || type;
+                },
+                
                 getConnectionStatusClass(status) {
-                    const statusMap = {
+                    const classMap = {
                         'connected': 'status-online',
                         'disconnected': 'status-offline',
                         'connecting': 'status-connecting',
-                        'unknown': 'status-unknown'
+                        'untested': 'status-unknown'
                     };
-                    return statusMap[status] || 'status-unknown';
+                    return classMap[status] || 'status-unknown';
                 },
+                
                 getConnectionStatusText(status) {
-                    const statusMap = {
+                    const textMap = {
                         'connected': '已连接',
-                        'disconnected': '已断开',
+                        'disconnected': '连接失败',
                         'connecting': '连接中',
-                        'unknown': '未知'
+                        'untested': '未测试'
                     };
-                    return statusMap[status] || '未知';
+                    return textMap[status] || '未知';
                 },
+                
                 getDeviceStatusTagType(status) {
-                    const statusMap = {
+                    const typeMap = {
                         'online': 'success',
                         'offline': 'danger',
                         'fault': 'warning'
                     };
-                    return statusMap[status] || 'info';
+                    return typeMap[status] || 'info';
                 },
+                
                 getDeviceStatusText(status) {
-                    const statusMap = {
+                    const textMap = {
                         'online': '在线',
                         'offline': '离线',
                         'fault': '故障'
                     };
-                    return statusMap[status] || '未知';
+                    return textMap[status] || '未知';
                 },
                 
-                // 用户操作
-                navigateToProfile() {
-                    ElMessage.info('跳转到个人中心');
+                getChannelTypeTagType(type) {
+                    const typeMap = {
+                        'video': 'primary',
+                        'audio': 'success',
+                        'alarm_in': 'warning',
+                        'alarm_out': 'danger'
+                    };
+                    return typeMap[type] || 'info';
                 },
-                navigateToPassword() {
-                    ElMessage.info('跳转到修改密码');
+                
+                getChannelTypeText(type) {
+                    const textMap = {
+                        'video': '视频输入',
+                        'audio': '音频输入',
+                        'alarm_in': '报警输入',
+                        'alarm_out': '报警输出'
+                    };
+                    return textMap[type] || type;
                 },
-                logout() {
-                    ElMessageBox.confirm('确定要退出登录吗？', '确认退出', {
-                        confirmButtonText: '确定',
-                        cancelButtonText: '取消',
-                        type: 'warning'
-                    }).then(() => {
-                        ElMessage.success('已退出登录');
-                        // 这里可以添加实际的退出登录逻辑
+                
+                getChannelStatusTagType(status) {
+                    const typeMap = {
+                        'active': 'success',
+                        'inactive': 'info',
+                        'in_use': 'warning',
+                        'fault': 'danger'
+                    };
+                    return typeMap[status] || 'info';
+                },
+                
+                getChannelStatusText(status) {
+                    const textMap = {
+                        'active': '活动',
+                        'inactive': '非活动',
+                        'in_use': '使用中',
+                        'fault': '故障'
+                    };
+                    return textMap[status] || status;
+                },
+                
+                // 手动新增设备相关方法
+                showAddDeviceDialog() {
+                    this.addDeviceDialogVisible = true;
+                },
+                
+                submitAddDevice() {
+                    this.$refs.addDeviceFormRef.validate((valid) => {
+                        if (valid) {
+                            // 获取平台名称
+                            const platform = this.platforms.find(p => p.id === this.addDeviceForm.platformId);
+                            const platformName = platform ? platform.name : '未知平台';
+                            
+                            // 生成新设备ID
+                            const newId = Math.max(...this.devices.map(d => d.id)) + 1;
+                            
+                            // 生成新设备对象
+                            const newDevice = {
+                                id: newId,
+                                deviceId: this.addDeviceForm.deviceId,
+                                name: this.addDeviceForm.name,
+                                platformName: platformName,
+                                manufacturer: this.addDeviceForm.manufacturer,
+                                model: this.addDeviceForm.model,
+                                serialNumber: this.addDeviceForm.serialNumber,
+                                ip: this.addDeviceForm.ip,
+                                region: this.addDeviceForm.region,
+                                gps: this.addDeviceForm.gps,
+                                status: 'offline',
+                                lastOnlineTime: '未上线',
+                                source: 'manual', // 标记为手动新增
+                                tags: [],
+                                remarks: this.addDeviceForm.remarks
+                            };
+                            
+                            // 新增到设备列表
+                            this.devices.push(newDevice);
+                            
+                            ElMessage.success('设备新增成功');
+                            this.addDeviceDialogVisible = false;
+                            this.resetAddDeviceForm();
+                        }
                     });
+                },
+                
+                resetAddDeviceForm() {
+                    this.$refs.addDeviceFormRef.resetFields();
+                    this.addDeviceForm = {
+                        deviceId: '',
+                        name: '',
+                        platformId: '',
+                        manufacturer: '',
+                        model: '',
+                        serialNumber: '',
+                        ip: '',
+                        port: 8000,
+                        region: '',
+                        gps: '',
+                        location: '',
+                        maintainer: '',
+                        remarks: ''
+                    };
+                },
+                
+                // 手动新增通道相关方法
+                showAddChannelDialog() {
+                    this.addChannelDialogVisible = true;
+                },
+                
+                submitAddChannel() {
+                    this.$refs.addChannelFormRef.validate((valid) => {
+                        if (valid) {
+                            // 获取设备名称
+                            const device = this.devices.find(d => d.id == this.addChannelForm.deviceId);
+                            const deviceName = device ? device.name : '未知设备';
+                            
+                            // 生成新通道ID
+                            const newId = Math.max(...this.channels.map(c => c.id)) + 1;
+                            
+                            // 生成新通道对象
+                            const newChannel = {
+                                id: newId,
+                                channelId: this.addChannelForm.channelId,
+                                name: this.addChannelForm.name,
+                                deviceId: parseInt(this.addChannelForm.deviceId),
+                                deviceName: deviceName,
+                                type: this.addChannelForm.type,
+                                status: 'inactive',
+                                encoding: this.addChannelForm.encoding,
+                                resolution: this.addChannelForm.resolution,
+                                frameRate: this.addChannelForm.frameRate,
+                                bitRate: this.addChannelForm.bitRate,
+                                streamType: this.addChannelForm.type === 'video' ? '主码流' : '-',
+                                ptzSupport: this.addChannelForm.ptzSupport,
+                                enabled: true,
+                                source: 'manual', // 标记为手动新增
+                                remarks: this.addChannelForm.remarks
+                            };
+                            
+                            // 新增到通道列表
+                            this.channels.push(newChannel);
+                            
+                            ElMessage.success('通道新增成功');
+                            this.addChannelDialogVisible = false;
+                            this.resetAddChannelForm();
+                        }
+                    });
+                },
+                
+                resetAddChannelForm() {
+                    this.$refs.addChannelFormRef.resetFields();
+                    this.addChannelForm = {
+                        channelId: '',
+                        name: '',
+                        deviceId: '',
+                        type: '',
+                        encoding: 'H264',
+                        resolution: '1920x1080',
+                        frameRate: 25,
+                        bitRate: 2048,
+                        ptzSupport: false,
+                        remarks: ''
+                    };
+                },
+                
+                // 辅助方法
+                getDeviceNameById(deviceId) {
+                    const device = this.devices.find(d => d.id === deviceId);
+                    return device ? device.name : '未知设备';
+                },
+                
+                getPlatformNameByDeviceId(deviceId) {
+                    const device = this.devices.find(d => d.id === deviceId);
+                    if (device) {
+                        const platform = this.platforms.find(p => p.id === device.platformId);
+                        return platform ? platform.name : '未知平台';
+                    }
+                    return '未知平台';
+                },
+                
+                // 同步设备方法
+                syncDevices() {
+                    ElMessage.success('设备同步完成');
+                },
+                
+                // 同步通道方法
+                syncChannels() {
+                    ElMessage.success('通道同步完成');
                 }
             }
         }).use(ElementPlus).mount('#app');

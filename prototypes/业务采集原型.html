@@ -361,17 +361,6 @@
                                             </el-input>
                                         </div>
                                         <div class="flex items-center space-x-2">
-                                            <span class="text-sm font-medium text-gray-700 w-20">日期范围:</span>
-                                            <el-date-picker
-                                                v-model="taskDateRange"
-                                                type="daterange"
-                                                range-separator="至"
-                                                start-placeholder="开始日期"
-                                                end-placeholder="结束日期"
-                                                style="width: 240px">
-                                            </el-date-picker>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
                                             <span class="text-sm font-medium text-gray-700 w-16">同步状态:</span>
                                             <el-select v-model="taskSyncStatusFilter" placeholder="请选择" clearable style="width: 150px">
                                                 <el-option label="全部" value=""></el-option>
@@ -507,7 +496,7 @@
 
                             <!-- 日志列表 -->
                             <el-table :data="filteredLogs" stripe>
-                                <el-table-column prop="callTime" label="调用时间" width="160"></el-table-column>
+                                <el-table-column prop="callTime" label="同步时间" width="160"></el-table-column>
                                 <el-table-column prop="taskName" label="任务名称" width="140"></el-table-column>
                                 <el-table-column prop="sourcePlatform" label="源平台" width="100"></el-table-column>
                                 <el-table-column prop="sourceInterface" label="源接口" width="100"></el-table-column>
@@ -530,7 +519,7 @@
                                 <el-table-column prop="duration" label="耗时(ms)" width="90"></el-table-column>
                                 <el-table-column label="操作" width="100">
                                     <template #default="scope">
-                                        <el-button size="small" type="primary" @click="viewLogDetail(scope.row)">详情</el-button>
+                                        <el-button size="small" type="primary" @click="viewLogDetail(scope.row)">查看</el-button>
                                     </template>
                                 </el-table-column>
                             </el-table>
@@ -552,7 +541,7 @@
 
         <!-- 业务平台管理对话框 -->
         <el-dialog v-model="platformDialogVisible" :title="platformDialogTitle" width="600px">
-            <el-form :model="platformForm" label-width="100px">
+            <el-form :model="platformForm" :rules="platformRules" ref="platformForm" label-width="100px">
                 <el-form-item label="平台名称" required>
                     <el-input v-model="platformForm.name" placeholder="请输入平台名称"></el-input>
                 </el-form-item>
@@ -574,6 +563,12 @@
                             <el-option label="API Key" value="apikey"></el-option>
                             <el-option label="Bearer Token" value="bearer"></el-option>
                         </el-select>
+                    </el-form-item>
+                    <el-form-item v-if="platformForm.authType === 'apikey'" label="API Key" prop="apiKey">
+                        <el-input v-model="platformForm.apiKey" placeholder="请输入API Key"></el-input>
+                    </el-form-item>
+                    <el-form-item v-if="platformForm.authType === 'bearer'" label="Bearer Token" prop="bearerToken">
+                        <el-input v-model="platformForm.bearerToken" placeholder="请输入Bearer Token"></el-input>
                     </el-form-item>
                 </div>
             </el-form>
@@ -682,7 +677,6 @@
                     <el-step title="基本信息"></el-step>
                     <el-step title="字段映射"></el-step>
                     <el-step title="运行配置"></el-step>
-                    <el-step title="配置确认"></el-step>
                 </el-steps>
             </div>
             
@@ -965,13 +959,6 @@
                         </el-tab-pane>
                     </el-tabs>
                     
-                    <!-- 映射统计 -->
-                    <div class="mt-4 p-3 bg-blue-50 rounded">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-blue-700">映射统计：已配置 {{validMappingsCount}} 个有效映射</span>
-                            <span class="text-gray-600">源字段：{{sourceFields.length}} 个 | 目标字段：{{targetFields.length}} 个</span>
-                        </div>
-                    </div>
                 </div>
             </div>
             
@@ -981,8 +968,8 @@
                     <div>
                         <h4 class="font-medium mb-4">运行模式</h4>
                         <el-radio-group v-model="taskForm.runMode" class="mb-4">
-                            <el-radio label="once">单次执行</el-radio>
-                            <el-radio label="cycle">循环执行</el-radio>
+                            <el-radio label="once">单次运行</el-radio>
+                            <el-radio label="cycle">循环运行</el-radio>
                         </el-radio-group>
                     </div>
                     
@@ -1000,13 +987,13 @@
                         <!-- 每月配置 -->
                         <div v-if="taskForm.cycleType === 'monthly'" class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行日期</label>
+                                <label class="block text-sm font-medium mb-1">运行日期</label>
                                 <el-select v-model="taskForm.monthlyDay" placeholder="选择日期">
                                     <el-option v-for="day in 31" :key="day" :label="`${day}日`" :value="day"></el-option>
                                 </el-select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <label class="block text-sm font-medium mb-1">运行时间</label>
                                 <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                             </div>
                         </div>
@@ -1014,7 +1001,7 @@
                         <!-- 每周配置 -->
                         <div v-if="taskForm.cycleType === 'weekly'" class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行星期</label>
+                                <label class="block text-sm font-medium mb-1">运行星期</label>
                                 <el-select v-model="taskForm.weeklyDay" placeholder="选择星期">
                                     <el-option label="星期一" value="1"></el-option>
                                     <el-option label="星期二" value="2"></el-option>
@@ -1026,51 +1013,15 @@
                                 </el-select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <label class="block text-sm font-medium mb-1">运行时间</label>
                                 <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                             </div>
                         </div>
                         
                         <!-- 每日配置 -->
                         <div v-if="taskForm.cycleType === 'daily'">
-                            <label class="block text-sm font-medium mb-1">执行时间</label>
+                            <label class="block text-sm font-medium mb-1">运行时间</label>
                             <el-time-picker v-model="taskForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 步骤4：配置确认 -->
-            <div v-show="taskWizardStep === 3">
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="font-medium mb-2">基本信息</h4>
-                        <div class="bg-gray-50 p-4 rounded">
-                            <p><strong>任务名称：</strong>{{taskForm.name}}</p>
-                            <p><strong>任务描述：</strong>{{taskForm.description}}</p>
-                            <p><strong>源平台/接口：</strong>{{getSelectedPlatformName(taskForm.sourcePlatformId)}} / {{getSelectedInterfaceName(taskForm.sourceInterfaceId)}}</p>
-                            <p><strong>目标平台/接口：</strong>{{getSelectedPlatformName(taskForm.targetPlatformId)}} / {{getSelectedInterfaceName(taskForm.targetInterfaceId)}}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-medium mb-2">运行配置</h4>
-                        <div class="bg-gray-50 p-4 rounded">
-                            <p><strong>运行模式：</strong>{{taskForm.runMode === 'once' ? '单次执行' : '循环执行'}}</p>
-                            <div v-if="taskForm.runMode === 'cycle'">
-                                <p><strong>循环类型：</strong>{{getCycleTypeText(taskForm.cycleType)}}</p>
-                                <p v-if="taskForm.cycleType === 'monthly'"><strong>执行时间：</strong>每月{{taskForm.monthlyDay}}日 {{formatTime(taskForm.executeTime)}}</p>
-                                <p v-if="taskForm.cycleType === 'weekly'"><strong>执行时间：</strong>每周{{getWeekDayText(taskForm.weeklyDay)}} {{formatTime(taskForm.executeTime)}}</p>
-                                <p v-if="taskForm.cycleType === 'daily'"><strong>执行时间：</strong>每日 {{formatTime(taskForm.executeTime)}}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 class="font-medium mb-2">字段映射概览</h4>
-                        <div class="bg-gray-50 p-4 rounded">
-                            <p><strong>映射数量：</strong>{{ validMappingCount }} 个</p>
-                            <div v-for="(sourceField, targetField) in fieldMappings" :key="targetField" class="text-sm">
-                                <p v-if="sourceField">{{ sourceField }} → {{ targetField }}</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1080,9 +1031,7 @@
                 <span class="dialog-footer">
                     <el-button @click="taskWizardVisible = false">取消</el-button>
                     <el-button v-if="taskWizardStep > 0" @click="taskWizardStep--">上一步</el-button>
-                    <el-button v-if="taskWizardStep < 3" type="primary" @click="taskWizardStep++">下一步</el-button>
-                    <el-button v-if="taskWizardStep === 3" type="success" @click="saveTask">保存并激活</el-button>
-                    <el-button v-if="taskWizardStep === 3" @click="saveDraftTask">存为草稿</el-button>
+          <el-button v-if="taskWizardStep === 2" type="success" @click="saveTask">提交</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -1115,7 +1064,7 @@
         </el-dialog>
 
         <!-- 日志详情对话框 -->
-        <el-dialog v-model="logDetailVisible" title="调用详情" width="1400px" class="log-detail-dialog">
+        <el-dialog v-model="logDetailVisible" title="同步详情" width="1400px" class="log-detail-dialog">
             <!-- 基本信息 -->
             <div class="mb-6">
                 <el-descriptions :column="4" border>
@@ -1131,17 +1080,19 @@
             <div v-if="logDetail.status === 'success' || logDetail.status === 'partial'">
                 <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                     <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-b">
-                        <div class="flex items-center space-x-2 text-gray-700">
-                            <el-icon><DataAnalysis /></el-icon>
-                            <h4 class="font-medium">同步成果数据</h4>
-                        </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center space-x-2 text-gray-700">
+                                <el-icon><DataAnalysis /></el-icon>
+                                <h4 class="font-medium">同步成果数据</h4>
+                            </div>
                             <div class="text-sm text-gray-600">
                                 <span class="font-bold text-green-600">{{ logDetail.data.length }}</span> 条数据同步成功
                             </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
                             <el-button type="success" size="small">
                                 <el-icon class="mr-1"><Download /></el-icon>
-                                导出数据
+                                导出
                             </el-button>
                         </div>
                     </div>
@@ -1567,8 +1518,8 @@
                     <div>
                         <h4 class="font-medium mb-4">运行模式</h4>
                         <el-radio-group v-model="taskDetailForm.runMode" class="mb-4">
-                            <el-radio label="once">单次执行</el-radio>
-                            <el-radio label="cycle">循环执行</el-radio>
+                            <el-radio label="once">单次运行</el-radio>
+                            <el-radio label="cycle">循环运行</el-radio>
                         </el-radio-group>
                     </div>
                     
@@ -1586,13 +1537,13 @@
                         <!-- 每月配置 -->
                         <div v-if="taskDetailForm.cycleType === 'monthly'" class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行日期</label>
+                                <label class="block text-sm font-medium mb-1">运行日期</label>
                                 <el-select v-model="taskDetailForm.monthlyDay" placeholder="选择日期">
                                     <el-option v-for="day in 31" :key="day" :label="`${day}日`" :value="day"></el-option>
                                 </el-select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <label class="block text-sm font-medium mb-1">运行时间</label>
                                 <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                             </div>
                         </div>
@@ -1600,7 +1551,7 @@
                         <!-- 每周配置 -->
                         <div v-if="taskDetailForm.cycleType === 'weekly'" class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行星期</label>
+                                <label class="block text-sm font-medium mb-1">运行星期</label>
                                 <el-select v-model="taskDetailForm.weeklyDay" placeholder="选择星期">
                                     <el-option label="星期一" value="1"></el-option>
                                     <el-option label="星期二" value="2"></el-option>
@@ -1612,14 +1563,14 @@
                                 </el-select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">执行时间</label>
+                                <label class="block text-sm font-medium mb-1">运行时间</label>
                                 <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                             </div>
                         </div>
                         
                         <!-- 每日配置 -->
                         <div v-if="taskDetailForm.cycleType === 'daily'">
-                            <label class="block text-sm font-medium mb-1">执行时间</label>
+                            <label class="block text-sm font-medium mb-1">运行时间</label>
                             <el-time-picker v-model="taskDetailForm.executeTime" format="HH:mm" placeholder="选择时间"></el-time-picker>
                         </div>
                     </div>
@@ -1707,10 +1658,19 @@
                         description: '',
                         type: '',
                         baseUrl: '',
-                        authType: 'none'
+                        authType: 'none',
+                        apiKey: '',
+                        bearerToken: ''
                     },
                     platformDetailVisible: false,
                     platformDetail: {},
+                    platformRules: {
+                        name: [{ required: true, message: '请输入平台名称', trigger: 'blur' }],
+                        type: [{ required: true, message: '请选择连接类型', trigger: 'change' }],
+                        baseUrl: [{ required: true, message: '请输入Base URL', trigger: 'blur' }],
+                        apiKey: [{ required: true, message: '请输入API Key', trigger: 'blur' }],
+                        bearerToken: [{ required: true, message: '请输入Bearer Token', trigger: 'blur' }]
+                    },
                     
                     // 接口管理
                     interfaces: [
@@ -2095,8 +2055,15 @@
                     ElMessage.success('连接测试成功');
                 },
                 savePlatform() {
-                    ElMessage.success('保存成功');
-                    this.platformDialogVisible = false;
+                    this.$refs.platformForm.validate((valid) => {
+                        if (valid) {
+                            ElMessage.success('保存成功');
+                            this.platformDialogVisible = false;
+                        } else {
+                            ElMessage.error('请检查表单必填项');
+                            return false;
+                        }
+                    });
                 },
                 onConnectionTypeChange() {
                     // 重置相关字段
@@ -2353,7 +2320,7 @@
                     
                     // 如果任务正在运行，给出特殊提示
                     if (this.isTaskRunning(task.id)) {
-                        confirmMessage = `任务"${task.name}"正在运行中，删除后将停止执行，确定要删除吗？`;
+                        confirmMessage = `任务"${task.name}"正在运行中，删除后将停止运行，确定要删除吗？`;
                     }
                     
                     ElMessageBox.confirm(
@@ -3039,10 +3006,10 @@
                 viewLogDetail(log) {
                     this.logDetail.status = log.status;
                     this.logDetail.basicInfo = {
-                        '调用时间': log.callTime,
+                        '同步时间': log.callTime,
                         '任务名称': log.taskName,
-                        '执行耗时': `${log.duration} ms`,
-                        '调用状态': this.getLogStatusText(log.status)
+                        '运行耗时（ms）': `${log.duration} `,
+                        '同步状态': this.getLogStatusText(log.status)
                     };
 
                     if (log.status === 'success' || log.status === 'partial') {
