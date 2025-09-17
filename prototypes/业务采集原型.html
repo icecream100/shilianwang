@@ -1460,14 +1460,7 @@
                     </el-descriptions-item>
                     <el-descriptions-item label="运行耗时">{{ selectedLog.duration }}ms</el-descriptions-item>
                     <el-descriptions-item label="处理记录数">{{ selectedLog.recordCount }}</el-descriptions-item>
-                    <el-descriptions-item label="成功记录数">{{ selectedLog.successCount || 0 }}</el-descriptions-item>
-                    <el-descriptions-item label="失败记录数">{{ selectedLog.failedCount || 0 }}</el-descriptions-item>
-                    <el-descriptions-item label="跳过记录数">{{ selectedLog.skippedCount || 0 }}</el-descriptions-item>
                 </el-descriptions>
-                <div v-if="selectedLog.errorMessage" class="mt-4">
-                    <h4 class="font-medium mb-2">错误信息</h4>
-                    <el-input v-model="selectedLog.errorMessage" type="textarea" :rows="4" readonly></el-input>
-                </div>
                 <div v-if="selectedLog.details" class="mt-4">
                     <h4 class="font-medium mb-2">运行详情</h4>
                     <el-input v-model="selectedLog.details" type="textarea" :rows="6" readonly></el-input>
