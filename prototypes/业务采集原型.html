@@ -820,14 +820,34 @@
 
                             <!-- 日志列表 -->
                             <el-table :data="filteredLogs" style="width: 100%" stripe>
+                                <el-table-column prop="executeTime" label="同步时间" width="170">
+                                    <template #default="scope">
+                                        <span class="text-gray-600">{{ scope.row.executeTime }}</span>
+                                    </template>
+                                </el-table-column>
                                 <el-table-column prop="taskName" label="任务名称" width="150">
                                     <template #default="scope">
                                         <span class="font-medium">{{ scope.row.taskName }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="executeTime" label="同步时间" width="150">
+                                <el-table-column prop="sourcePlatform" label="源平台" width="140">
                                     <template #default="scope">
-                                        <span class="text-gray-600">{{ scope.row.executeTime }}</span>
+                                        <span class="text-gray-600">{{ scope.row.sourcePlatform || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="sourceInterface" label="源接口" width="140">
+                                    <template #default="scope">
+                                        <span class="text-gray-600">{{ scope.row.sourceInterface || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="targetPlatform" label="目标平台" width="140">
+                                    <template #default="scope">
+                                        <span class="text-gray-600">{{ scope.row.targetPlatform || '-' }}</span>
+                                    </template>
+                                </el-table-column>
+                                <el-table-column prop="targetInterface" label="目标接口" width="140">
+                                    <template #default="scope">
+                                        <span class="text-gray-600">{{ scope.row.targetInterface || '-' }}</span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="status" label="同步状态" width="100">
@@ -837,24 +857,14 @@
                                         </span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="duration" label="同步耗时" width="100">
+                                <el-table-column prop="duration" label="耗时" width="100">
                                     <template #default="scope">
                                         <span class="text-gray-600">{{ scope.row.duration }}ms</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="recordCount" label="处理记录数" width="120">
-                                    <template #default="scope">
-                                        <span class="text-blue-600">{{ scope.row.recordCount }}</span>
-                                    </template>
-                                </el-table-column>
-                                <el-table-column prop="errorMessage" label="错误信息" width="200">
-                                    <template #default="scope">
-                                        <span class="text-red-600">{{ scope.row.errorMessage || '-' }}</span>
-                                    </template>
-                                </el-table-column>
                                 <el-table-column label="操作" width="120" fixed="right">
                                     <template #default="scope">
-                                        <el-button size="small" @click="viewLogDetail(scope.row)">详情</el-button>
+                                        <el-button size="small" @click="viewLogDetail(scope.row)">查看</el-button>
                                     </template>
                                 </el-table-column>
                             </el-table>
@@ -1676,6 +1686,10 @@
                             id: 1,
                             taskName: '客户数据同步',
                             executeTime: '2024-01-20 02:00:00',
+                            sourcePlatform: '运营平台A',
+                            sourceInterface: '客户查询接口V1',
+                            targetPlatform: '数据中心B',
+                            targetInterface: '客户写入接口V2',
                             status: 'success',
                             duration: 1250,
                             recordCount: 156,
@@ -1689,6 +1703,10 @@
                             id: 2,
                             taskName: '订单状态更新',
                             executeTime: '2024-01-19 18:30:00',
+                            sourcePlatform: '订单平台C',
+                            sourceInterface: '订单状态查询API',
+                            targetPlatform: '仓储系统D',
+                            targetInterface: '订单状态回写API',
                             status: 'failed',
                             duration: 850,
                             recordCount: 0,
@@ -1702,6 +1720,10 @@
                             id: 3,
                             taskName: '客户数据同步',
                             executeTime: '2024-01-19 02:00:00',
+                            sourcePlatform: '运营平台A',
+                            sourceInterface: '客户查询接口V1',
+                            targetPlatform: '数据中心B',
+                            targetInterface: '客户写入接口V2',
                             status: 'running',
                             duration: 0,
                             recordCount: 0,
@@ -1781,7 +1803,8 @@
                             return logDate >= startDate && logDate <= endDate;
                         });
                     }
-                    return filtered;
+                    // 默认按同步时间倒序
+                    return filtered.slice().sort((a, b) => new Date(b.executeTime) - new Date(a.executeTime));
                 },
                 mappedFieldsCount() {
                     let count = 0;
