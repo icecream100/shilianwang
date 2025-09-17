@@ -418,7 +418,7 @@
                         <el-menu-item index="platform-mgmt">业务平台管理</el-menu-item>
                         <el-menu-item index="interface-mgmt">接口管理</el-menu-item>
                         <el-menu-item index="task-mgmt">任务管理</el-menu-item>
-                        <el-menu-item index="log-mgmt">执行日志</el-menu-item>
+                        <el-menu-item index="log-mgmt">同步记录</el-menu-item>
                     </el-sub-menu>
                 </el-menu>
             </div>
@@ -740,7 +740,7 @@
                                         <span class="text-gray-600">{{ scope.row.runMode }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="schedule" label="执行计划" width="150">
+                                <el-table-column prop="schedule" label=运行计划" width="150">
                                     <template #default="scope">
                                         <span class="text-gray-600">{{ scope.row.schedule || '--' }}</span>
                                     </template>
@@ -781,7 +781,7 @@
                         </div>
                     </div>
 
-                    <!-- 执行日志 -->
+                    <!-- 同步日志 -->
                     <div v-show="activeTab === 'log-mgmt'">
                         <div class="content-card p-6">
                             <!-- 筛选查询区域 -->
@@ -796,24 +796,13 @@
                                             </el-select>
                                         </div>
                                         <div class="flex items-center space-x-3">
-                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">执行状态:</label>
+                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">同步状态:</label>
                                             <el-select v-model="logStatusFilter" placeholder="全部状态" clearable style="flex: 1">
                                                 <el-option label="全部状态" value=""></el-option>
                                                 <el-option label="成功" value="success"></el-option>
                                                 <el-option label="失败" value="failed"></el-option>
                                                 <el-option label="运行中" value="running"></el-option>
                                             </el-select>
-                                        </div>
-                                        <div class="flex items-center space-x-3">
-                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">执行时间:</label>
-                                            <el-date-picker
-                                                v-model="logDateRange"
-                                                type="datetimerange"
-                                                range-separator="至"
-                                                start-placeholder="开始时间"
-                                                end-placeholder="结束时间"
-                                                style="flex: 1">
-                                            </el-date-picker>
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-3 ml-4">
@@ -836,19 +825,19 @@
                                         <span class="font-medium">{{ scope.row.taskName }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="executeTime" label="执行时间" width="150">
+                                <el-table-column prop="executeTime" label="同步时间" width="150">
                                     <template #default="scope">
                                         <span class="text-gray-600">{{ scope.row.executeTime }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="status" label="执行状态" width="100">
+                                <el-table-column prop="status" label="同步状态" width="100">
                                     <template #default="scope">
                                         <span :class="getLogStatusBadgeClass(scope.row.status)">
                                             {{ getLogStatusText(scope.row.status) }}
                                         </span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="duration" label="执行耗时" width="100">
+                                <el-table-column prop="duration" label="同步耗时" width="100">
                                     <template #default="scope">
                                         <span class="text-gray-600">{{ scope.row.duration }}ms</span>
                                     </template>
@@ -1146,7 +1135,7 @@
                     <el-steps :active="taskWizardStep" finish-status="success">
                         <el-step title="基本信息" description="配置任务基本信息"></el-step>
                         <el-step title="字段映射" description="配置字段映射关系"></el-step>
-                        <el-step title="运行周期" description="配置执行计划"></el-step>
+                        <el-step title="运行周期" description="配置任务运行计划"></el-step>
                     </el-steps>
                 </div>
                 <div class="wizard-content">
@@ -1400,13 +1389,13 @@
                                         <el-option label="每日" value="daily"></el-option>
                                     </el-select>
                                 </el-form-item>
-                                <el-form-item v-if="taskForm.loopType === 'monthly'" label="执行日期" prop="monthDay">
-                                    <el-select v-model="taskForm.monthDay" placeholder="请选择执行日期">
+                                <el-form-item v-if="taskForm.loopType === 'monthly'" label="运行日期" prop="monthDay">
+                                    <el-select v-model="taskForm.monthDay" placeholder="请选择运行日期">
                                         <el-option v-for="day in 31" :key="day" :label="`${day}日`" :value="day"></el-option>
                                     </el-select>
                                 </el-form-item>
-                                <el-form-item v-if="taskForm.loopType === 'weekly'" label="执行星期" prop="weekDay">
-                                    <el-select v-model="taskForm.weekDay" placeholder="请选择执行星期">
+                                <el-form-item v-if="taskForm.loopType === 'weekly'" label="运行星期" prop="weekDay">
+                                    <el-select v-model="taskForm.weekDay" placeholder="请选择运行星期">
                                         <el-option label="星期一" value="1"></el-option>
                                         <el-option label="星期二" value="2"></el-option>
                                         <el-option label="星期三" value="3"></el-option>
@@ -1416,7 +1405,7 @@
                                         <el-option label="星期日" value="0"></el-option>
                                     </el-select>
                                 </el-form-item>
-                                <el-form-item v-if="taskForm.loopType" label="执行时间" prop="executeTime">
+                                <el-form-item v-if="taskForm.loopType" label="运行时间" prop="executeTime">
                                     <el-time-picker 
                                         v-model="taskForm.executeTime" 
                                         placeholder="选择时间" 
@@ -1425,7 +1414,7 @@
                                     </el-time-picker>
                                 </el-form-item>
                                 <div v-if="taskForm.loopType" class="mt-4 p-3 bg-gray-50 rounded">
-                                    <h5 class="text-sm font-medium mb-2">执行计划预览</h5>
+                                    <h5 class="text-sm font-medium mb-2">运行计划预览</h5>
                                     <p class="text-sm text-gray-600">{{ getSchedulePreview() }}</p>
                                 </div>
                             </div>
@@ -1448,18 +1437,18 @@
         <!-- 日志详情对话框 -->
         <el-dialog
             v-model="logDetailVisible"
-            title="执行日志详情"
+            title="运行日志详情"
             width="800px">
             <div v-if="selectedLog">
                 <el-descriptions :column="2" border>
                     <el-descriptions-item label="任务名称">{{ selectedLog.taskName }}</el-descriptions-item>
-                    <el-descriptions-item label="执行时间">{{ selectedLog.executeTime }}</el-descriptions-item>
-                    <el-descriptions-item label="执行状态">
+                    <el-descriptions-item label="运行时间">{{ selectedLog.executeTime }}</el-descriptions-item>
+                    <el-descriptions-item label="运行状态">
                         <span :class="getLogStatusBadgeClass(selectedLog.status)">
                             {{ getLogStatusText(selectedLog.status) }}
                         </span>
                     </el-descriptions-item>
-                    <el-descriptions-item label="执行耗时">{{ selectedLog.duration }}ms</el-descriptions-item>
+                    <el-descriptions-item label="运行耗时">{{ selectedLog.duration }}ms</el-descriptions-item>
                     <el-descriptions-item label="处理记录数">{{ selectedLog.recordCount }}</el-descriptions-item>
                     <el-descriptions-item label="成功记录数">{{ selectedLog.successCount || 0 }}</el-descriptions-item>
                     <el-descriptions-item label="失败记录数">{{ selectedLog.failedCount || 0 }}</el-descriptions-item>
@@ -1470,7 +1459,7 @@
                     <el-input v-model="selectedLog.errorMessage" type="textarea" :rows="4" readonly></el-input>
                 </div>
                 <div v-if="selectedLog.details" class="mt-4">
-                    <h4 class="font-medium mb-2">执行详情</h4>
+                    <h4 class="font-medium mb-2">运行详情</h4>
                     <el-input v-model="selectedLog.details" type="textarea" :rows="6" readonly></el-input>
                 </div>
             </div>
@@ -1616,7 +1605,7 @@
                             targetPlatform: '订单管理系统',
                             targetInterface: '同步客户信息',
                             status: 'enabled',
-                            runMode: '定时执行',
+                            runMode: '定时运行',
                             schedule: '每天 02:00',
                             lastRun: '2024-01-20 02:00:00',
                             createTime: '2024-01-18 16:20:00'
@@ -1720,7 +1709,7 @@
                             failedCount: 0,
                             skippedCount: 0,
                             errorMessage: '',
-                            details: '任务正在执行中...'
+                            details: '任务正在运行中...'
                         }
                     ],
                     logTaskFilter: '',
@@ -1859,8 +1848,8 @@
                     const descriptions = {
                         'platform-mgmt': '管理业务平台连接配置，支持HTTP等多种连接方式',
                         'interface-mgmt': '管理各平台的API接口定义和参数配置',
-                        'task-mgmt': '配置数据采集任务，设置字段映射和执行计划',
-                        'log-mgmt': '查看任务执行历史和详细日志信息'
+                        'task-mgmt': '配置数据采集任务，设置字段映射和运行计划',
+                        'log-mgmt': '查看任务运行历史和详细日志信息'
                     };
                     return descriptions[this.activeTab] || '';
                 },
@@ -2164,7 +2153,7 @@
                     }
                     
                     // 回填运行配置
-                    this.taskForm.runMode = task.runMode === '定时执行' ? 'scheduled' : 
+                    this.taskForm.runMode = task.runMode === '定时运行' ? 'scheduled' : 
                                            task.runMode === '实时同步' ? 'realtime' : 'manual';
                     
                     // 根据schedule解析具体的调度配置
@@ -2319,7 +2308,7 @@
                 },
                 getSchedulePreview() {
                     if (this.taskForm.runMode === 'single') {
-                        return '单次运行，手动触发执行';
+                        return '单次运行，手动触发运行';
                     } else if (this.taskForm.runMode === 'loop' && this.taskForm.loopType) {
                         let preview = '';
                         switch (this.taskForm.loopType) {
@@ -2345,7 +2334,7 @@
                         if (this.taskForm.executeTime) {
                             preview += ` ${this.taskForm.executeTime}`;
                         }
-                        return preview + ' 自动执行';
+                        return preview + ' 自动运行';
                     }
                     return '请完善配置信息';
                 },
@@ -2369,8 +2358,8 @@
                                     sourceInterface: sourceInterface ? sourceInterface.name : '',
                                     targetPlatform: targetPlatform ? targetPlatform.name : '',
                                     targetInterface: targetInterface ? targetInterface.name : '',
-                                    runMode: this.taskForm.runMode === 'manual' ? '手动执行' : 
-                                            this.taskForm.runMode === 'scheduled' ? '定时执行' : '实时同步',
+                                    runMode: this.taskForm.runMode === 'manual' ? '手动运行' : 
+                                            this.taskForm.runMode === 'scheduled' ? '定时运行' : '实时同步',
                                     schedule: this.generateScheduleText(),
                                     updateTime: new Date().toLocaleString()
                                 };
@@ -2388,8 +2377,8 @@
                                 targetPlatform: targetPlatform ? targetPlatform.name : '',
                                 targetInterface: targetInterface ? targetInterface.name : '',
                                 status: 'disabled',
-                                runMode: this.taskForm.runMode === 'manual' ? '手动执行' : 
-                                        this.taskForm.runMode === 'scheduled' ? '定时执行' : '实时同步',
+                                runMode: this.taskForm.runMode === 'manual' ? '手动运行' : 
+                                        this.taskForm.runMode === 'scheduled' ? '定时运行' : '实时同步',
                                 schedule: this.generateScheduleText(),
                                 lastRun: '',
                                 createTime: new Date().toLocaleString()
@@ -2415,7 +2404,7 @@
                         } else if (this.taskForm.scheduleType === 'monthly' && this.taskForm.monthlyDay && this.taskForm.monthlyTime) {
                             return `每月${this.taskForm.monthlyDay}日 ${this.taskForm.monthlyTime}`;
                         }
-                        return '定时执行';
+                        return '定时运行';
                     } else if (this.taskForm.runMode === 'realtime') {
                         if (this.taskForm.realtimeInterval) {
                             return `每${this.taskForm.realtimeInterval}秒`;
