@@ -277,6 +277,15 @@
         .mapping-table-row:hover {
             background: #f8f9fa;
         }
+
+        .mapping-row-error {
+            background: rgba(254, 226, 226, 0.6) !important;
+        }
+
+        .mapping-row-error .el-input__wrapper,
+        .mapping-row-error .el-select .el-select__wrapper {
+            box-shadow: 0 0 0 1px #f56c6c inset;
+        }
         
         .mapping-col-source {
             display: flex;
@@ -528,13 +537,6 @@
                                         <span class="text-gray-600">{{ scope.row.description || '-' }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="status" label="连接状态" width="100">
-                                    <template #default="scope">
-                                        <span :class="getStatusBadgeClass(scope.row.status)">
-                                            {{ getStatusText(scope.row.status) }}
-                                        </span>
-                                    </template>
-                                </el-table-column>
                                 <el-table-column prop="createTime" label="新增时间" width="150">
                                     <template #default="scope">
                                         <span class="text-gray-500">{{ scope.row.createTime }}</span>
@@ -542,9 +544,8 @@
                                 </el-table-column>
                                 <el-table-column label="操作" width="200" fixed="right">
                                     <template #default="scope">
-                                        <el-button size="small" @click="viewPlatformDetail(scope.row)">详情</el-button>
+                                        <el-button size="small" @click="viewPlatformDetail(scope.row)">查看</el-button>
                                         <el-button size="small" type="primary" @click="editPlatform(scope.row)">编辑</el-button>
-                                        <el-button size="small" type="warning" @click="testConnection(scope.row)">测试连接</el-button>
                                         <el-button size="small" type="danger" @click="deletePlatform(scope.row)">删除</el-button>
                                     </template>
                                 </el-table-column>
@@ -631,12 +632,19 @@
                                 </el-table-column>
                                 <el-table-column prop="fieldCount" label="字段数量" width="100">
                                     <template #default="scope">
-                                        <span class="text-gray-600">{{ scope.row.fieldCount }}</span>
+                                        <span class="text-gray-600">{{ getInterfaceFieldCount(scope.row) }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="description" label="接口描述" width="200">
+                                <el-table-column prop="description" label="接口描述" width="220">
                                     <template #default="scope">
-                                        <span class="text-gray-600">{{ scope.row.description || '-' }}</span>
+                                        <template v-if="scope.row.description">
+                                            <el-tooltip :content="scope.row.description" placement="top">
+                                                <span class="text-gray-600 truncate" style="display: inline-block; max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    {{ scope.row.description }}
+                                                </span>
+                                            </el-tooltip>
+                                        </template>
+                                        <span v-else class="text-gray-500">-</span>
                                     </template>
                                 </el-table-column>
                                 <el-table-column prop="createTime" label="新增时间" width="150">
@@ -646,7 +654,7 @@
                                 </el-table-column>
                                 <el-table-column label="操作" width="180" fixed="right">
                                     <template #default="scope">
-                                        <el-button size="small" @click="viewInterfaceDetail(scope.row)">详情</el-button>
+                                        <el-button size="small" @click="viewInterfaceDetail(scope.row)">查看</el-button>
                                         <el-button size="small" type="primary" @click="editInterface(scope.row)">编辑</el-button>
                                         <el-button size="small" type="danger" @click="deleteInterface(scope.row)">删除</el-button>
                                     </template>
@@ -740,7 +748,7 @@
                                         <span class="text-gray-600">{{ scope.row.runMode }}</span>
                                     </template>
                                 </el-table-column>
-                                <el-table-column prop="schedule" label=运行计划" width="150">
+                                <el-table-column prop="schedule" label="执行计划" width="180">
                                     <template #default="scope">
                                         <span class="text-gray-600">{{ scope.row.schedule || '--' }}</span>
                                     </template>
@@ -757,7 +765,7 @@
                                 </el-table-column>
                                 <el-table-column label="操作" width="200" fixed="right">
                                     <template #default="scope">
-                                        <el-button size="small" @click="viewTaskDetail(scope.row)">详情</el-button>
+                                        <el-button size="small" @click="viewTaskDetail(scope.row)">查看</el-button>
                                         <el-button size="small" type="primary" @click="editTask(scope.row)">编辑</el-button>
                                         <el-button size="small" :type="scope.row.status === 'enabled' ? 'warning' : 'success'" 
                                                    @click="toggleTaskStatus(scope.row)">
@@ -794,6 +802,18 @@
                                                 <el-option label="全部任务" value=""></el-option>
                                                 <el-option v-for="task in tasks" :key="task.id" :label="task.name" :value="task.id"></el-option>
                                             </el-select>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">日期范围:</label>
+                                            <el-date-picker
+                                                v-model="logDateRange"
+                                                type="daterange"
+                                                range-separator="至"
+                                                start-placeholder="开始日期"
+                                                end-placeholder="结束日期"
+                                                value-format="YYYY-MM-DD"
+                                                style="flex: 1">
+                                            </el-date-picker>
                                         </div>
                                         <div class="flex items-center space-x-3">
                                             <label class="text-sm font-medium text-gray-700 whitespace-nowrap">同步状态:</label>
@@ -862,6 +882,18 @@
                                         <span class="text-gray-600">{{ scope.row.duration }}ms</span>
                                     </template>
                                 </el-table-column>
+                                <el-table-column prop="errorMessage" label="错误信息" width="220">
+                                    <template #default="scope">
+                                        <span v-if="scope.row.status === 'success'" class="text-gray-400">--</span>
+                                        <template v-else>
+                                            <el-tooltip :content="scope.row.errorMessage || '--'" placement="top">
+                                                <span class="text-gray-600" style="display: inline-block; max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    {{ scope.row.errorMessage || '--' }}
+                                                </span>
+                                            </el-tooltip>
+                                        </template>
+                                    </template>
+                                </el-table-column>
                                 <el-table-column label="操作" width="120" fixed="right">
                                     <template #default="scope">
                                         <el-button size="small" @click="viewLogDetail(scope.row)">查看</el-button>
@@ -924,7 +956,6 @@
             </el-form>
             <template #footer>
                 <div class="flex justify-between">
-                    <el-button @click="testPlatformConnection" :loading="testingConnection">测试连接</el-button>
                     <div>
                         <el-button @click="platformDialogVisible = false">取消</el-button>
                         <el-button type="primary" @click="savePlatform" :loading="savingPlatform">保存</el-button>
@@ -1205,6 +1236,13 @@
                                     <el-button size="small" @click="clearAllMappings">清空映射</el-button>
                                 </div>
                             </div>
+                            <el-alert
+                                v-if="mappingValidationError"
+                                title="存在未映射的必填目标字段，请检查后重试。"
+                                type="error"
+                                show-icon
+                                class="mx-4 my-4">
+                            </el-alert>
                             <el-tabs v-model="activeMappingTab" type="border-card">
                                 <el-tab-pane label="Body参数映射" name="body">
                                     <div class="mapping-content">
@@ -1219,7 +1257,7 @@
                                                 <div class="mapping-col-required">必填</div>
                                             </div>
                                             <div class="mapping-table-body">
-                                                <div v-for="field in targetBodyFields" :key="field.id" class="mapping-table-row">
+                                                <div v-for="field in targetBodyFields" :key="field.id" :class="['mapping-table-row', { 'mapping-row-error': field.mappingError }]">
                                                     <div class="mapping-col-source">
                                                         <el-select v-model="field.mappedSource" placeholder="选择源平台输出字段" class="w-full" clearable>
                                                             <el-option 
@@ -1262,7 +1300,7 @@
                                                 <div class="mapping-col-required">必填</div>
                                             </div>
                                             <div class="mapping-table-body">
-                                                <div v-for="field in targetQueryFields" :key="field.id" class="mapping-table-row">
+                                                <div v-for="field in targetQueryFields" :key="field.id" :class="['mapping-table-row', { 'mapping-row-error': field.mappingError }]">
                                                     <div class="mapping-col-source">
                                                         <el-select v-model="field.mappedSource" placeholder="选择源平台输出字段" class="w-full" clearable>
                                                             <el-option 
@@ -1305,7 +1343,7 @@
                                                 <div class="mapping-col-required">必填</div>
                                             </div>
                                             <div class="mapping-table-body">
-                                                <div v-for="field in targetHeaderFields" :key="field.id" class="mapping-table-row">
+                                                <div v-for="field in targetHeaderFields" :key="field.id" :class="['mapping-table-row', { 'mapping-row-error': field.mappingError }]">
                                                     <div class="mapping-col-source">
                                                         <el-select v-model="field.mappedSource" placeholder="选择源平台输出字段" class="w-full" clearable>
                                                             <el-option 
@@ -1348,7 +1386,7 @@
                                                 <div class="mapping-col-required">必填</div>
                                             </div>
                                             <div class="mapping-table-body">
-                                                <div v-for="field in targetPathFields" :key="field.id" class="mapping-table-row">
+                                                <div v-for="field in targetPathFields" :key="field.id" :class="['mapping-table-row', { 'mapping-row-error': field.mappingError }]">
                                                     <div class="mapping-col-source">
                                                         <el-select v-model="field.mappedSource" placeholder="选择源平台输出字段" class="w-full" clearable>
                                                             <el-option 
@@ -1448,24 +1486,326 @@
         <el-dialog
             v-model="logDetailVisible"
             title="运行日志详情"
-            width="800px">
+            width="800px"
+            append-to-body
+            teleported
+            :z-index="4000">
             <div v-if="selectedLog">
+                <!-- 运行日志详情信息 -->
                 <el-descriptions :column="2" border>
-                    <el-descriptions-item label="任务名称">{{ selectedLog.taskName }}</el-descriptions-item>
-                    <el-descriptions-item label="运行时间">{{ selectedLog.executeTime }}</el-descriptions-item>
+                    <el-descriptions-item label="任务名称">
+                        <span class="font-medium">{{ selectedLog.taskName }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="运行时间">
+                        <span class="text-gray-600">{{ selectedLog.executeTime }}</span>
+                    </el-descriptions-item>
                     <el-descriptions-item label="运行状态">
                         <span :class="getLogStatusBadgeClass(selectedLog.status)">
                             {{ getLogStatusText(selectedLog.status) }}
                         </span>
                     </el-descriptions-item>
-                    <el-descriptions-item label="运行耗时">{{ selectedLog.duration }}ms</el-descriptions-item>
-                    <el-descriptions-item label="处理记录数">{{ selectedLog.recordCount }}</el-descriptions-item>
+                    <el-descriptions-item label="运行耗时">
+                        <span class="text-gray-600">{{ selectedLog.duration }}ms</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="处理记录数">
+                        <span class="font-medium text-blue-600">{{ selectedLog.recordCount || 0 }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="成功记录数">
+                        <span class="font-medium text-green-600">{{ selectedLog.successCount || 0 }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="失败记录数">
+                        <span class="font-medium text-red-600">{{ selectedLog.failedCount || 0 }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="跳过记录数">
+                        <span class="font-medium text-yellow-600">{{ selectedLog.skippedCount || 0 }}</span>
+                    </el-descriptions-item>
                 </el-descriptions>
-                <div v-if="selectedLog.details" class="mt-4">
-                    <h4 class="font-medium mb-2">运行详情</h4>
-                    <el-input v-model="selectedLog.details" type="textarea" :rows="6" readonly></el-input>
+
+                <!-- 错误信息 - 条件显示 -->
+                <div v-if="selectedLog.errorMessage" class="mt-6">
+                    <h4 class="text-lg font-medium mb-3 text-red-600 border-b pb-2">错误信息</h4>
+                    <el-alert
+                        :title="selectedLog.errorMessage"
+                        type="error"
+                        :closable="false"
+                        show-icon>
+                    </el-alert>
+                </div>
+
+                <!-- 运行详情 - 条件显示 -->
+                <div v-if="selectedLog.details" class="mt-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">运行详情</h4>
+                    <el-input 
+                        v-model="selectedLog.details" 
+                        type="textarea" 
+                        :rows="6" 
+                        readonly
+                        class="bg-gray-50">
+                    </el-input>
                 </div>
             </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="logDetailVisible = false">关闭</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 平台详情对话框 -->
+        <el-dialog
+            v-model="platformDetailVisible"
+            title="平台详情"
+            width="900px"
+            append-to-body
+            teleported
+            :z-index="4000">
+            <div v-if="selectedPlatform">
+                <!-- 基本信息 -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">基本信息</h4>
+                    <el-descriptions :column="2" border>
+                        <el-descriptions-item label="平台名称">
+                            <span class="font-medium">{{ selectedPlatform.name }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="平台类型">
+                            <el-tag type="primary">{{ selectedPlatform.type }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="基础URL">
+                            <span class="text-blue-600">{{ selectedPlatform.baseUrl }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="创建时间" :span="2">{{ selectedPlatform.createTime }}</el-descriptions-item>
+                        <el-descriptions-item label="平台描述" :span="2">
+                            <span class="text-gray-600">{{ selectedPlatform.description || '-' }}</span>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                </div>
+
+                <!-- 认证信息 -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">认证信息</h4>
+                    <el-descriptions :column="2" border>
+                        <el-descriptions-item label="认证方式">
+                            <el-tag type="info">{{ selectedPlatform.authType || 'API Key' }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="API Key">
+                            <span class="text-gray-500">{{ selectedPlatform.apiKey ? '******' : '-' }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="Token过期时间">
+                            <span class="text-gray-600">{{ selectedPlatform.tokenExpiry || '-' }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="刷新Token">
+                            <el-tag :type="selectedPlatform.autoRefresh !== false ? 'success' : 'warning'">
+                                {{ selectedPlatform.autoRefresh !== false ? '自动刷新' : '手动刷新' }}
+                            </el-tag>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                </div>
+
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="platformDetailVisible = false">关闭</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 接口详情对话框 -->
+        <el-dialog
+            v-model="interfaceDetailVisible"
+            title="接口详情"
+            width="900px"
+            append-to-body
+            teleported
+            :z-index="4000">
+            <div v-if="selectedInterface">
+                <!-- 基本信息 -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">基本信息</h4>
+                    <el-descriptions :column="2" border>
+                        <el-descriptions-item label="接口名称">
+                            <span class="font-medium">{{ selectedInterface.name }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="所属平台">
+                            <span class="text-blue-600 font-medium">{{ selectedInterface.platformName }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="接口路径">
+                            <span class="text-gray-700 font-mono">{{ selectedInterface.path }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="请求方法">
+                            <el-tag :type="getMethodTagType(selectedInterface.method)">{{ selectedInterface.method }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="字段数量">
+                            <span class="font-medium text-purple-600">{{ selectedInterface.fieldCount || 0 }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="创建时间">{{ selectedInterface.createTime }}</el-descriptions-item>
+                        <el-descriptions-item label="接口描述" :span="2">
+                            <span class="text-gray-600">{{ selectedInterface.description || '-' }}</span>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                </div>
+
+                <!-- 请求配置 -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">请求配置</h4>
+                    <el-descriptions :column="2" border>
+                        <el-descriptions-item label="Content-Type">
+                            <span class="font-mono text-sm">{{ selectedInterface.contentType || 'application/json' }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="超时时间">
+                            <span class="font-medium">{{ selectedInterface.timeout || '30' }}秒</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="重试次数">
+                            <span class="font-medium">{{ selectedInterface.retryCount || '3' }}次</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="缓存策略">
+                            <el-tag :type="selectedInterface.cacheEnabled ? 'success' : 'info'">
+                                {{ selectedInterface.cacheEnabled ? '启用缓存' : '不缓存' }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="认证方式">
+                            <el-tag type="warning">{{ selectedInterface.authType || 'Bearer Token' }}</el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="限流配置">
+                            <span class="text-gray-600">{{ selectedInterface.rateLimit || '100/分钟' }}</span>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                </div>
+
+                <!-- 字段结构 -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">字段结构</h4>
+                    <div class="bg-gray-50 p-4 rounded border">
+                        <div v-if="selectedInterface.fieldStructure && selectedInterface.fieldStructure.length > 0">
+                            <div v-for="field in selectedInterface.fieldStructure" :key="field.name" class="mb-3 last:mb-0">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono text-sm font-medium text-blue-600">{{ field.name }}</span>
+                                    <div class="flex items-center space-x-2">
+                                        <el-tag size="small" :type="field.required ? 'danger' : 'info'">
+                                            {{ field.required ? '必填' : '可选' }}
+                                        </el-tag>
+                                        <el-tag size="small" type="success">{{ field.type || 'string' }}</el-tag>
+                                    </div>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-2">{{ field.description || '无描述' }}</div>
+                                
+                                <!-- 子字段（嵌套结构） -->
+                                <div v-if="field.children && field.children.length > 0" class="ml-4 border-l-2 border-gray-200 pl-3">
+                                    <div v-for="child in field.children" :key="child.name" class="mb-2 last:mb-0">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-mono text-xs text-green-600">{{ child.name }}</span>
+                                            <div class="flex items-center space-x-1">
+                                                <el-tag size="small" :type="child.required ? 'danger' : 'info'">
+                                                    {{ child.required ? '必填' : '可选' }}
+                                                </el-tag>
+                                                <el-tag size="small" type="success">{{ child.type || 'string' }}</el-tag>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-500">{{ child.description || '无描述' }}</div>
+                                        
+                                        <!-- 三级嵌套 -->
+                                        <div v-if="child.children && child.children.length > 0" class="ml-4 border-l-2 border-gray-200 pl-3 mt-2">
+                                            <div v-for="grandChild in child.children" :key="grandChild.name" class="mb-1 last:mb-0">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="font-mono text-xs text-purple-600">{{ grandChild.name }}</span>
+                                                    <div class="flex items-center space-x-1">
+                                                        <el-tag size="small" :type="grandChild.required ? 'danger' : 'info'">
+                                                            {{ grandChild.required ? '必填' : '可选' }}
+                                                        </el-tag>
+                                                        <el-tag size="small" type="success">{{ grandChild.type || 'string' }}</el-tag>
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs text-gray-500">{{ grandChild.description || '无描述' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-gray-500 text-sm">暂无字段结构配置</div>
+                    </div>
+                </div>
+
+                <!-- 统计信息 -->
+                <div class="mb-4">
+                    <h4 class="text-lg font-medium mb-3 text-gray-800 border-b pb-2">统计信息</h4>
+                    <el-descriptions :column="2" border>
+                        <el-descriptions-item label="关联任务数">
+                            <span class="font-medium text-blue-600">{{ selectedInterface.taskCount || 0 }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="今日调用次数">
+                            <span class="font-medium text-green-600">{{ selectedInterface.todayCallCount || 0 }}</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="成功率">
+                            <span class="font-medium text-purple-600">{{ selectedInterface.successRate || '0' }}%</span>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="平均响应时间">
+                            <span class="font-medium text-orange-600">{{ selectedInterface.avgResponseTime || 0 }}ms</span>
+                        </el-descriptions-item>
+                    </el-descriptions>
+                </div>
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="interfaceDetailVisible = false">关闭</el-button>
+                </span>
+            </template>
+        </el-dialog>
+
+        <!-- 任务详情对话框 -->
+        <el-dialog
+            v-model="taskDetailVisible"
+            title="任务查看"
+            width="800px">
+            <div v-if="selectedTask">
+                <!-- 任务基本配置信息 -->
+                <el-descriptions :column="2" border>
+                    <el-descriptions-item label="任务名称">
+                        <span class="font-medium">{{ selectedTask.name }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="任务描述">
+                        <span class="text-gray-600">{{ selectedTask.description || '暂无描述' }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="源平台">
+                        <span class="text-blue-600 font-medium">{{ selectedTask.sourcePlatform }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="源接口">
+                        <span class="text-gray-700 font-mono text-sm">{{ selectedTask.sourceInterface }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="目标平台">
+                        <span class="text-green-600 font-medium">{{ selectedTask.targetPlatform }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="目标接口">
+                        <span class="text-gray-700 font-mono text-sm">{{ selectedTask.targetInterface }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="运行模式">
+                        <el-tag :type="selectedTask.runMode === '定时运行' ? 'primary' : selectedTask.runMode === '实时同步' ? 'success' : 'info'">
+                            {{ selectedTask.runMode }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="调度配置">
+                        <span class="font-medium text-blue-600">{{ selectedTask.schedule }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="任务状态">
+                        <el-tag :type="selectedTask.status === 'enabled' ? 'success' : 'danger'">
+                            {{ selectedTask.status === 'enabled' ? '启用' : '禁用' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="最近运行时间">
+                        <span class="text-gray-600">{{ selectedTask.lastRun || '暂未运行' }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="创建时间">
+                        <span class="text-gray-600">{{ selectedTask.createTime }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="更新时间">
+                        <span class="text-gray-600">{{ selectedTask.updateTime || selectedTask.createTime }}</span>
+                    </el-descriptions-item>
+                </el-descriptions>
+            </div>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="taskDetailVisible = false">关闭</el-button>
+                </span>
+            </template>
         </el-dialog>
     </div>
 
@@ -1487,7 +1827,6 @@
                             type: 'HTTP',
                             baseUrl: 'https://crm.example.com/api',
                             description: '客户关系管理系统API',
-                            status: 'connected',
                             createTime: '2024-01-15 10:30:00'
                         },
                         {
@@ -1496,7 +1835,6 @@
                             type: 'HTTP',
                             baseUrl: 'https://order.example.com/api',
                             description: '订单处理系统API',
-                            status: 'disconnected',
                             createTime: '2024-01-16 14:20:00'
                         },
                         {
@@ -1505,7 +1843,6 @@
                             type: 'HTTP',
                             baseUrl: 'https://inventory.example.com/api',
                             description: '库存管理系统API',
-                            status: 'connecting',
                             createTime: '2024-01-17 09:15:00'
                         }
                     ],
@@ -1531,7 +1868,6 @@
                         type: [{ required: true, message: '请选择连接类型', trigger: 'change' }],
                         baseUrl: [{ required: true, message: '请输入基础URL', trigger: 'blur' }]
                     },
-                    testingConnection: false,
                     savingPlatform: false,
                     
                     // 接口管理相关数据
@@ -1545,7 +1881,78 @@
                             method: 'GET',
                             fieldCount: 8,
                             description: '获取客户基本信息列表',
-                            createTime: '2024-01-15 11:00:00'
+                            createTime: '2024-01-15 11:00:00',
+                            fieldStructure: [
+                                {
+                                    name: 'customer_id',
+                                    type: 'string',
+                                    required: true,
+                                    description: '客户唯一标识',
+                                    children: []
+                                },
+                                {
+                                    name: 'customer_info',
+                                    type: 'object',
+                                    required: true,
+                                    description: '客户基本信息',
+                                    children: [
+                                        {
+                                            name: 'name',
+                                            type: 'string',
+                                            required: true,
+                                            description: '客户姓名',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'phone',
+                                            type: 'string',
+                                            required: false,
+                                            description: '联系电话',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'address',
+                                            type: 'object',
+                                            required: false,
+                                            description: '地址信息',
+                                            children: [
+                                                {
+                                                    name: 'province',
+                                                    type: 'string',
+                                                    required: true,
+                                                    description: '省份'
+                                                },
+                                                {
+                                                    name: 'city',
+                                                    type: 'string',
+                                                    required: true,
+                                                    description: '城市'
+                                                },
+                                                {
+                                                    name: 'detail',
+                                                    type: 'string',
+                                                    required: false,
+                                                    description: '详细地址'
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    name: 'create_time',
+                                    type: 'datetime',
+                                    required: true,
+                                    description: '创建时间',
+                                    children: []
+                                },
+                                {
+                                    name: 'status',
+                                    type: 'integer',
+                                    required: true,
+                                    description: '客户状态：1-正常，0-禁用',
+                                    children: []
+                                }
+                            ]
                         },
                         {
                             id: 2,
@@ -1556,7 +1963,66 @@
                             method: 'POST',
                             fieldCount: 12,
                             description: '创建新订单',
-                            createTime: '2024-01-16 15:30:00'
+                            createTime: '2024-01-16 15:30:00',
+                            fieldStructure: [
+                                {
+                                    name: 'order_id',
+                                    type: 'string',
+                                    required: true,
+                                    description: '订单编号',
+                                    children: []
+                                },
+                                {
+                                    name: 'customer_id',
+                                    type: 'string',
+                                    required: true,
+                                    description: '客户ID',
+                                    children: []
+                                },
+                                {
+                                    name: 'order_items',
+                                    type: 'array',
+                                    required: true,
+                                    description: '订单商品列表',
+                                    children: [
+                                        {
+                                            name: 'product_id',
+                                            type: 'string',
+                                            required: true,
+                                            description: '商品ID',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'quantity',
+                                            type: 'integer',
+                                            required: true,
+                                            description: '购买数量',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'price',
+                                            type: 'decimal',
+                                            required: true,
+                                            description: '单价',
+                                            children: []
+                                        }
+                                    ]
+                                },
+                                {
+                                    name: 'total_amount',
+                                    type: 'decimal',
+                                    required: true,
+                                    description: '订单总金额',
+                                    children: []
+                                },
+                                {
+                                    name: 'payment_method',
+                                    type: 'string',
+                                    required: true,
+                                    description: '支付方式',
+                                    children: []
+                                }
+                            ]
                         },
                         {
                             id: 3,
@@ -1567,7 +2033,52 @@
                             method: 'PUT',
                             fieldCount: 6,
                             description: '更新商品库存信息',
-                            createTime: '2024-01-17 10:45:00'
+                            createTime: '2024-01-17 10:45:00',
+                            fieldStructure: [
+                                {
+                                    name: 'product_id',
+                                    type: 'string',
+                                    required: true,
+                                    description: '商品ID',
+                                    children: []
+                                },
+                                {
+                                    name: 'stock_info',
+                                    type: 'object',
+                                    required: true,
+                                    description: '库存信息',
+                                    children: [
+                                        {
+                                            name: 'current_stock',
+                                            type: 'integer',
+                                            required: true,
+                                            description: '当前库存数量',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'reserved_stock',
+                                            type: 'integer',
+                                            required: false,
+                                            description: '预留库存',
+                                            children: []
+                                        },
+                                        {
+                                            name: 'warehouse_id',
+                                            type: 'string',
+                                            required: true,
+                                            description: '仓库ID',
+                                            children: []
+                                        }
+                                    ]
+                                },
+                                {
+                                    name: 'update_reason',
+                                    type: 'string',
+                                    required: false,
+                                    description: '更新原因',
+                                    children: []
+                                }
+                            ]
                         }
                     ],
                     interfaceSearch: '',
@@ -1611,7 +2122,28 @@
                             runMode: '定时运行',
                             schedule: '每天 02:00',
                             lastRun: '2024-01-20 02:00:00',
-                            createTime: '2024-01-18 16:20:00'
+                            createTime: '2024-01-18 16:20:00',
+                            description: '定时同步客户管理系统的客户数据到订单管理系统',
+                            sourceFormat: 'JSON',
+                            targetFormat: 'JSON',
+                            sourceAuth: 'Bearer Token',
+                            targetAuth: 'API Key',
+                            timeout: 300,
+                            retryCount: 3,
+                            concurrency: 1,
+                            errorHandling: '记录日志并停止',
+                            totalRuns: 45,
+                            successRuns: 43,
+                            failedRuns: 2,
+                            successRate: '95.6',
+                            avgExecutionTime: 125,
+                            totalRecords: 12580,
+                            fieldMappings: [
+                                { id: 1, sourceField: 'customer_id', targetField: 'cust_id', sourceType: 'string', targetType: 'string' },
+                                { id: 2, sourceField: 'customer_name', targetField: 'name', sourceType: 'string', targetType: 'string' },
+                                { id: 3, sourceField: 'email_address', targetField: 'email', sourceType: 'string', targetType: 'string' },
+                                { id: 4, sourceField: 'phone_number', targetField: 'phone', sourceType: 'string', targetType: 'string' }
+                            ]
                         },
                         {
                             id: 2,
@@ -1624,7 +2156,27 @@
                             runMode: '实时同步',
                             schedule: '每30秒',
                             lastRun: '2024-01-19 18:30:00',
-                            createTime: '2024-01-19 09:15:00'
+                            createTime: '2024-01-19 09:15:00',
+                            description: '实时监控订单状态变化并同步到库存管理系统',
+                            sourceFormat: 'JSON',
+                            targetFormat: 'XML',
+                            sourceAuth: 'OAuth 2.0',
+                            targetAuth: 'Bearer Token',
+                            timeout: 60,
+                            retryCount: 5,
+                            concurrency: 3,
+                            errorHandling: '重试后记录日志',
+                            totalRuns: 1280,
+                            successRuns: 1245,
+                            failedRuns: 35,
+                            successRate: '97.3',
+                            avgExecutionTime: 45,
+                            totalRecords: 45620,
+                            fieldMappings: [
+                                { id: 1, sourceField: 'order_id', targetField: 'orderId', sourceType: 'string', targetType: 'string' },
+                                { id: 2, sourceField: 'status', targetField: 'orderStatus', sourceType: 'string', targetType: 'string' },
+                                { id: 3, sourceField: 'update_time', targetField: 'lastModified', sourceType: 'datetime', targetType: 'timestamp' }
+                            ]
                         }
                     ],
                     taskSearch: '',
@@ -1672,11 +2224,13 @@
                     targetHeaderFields: [],
                     targetPathFields: [],
                     savingTask: false,
+                    mappingValidationError: false,
                     
                     // 日志管理相关数据
                     logs: [
                         {
                             id: 1,
+                            taskId: 1,
                             taskName: '客户数据同步',
                             executeTime: '2024-01-20 02:00:00',
                             sourcePlatform: '运营平台A',
@@ -1694,6 +2248,7 @@
                         },
                         {
                             id: 2,
+                            taskId: 2,
                             taskName: '订单状态更新',
                             executeTime: '2024-01-19 18:30:00',
                             sourcePlatform: '订单平台C',
@@ -1711,6 +2266,7 @@
                         },
                         {
                             id: 3,
+                            taskId: 1,
                             taskName: '客户数据同步',
                             executeTime: '2024-01-19 02:00:00',
                             sourcePlatform: '运营平台A',
@@ -1735,7 +2291,19 @@
                     
                     // 日志详情对话框
                     logDetailVisible: false,
-                    selectedLog: null
+                    selectedLog: null,
+                    
+                    // 平台详情对话框
+                    platformDetailVisible: false,
+                    selectedPlatform: null,
+                    
+                    // 接口详情对话框
+                    interfaceDetailVisible: false,
+                    selectedInterface: null,
+                    
+                    // 任务详情弹窗相关
+                    taskDetailVisible: false,
+                    selectedTask: null
                 };
             },
             computed: {
@@ -1780,10 +2348,7 @@
                 filteredLogs() {
                     let filtered = this.logs;
                     if (this.logTaskFilter) {
-                        const task = this.tasks.find(t => t.id == this.logTaskFilter);
-                        if (task) {
-                            filtered = filtered.filter(log => log.taskName === task.name);
-                        }
+                        filtered = filtered.filter(log => log.taskId == this.logTaskFilter);
                     }
                     if (this.logStatusFilter) {
                         filtered = filtered.filter(log => log.status === this.logStatusFilter);
@@ -1791,6 +2356,7 @@
                     if (this.logDateRange && this.logDateRange.length === 2) {
                         const startDate = new Date(this.logDateRange[0]);
                         const endDate = new Date(this.logDateRange[1]);
+                        endDate.setHours(23, 59, 59, 999);
                         filtered = filtered.filter(log => {
                             const logDate = new Date(log.executeTime);
                             return logDate >= startDate && logDate <= endDate;
@@ -1870,13 +2436,25 @@
                     return descriptions[this.activeTab] || '';
                 },
                 
+                getMethodTagType(method) {
+                    const methodTypes = {
+                        'GET': 'success',
+                        'POST': 'primary',
+                        'PUT': 'warning',
+                        'DELETE': 'danger',
+                        'PATCH': 'info'
+                    };
+                    return methodTypes[method] || 'info';
+                },
+                
                 // 平台管理方法
                 searchPlatforms() {
-                    // 搜索逻辑已在computed中实现
+                    this.platformCurrentPage = 1;
                 },
                 resetPlatformFilters() {
                     this.platformSearch = '';
                     this.platformTypeFilter = '';
+                    this.platformCurrentPage = 1;
                 },
                 showAddPlatformDialog() {
                     this.platformDialogMode = 'add';
@@ -1889,6 +2467,11 @@
                     this.platformDialogVisible = true;
                 },
                 deletePlatform(platform) {
+                    const hasInterfaces = this.interfaces.some(i => i.platformId === platform.id);
+                    if (hasInterfaces) {
+                        ElMessage.warning('该平台下存在接口定义，无法删除');
+                        return;
+                    }
                     ElMessageBox.confirm('确定要删除该平台吗？', '提示', {
                         confirmButtonText: '确定',
                         cancelButtonText: '取消',
@@ -1901,15 +2484,11 @@
                         }
                     });
                 },
-                testConnection(platform) {
-                    ElMessage.info('正在测试连接...');
-                    // 模拟测试连接
-                    setTimeout(() => {
-                        ElMessage.success('连接测试成功');
-                    }, 1500);
-                },
                 viewPlatformDetail(platform) {
-                    ElMessage.info('查看平台详情功能开发中...');
+                    console.log('点击平台详情', platform);
+                    this.selectedPlatform = platform;
+                    this.platformDetailVisible = true;
+                    console.log('平台详情弹窗状态', this.platformDetailVisible);
                 },
                 resetPlatformForm() {
                     this.platformForm = {
@@ -1928,23 +2507,19 @@
                 onAuthTypeChange() {
                     // 认证方式变化时的处理
                 },
-                testPlatformConnection() {
-                    this.testingConnection = true;
-                    setTimeout(() => {
-                        this.testingConnection = false;
-                        ElMessage.success('连接测试成功');
-                    }, 2000);
-                },
+
                 savePlatform() {
                     this.$refs.platformFormRef.validate((valid) => {
                         if (valid) {
+                            if (!this.validatePlatformExtra()) {
+                                return;
+                            }
                             this.savingPlatform = true;
                             setTimeout(() => {
                                 if (this.platformDialogMode === 'add') {
                                     const newPlatform = {
                                         ...this.platformForm,
                                         id: Date.now(),
-                                        status: 'disconnected',
                                         createTime: new Date().toLocaleString()
                                     };
                                     this.platforms.push(newPlatform);
@@ -1962,14 +2537,44 @@
                         }
                     });
                 },
+                validatePlatformExtra() {
+                    const name = (this.platformForm.name || '').trim();
+                    const duplicate = this.platforms.some(platform => 
+                        platform.name === name && platform.id !== this.platformForm.id
+                    );
+                    if (duplicate) {
+                        ElMessage.error('平台名称已存在，请更换名称');
+                        return false;
+                    }
+                    if (this.platformForm.type === 'HTTP') {
+                        if (!this.isValidUrl(this.platformForm.baseUrl)) {
+                            ElMessage.error('请输入有效的URL地址');
+                            return false;
+                        }
+                        if (this.platformForm.authType === 'apikey' && !this.platformForm.apiKey) {
+                            ElMessage.error('请输入API Key');
+                            return false;
+                        }
+                        if (this.platformForm.authType === 'bearer' && !this.platformForm.token) {
+                            ElMessage.error('请输入Bearer Token');
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+                isValidUrl(url) {
+                    const pattern = /^(https?:\/\/)[\w.-]+(\.[\w.-]+)+(\/[\w\-./?%&=]*)?$/i;
+                    return pattern.test(url || '');
+                },
                 
                 // 接口管理方法
                 searchInterfaces() {
-                    // 搜索逻辑已在computed中实现
+                    this.interfaceCurrentPage = 1;
                 },
                 resetInterfaceFilters() {
                     this.interfaceSearch = '';
                     this.interfacePlatformFilter = '';
+                    this.interfaceCurrentPage = 1;
                 },
                 showAddInterfaceDialog() {
                     this.interfaceDialogMode = 'add';
@@ -1995,7 +2600,10 @@
                     });
                 },
                 viewInterfaceDetail(interface) {
-                    ElMessage.info('查看接口详情功能开发中...');
+                    console.log('点击接口详情', interface);
+                    this.selectedInterface = interface;
+                    this.interfaceDetailVisible = true;
+                    console.log('接口详情弹窗状态', this.interfaceDetailVisible);
                 },
                 resetInterfaceForm() {
                     this.interfaceForm = {
@@ -2009,6 +2617,29 @@
                         headerParams: [],
                         pathParams: []
                     };
+                },
+                getInterfaceFieldCount(interface) {
+                    if (interface.fieldStructure && interface.fieldStructure.length) {
+                        return this.countNestedParams(interface.fieldStructure);
+                    }
+                    const bodyCount = this.countNestedParams(interface.bodyParams || []);
+                    const queryCount = (interface.queryParams || []).length;
+                    const headerCount = (interface.headerParams || []).length;
+                    const pathCount = (interface.pathParams || []).length;
+                    const total = bodyCount + queryCount + headerCount + pathCount;
+                    if (total === 0 && typeof interface.fieldCount === 'number') {
+                        return interface.fieldCount;
+                    }
+                    return total;
+                },
+                countNestedParams(params) {
+                    if (!Array.isArray(params)) {
+                        return 0;
+                    }
+                    return params.reduce((sum, param) => {
+                        const childrenCount = param.children ? this.countNestedParams(param.children) : 0;
+                        return sum + 1 + childrenCount;
+                    }, 0);
                 },
                 
                 // 参数配置方法
@@ -2086,13 +2717,18 @@
                         if (valid) {
                             this.savingInterface = true;
                             setTimeout(() => {
+                                const platform = this.platforms.find(p => p.id == this.interfaceForm.platformId);
+                                const formCopy = JSON.parse(JSON.stringify(this.interfaceForm));
+                                formCopy.platformName = platform ? platform.name : formCopy.platformName;
+                                formCopy.fieldStructure = JSON.parse(JSON.stringify(formCopy.bodyParams || []));
+                                formCopy.fieldCount = this.countNestedParams(formCopy.bodyParams || []) +
+                                    (formCopy.queryParams || []).length +
+                                    (formCopy.headerParams || []).length +
+                                    (formCopy.pathParams || []).length;
                                 if (this.interfaceDialogMode === 'add') {
-                                    const platform = this.platforms.find(p => p.id == this.interfaceForm.platformId);
                                     const newInterface = {
-                                        ...this.interfaceForm,
+                                        ...formCopy,
                                         id: Date.now(),
-                                        platformName: platform ? platform.name : '',
-                                        fieldCount: this.interfaceForm.bodyParams.length + this.interfaceForm.queryParams.length,
                                         createTime: new Date().toLocaleString()
                                     };
                                     this.interfaces.push(newInterface);
@@ -2100,7 +2736,11 @@
                                 } else {
                                     const index = this.interfaces.findIndex(i => i.id === this.interfaceForm.id);
                                     if (index > -1) {
-                                        this.interfaces[index] = { ...this.interfaceForm };
+                                        const updatedInterface = {
+                                            ...this.interfaces[index],
+                                            ...formCopy
+                                        };
+                                        this.interfaces[index] = updatedInterface;
                                         ElMessage.success('接口更新成功');
                                     }
                                 }
@@ -2113,11 +2753,12 @@
                 
                 // 任务管理方法
                 searchTasks() {
-                    // 搜索逻辑已在computed中实现
+                    this.taskCurrentPage = 1;
                 },
                 resetTaskFilters() {
                     this.taskSearch = '';
                     this.taskStatusFilter = '';
+                    this.taskCurrentPage = 1;
                 },
                 showAddTaskWizard() {
                     this.taskWizardMode = 'add';
@@ -2210,7 +2851,10 @@
                     ElMessage.success(`任务已${task.status === 'enabled' ? '启用' : '停用'}`);
                 },
                 viewTaskDetail(task) {
-                    ElMessage.info('查看任务详情功能开发中...');
+                    console.log('点击任务详情', task);
+                    this.selectedTask = task;
+                    this.taskDetailVisible = true;
+                    console.log('任务详情弹窗状态', this.taskDetailVisible);
                 },
                 resetTaskForm() {
                     this.taskForm = {
@@ -2432,35 +3076,22 @@
                 
                 // 日志管理方法
                 searchLogs() {
-                    // 搜索逻辑已在computed中实现
+                    this.logCurrentPage = 1;
                 },
                 resetLogFilters() {
                     this.logTaskFilter = '';
                     this.logStatusFilter = '';
                     this.logDateRange = [];
+                    this.logCurrentPage = 1;
                 },
                 viewLogDetail(log) {
+                    console.log('点击日志详情', log);
                     this.selectedLog = log;
                     this.logDetailVisible = true;
+                    console.log('日志详情弹窗状态', this.logDetailVisible);
                 },
                 
                 // 工具方法
-                getStatusBadgeClass(status) {
-                    const classes = {
-                        'connected': 'status-badge status-badge-connected',
-                        'disconnected': 'status-badge status-badge-disconnected',
-                        'connecting': 'status-badge status-badge-connecting'
-                    };
-                    return classes[status] || 'status-badge';
-                },
-                getStatusText(status) {
-                    const texts = {
-                        'connected': '已连接',
-                        'disconnected': '未连接',
-                        'connecting': '连接中'
-                    };
-                    return texts[status] || '未知';
-                },
                 getMethodBadgeClass(method) {
                     const classes = {
                         'GET': 'method-badge method-get',
